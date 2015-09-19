@@ -16,3 +16,13 @@ To get started, clone this repository and then
     $ cd /path/to/godelbrot
     $ go install functorama.com/demo/godelbrot
     $ bin/godelbrot
+
+## Credits
+
+**John Morrice**
+
+[http://functorama.com]
+[https://github.com/johnny-morrice]
+
+**Gavin Leech**
+[https://github.com/technicalities]
