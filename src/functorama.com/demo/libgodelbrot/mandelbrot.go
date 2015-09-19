@@ -4,7 +4,6 @@ import (
     "math/cmplx"
 )
 
-const limit int = 2
 
 type MandelbrotMember struct {
     InSet bool
@@ -12,16 +11,16 @@ type MandelbrotMember struct {
     C complex128
 }
 
-func Mandelbrot(c complex128) MandebrotMember {
+func Mandelbrot(c complex128, iterateLimit uint8, divergeLimit float64) MandelbrotMember {
     var z complex128 = 0
-    i := 0
-    for ; i < 255 && cmplx.Abs(z) < 4; i++ {
+    var i uint8 = 0
+    for ; i < iterateLimit && cmplx.Abs(z) < divergeLimit; i++ {
         z = (z * z) + c
     }
 
     return MandelbrotMember{
-        InSet: i >= 255
-        Divergence: i
-        C: c
+        InSet: i >= iterateLimit,
+        Divergence: i,
+        C: c,
     }
 }
