@@ -31,6 +31,7 @@ func parseArguments(args *commandLine) {
     flag.Float64Var(&args.yOffset, "yOffset", 1.0, "Topmost position of complex plane projected onto PNG image")
     flag.Float64Var(&args.zoom, "zoom", 1.0, "Look into the eyeball")
     flag.StringVar(&args.mode, "mode", "sequential", "Render mode")
+    flag.Parse()
 }
 
 func extractRenderParameters(args commandLine) (*libgodelbrot.RenderParameters, error) {
