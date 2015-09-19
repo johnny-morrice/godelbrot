@@ -7,8 +7,8 @@ import (
 func TestMandelbrotSanity(t *testing.T) {
     const originMember complex128 = 0
     const nonMember complex128 = 2 + 4i
-    const iterateLimit uint8 := 255
-    const divergeLimit float64 := 4.0
+    const iterateLimit uint8 = 255
+    const divergeLimit float64 = 4.0
 
     positiveMembership := Mandelbrot(originMember, iterateLimit, divergeLimit)
     negativeMembership := Mandelbrot(nonMember, iterateLimit, divergeLimit)
@@ -29,8 +29,8 @@ func TestMandelbrotSanity(t *testing.T) {
         t.Error("Expected Mandelbrot return to contain ", nonMember, " got ", negativeMembership.C)
     }
 
-    if negativeMembership.Divergence >= IterateLimit {
-        t.Error("Expected negativeMembership to have Divergence below IterateLimit")
+    if negativeMembership.InvDivergence >= iterateLimit {
+        t.Error("Expected negativeMembership to have InvDivergence below IterateLimit")
     }
 
 }

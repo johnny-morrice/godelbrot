@@ -6,6 +6,7 @@ import (
     "os"
     "image/png"
     "errors"
+    "functorama.com/demo/libgodelbrot"
 )
 
 type commandLine struct {
@@ -22,7 +23,7 @@ type commandLine struct {
 
 func parseArguments(args *commandLine) {
     flag.UintVar(&args.iterateLimit, "iterateLimit", 255, "Maximum number of iterations")
-    flag.Float64Var(&args.divergeLimit, "divergeLimit", 4.0 "Limit where function is said to diverge to infinity")
+    flag.Float64Var(&args.divergeLimit, "divergeLimit", 4.0, "Limit where function is said to diverge to infinity")
     flag.UintVar(&args.width, "imageWidth", 800, "Width of output PNG")
     flag.UintVar(&args.height, "imageHeight", 600, "Height of output PNG")
     flag.StringVar(&args.filename, "filename", "mandelbrot.png", "Name of output PNG")
@@ -32,7 +33,7 @@ func parseArguments(args *commandLine) {
     flag.StringVar(&args.mode, "mode", "sequential", "Render mode")
 }
 
-func extractRenderParameters(args commandLine) (*RenderParameters, error) {
+func extractRenderParameters(args commandLine) (*libgodelbrot.RenderParameters, error) {
     if args.iterateLimit > 255 {
         return nil, errors.New("iterateLimit out of bounds (uint8)")
     }
@@ -45,8 +46,8 @@ func extractRenderParameters(args commandLine) (*RenderParameters, error) {
         return nil, errors.New("zoom out of bounds (positive float64)")
     }
 
-    return &RenderParameters{
-        IterateLimit: args.iterateLimit,
+    parameters := &libgodelbrot.RenderParameters{
+        IterateLimit: uint8(args.iterateLimit),
         DivergeLimit: args.divergeLimit,
         Width: args.width,
         Height: args.height,
@@ -54,21 +55,22 @@ func extractRenderParameters(args commandLine) (*RenderParameters, error) {
         YOffset: args.yOffset,
         Zoom: args.zoom,
     }
+    return parameters, nil
 }
 
 func main() {
-    commandLineArguments := commandLine{}
-    parseArguments(&commandLine)
+    args := commandLine{}
+    parseArguments(&args)
 
-    renderer := nil
-    switch mode {
+    var renderer *libgodelbrot.SequentialRenderer
+    switch args.mode {
     case "sequential":
-        renderer := NewSequentialRenderer()
+        renderer = libgodelbrot.NewSequentialRenderer()
     default:
-        log.Fatal("No renderer specified")
+        log.Fatal("Unknown renderer")
     }
 
-    renderParameters, validationError := extractRenderParameters(commandLineArguments)
+    renderParameters, validationError := extractRenderParameters(args)
     if validationError != nil {
         log.Fatal(validationError)
     }
@@ -78,12 +80,12 @@ func main() {
         log.Fatal(renderError)
     }
 
-    file, fileError := os.Create(commandLineArguments.filename)
+    file, fileError := os.Create(args.filename)
 
     if fileError != nil {
         log.Fatal(fileError)
     }
-    defer os.Close(file)
+    defer file.Close()
 
     writeError := png.Encode(file, image)
 

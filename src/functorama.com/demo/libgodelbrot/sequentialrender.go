@@ -1,10 +1,14 @@
 package libgodelbrot
 
+import (
+    "image"
+)
+
 // Normalized size of window onto complex plane
 const windowSize complex128 = 1 + 1i
 
 type RenderParameters struct {
-    IterateLimit uint
+    IterateLimit uint8
     DivergeLimit float64
     Width uint
     Height uint
@@ -13,37 +17,43 @@ type RenderParameters struct {
     Zoom float64
 }
 
-type SequentialRenderer interface {}
+type SequentialRenderer struct {}
 
-func NewSequentialRenderer() SequentialRenderer {
-    return RenderParameters{}
+func NewSequentialRenderer() *SequentialRenderer {
+    return &SequentialRenderer{}
 }
 
-func (renderer *SequentialRenderer) Render(args RenderParameters) image.NRGBA {
-    var bottomRight complex128 = windowSize * zoom
-    horizUnit := real(bottomRight) / RenderParameters.Width
-    verticalUnit := imag(bottomRight) / RenderParameters.Height
+func (renderer *SequentialRenderer) Render(argP *RenderParameters) (*image.NRGBA, error) {
+    args := *argP
+    var bottomRight complex128 = windowSize * complex(args.Zoom, 0)
+    horizUnit := real(bottomRight) / float64(args.Width)
+    verticalUnit := imag(bottomRight) / float64(args.Height)
+
+
+    widthI := int(args.Width)
+    heightI := int(args.Height)
 
     pic := image.NewNRGBA(image.Rectangle{
         Min: image.ZP,
         Max: image.Point{
-            X: RenderParameters.Width,
-            Y: RenderParameters.Height,
+            X: widthI,
+            Y: heightI,
         },
     })
 
-    x := 0
-    for i := 0; i < RenderParameters.Width; i++; {
-        y := 0
-        for j := 0; j < RenderParameters.Height; j++ {
+    palette := NewRedscalePalette()
+    x := 0.0
+    for i := 0; i < widthI; i++ {
+        y := 0.0
+        for j := 0; j < heightI; j++ {
             c := complex(x, y)
-            member := Mandelbrot(c, RenderParameters.IterateLimit, RenderParameters.DivergeLimit)
-            color := MandelbrotColor(member)
+            member := Mandelbrot(c, args.IterateLimit, args.DivergeLimit)
+            color := palette.Lookup(member)
             pic.Set(i, j, color)
             y += verticalUnit
         }
         x += horizUnit
     }
     
-    return image
+    return pic, nil
 }
