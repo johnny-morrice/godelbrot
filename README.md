@@ -21,8 +21,10 @@ To get started, clone this repository and then
 
 **John Morrice**
 
-[http://functorama.com]
-[https://github.com/johnny-morrice]
+http://functorama.com
+
+https://github.com/johnny-morrice
 
 **Gavin Leech**
-[https://github.com/technicalities]
+
+https://github.com/technicalities
