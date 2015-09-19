@@ -5,7 +5,7 @@ import (
 )
 
 // Normalized size of window onto complex plane
-const windowSize complex128 = 1 + 1i
+const windowSize complex128 = 2.1 + 2i
 
 type RenderParameters struct {
     IterateLimit uint8
@@ -42,15 +42,15 @@ func (renderer *SequentialRenderer) Render(argP *RenderParameters) (*image.NRGBA
     })
 
     palette := NewRedscalePalette()
-    x := 0.0
+    x := args.XOffset
     for i := 0; i < widthI; i++ {
-        y := 0.0
+        y := args.YOffset
         for j := 0; j < heightI; j++ {
             c := complex(x, y)
             member := Mandelbrot(c, args.IterateLimit, args.DivergeLimit)
             color := palette.Lookup(member)
             pic.Set(i, j, color)
-            y += verticalUnit
+            y -= verticalUnit
         }
         x += horizUnit
     }
