@@ -41,14 +41,14 @@ func (renderer *SequentialRenderer) Render(argP *RenderParameters) (*image.NRGBA
         },
     })
 
-    palette := NewRedscalePalette()
+    palette := NewRedscalePalette(args.IterateLimit)
     x := args.XOffset
     for i := 0; i < widthI; i++ {
         y := args.YOffset
         for j := 0; j < heightI; j++ {
             c := complex(x, y)
             member := Mandelbrot(c, args.IterateLimit, args.DivergeLimit)
-            color := palette.Lookup(member)
+            color := palette.Color(member)
             pic.Set(i, j, color)
             y -= verticalUnit
         }
