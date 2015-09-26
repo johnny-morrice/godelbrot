@@ -10,7 +10,11 @@ type EscapePoint struct {
     membership MandelbrotMember
 }
 
-func NewEscapePointReals(r float64, i float64) EscapePoint {
+func NewEscapePointReals(r float64, i float64) *EscapePoint {
+    return NewEscapePoint(complex(r, i))
+}
+
+func NewEscapePoint(c complex128) *EscapePoint {
     return &EscapePoint{
         evaluated: false,
         c: c
@@ -106,5 +110,6 @@ func (r Region) Split() Subregion {
         bottomRight: r.bottomRight,
         midPoint: NewEscapePointReals(rightSectorMid, bottomSectorMid)
     }
+
     return []{tl, tr, bl, br}
 }
