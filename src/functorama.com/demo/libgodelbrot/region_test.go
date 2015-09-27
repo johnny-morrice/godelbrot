@@ -56,7 +56,7 @@ func TestRegionSplitPos(t *testing.T) {
     actual := subjectRegion.Split()
 
     for i, ex := range expected {
-        similarity := sameRegion(ex, actual.children[i])
+        similarity := sameRegion(ex, *actual.children[i])
         if (!similarity.same) {
             t.Error(
                 "Unexpected child region ", i, 

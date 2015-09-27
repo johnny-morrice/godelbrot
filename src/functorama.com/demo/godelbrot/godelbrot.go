@@ -18,23 +18,28 @@ type commandLine struct {
     xOffset float64
     yOffset float64
     zoom float64
-    mode string   
+    mode string 
+    regionCollapse uint  
 }
 
 func parseArguments(args *commandLine) {
+    xOffset := real(libgodelbrot.MagicOffset)
+    yOffset := imag(libgodelbrot.MagicOffset)
+
     flag.UintVar(&args.iterateLimit, "iterateLimit", 255, "Maximum number of iterations")
     flag.Float64Var(&args.divergeLimit, "divergeLimit", 4.0, "Limit where function is said to diverge to infinity")
     flag.UintVar(&args.width, "imageWidth", 800, "Width of output PNG")
     flag.UintVar(&args.height, "imageHeight", 600, "Height of output PNG")
     flag.StringVar(&args.filename, "filename", "mandelbrot.png", "Name of output PNG")
-    flag.Float64Var(&args.xOffset, "xOffset", -1.5, "Leftmost position of complex plane projected onto PNG image")
-    flag.Float64Var(&args.yOffset, "yOffset", 1.0, "Topmost position of complex plane projected onto PNG image")
+    flag.Float64Var(&args.xOffset, "realOffset", xOffset, "Leftmost position of complex plane projected onto PNG image")
+    flag.Float64Var(&args.yOffset, "imagOffset", yOffset, "Topmost position of complex plane projected onto PNG image")
     flag.Float64Var(&args.zoom, "zoom", 1.0, "Look into the eyeball")
     flag.StringVar(&args.mode, "mode", "sequential", "Render mode")
+    flag.UintVar(&args.regionCollapse, 2, "Pixel width of region at which sequential render is forced")
     flag.Parse()
 }
 
-func extractRenderParameters(args commandLine) (*libgodelbrot.RenderParameters, error) {
+func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, error) {
     if args.iterateLimit > 255 {
         return nil, errors.New("iterateLimit out of bounds (uint8)")
     }
@@ -47,7 +52,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderParameters, 
         return nil, errors.New("zoom out of bounds (positive float64)")
     }
 
-    parameters := &libgodelbrot.RenderParameters{
+    parameters := libgodelbrot.RenderConfig{
         IterateLimit: uint8(args.iterateLimit),
         DivergeLimit: args.divergeLimit,
         Width: args.width,
@@ -55,30 +60,35 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderParameters, 
         XOffset: args.xOffset,
         YOffset: args.yOffset,
         Zoom: args.zoom,
+        RegionCollapse: args.regionCollapse,
     }
-    return parameters, nil
+    config := parameters.Configure()
+    return config, nil
 }
 
 func main() {
     args := commandLine{}
     parseArguments(&args)
 
-    var renderer *libgodelbrot.SequentialRenderer
+    var renderer libgodelbrot.Renderer
     switch args.mode {
     case "sequential":
-        renderer = libgodelbrot.NewSequentialRenderer()
+        renderer = libgodelbrot.SequentialRender
     case "region":
-        render = libgodelbrot.NewRegionRenderer()
+        renderer = libgodelbrot.RegionRender
     default:
         log.Fatal("Unknown renderer")
     }
 
-    renderParameters, validationError := extractRenderParameters(args)
+    config, validationError := extractRenderParameters(args)
     if validationError != nil {
         log.Fatal(validationError)
     }
 
-    image, renderError := renderer.Render(renderParameters)
+    // Redscale is the only palette we have available
+    redscale := NewRedscalePalette(config.IterateLimit)
+
+    image, renderError := renderer(config, redscale)
     if renderError != nil {
         log.Fatal(renderError)
     }

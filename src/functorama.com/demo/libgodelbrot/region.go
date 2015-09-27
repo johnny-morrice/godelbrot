@@ -52,6 +52,10 @@ func NewRegion(topLeft complex128, bottomRight complex128) Region {
     }  
 }
 
+func (r Region) PixelSize(argP *RenderParameters) (uint, uint) {
+    
+}
+
 func (r Region) Points() []*EscapePoint {
     return []*EscapePoint{
         r.topLeft, 
@@ -64,7 +68,7 @@ func (r Region) Points() []*EscapePoint {
 
 type Subregion struct {
     populated bool
-    children []Region
+    children []*Region
 }
 
 func (r *Region) Subdivide(iterateLimit uint8, divergeLimit float64) Subregion {
@@ -149,6 +153,6 @@ func (r Region) Split() Subregion {
 
     return Subregion{
         populated: true,
-        children: []Region{tl, tr, bl, br},
+        children: []*Region{&tl, &tr, &bl, &br},
     }
 }

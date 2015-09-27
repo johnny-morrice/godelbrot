@@ -1,53 +1,27 @@
 package libgodelbrot
 
-import (
-    "image"
-)
-
-// Normalized size of window onto complex plane
-const windowSize complex128 = 2.1 + 2i
-
-type RenderParameters struct {
-    IterateLimit uint8
-    DivergeLimit float64
-    Width uint
-    Height uint
-    XOffset float64
-    YOffset float64
-    Zoom float64
+func SeqentialRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
+    pic := config.BlankImage()
+    return SequentialRenderImage(config, palette, pic), nil
 }
 
-type SequentialRenderer struct {}
+func SequentialRenderImage(configP *RenderConfig, palette Palette, pic *image.NRGBA) *image.NRGBA {}
+    config := *configP
+    topLeft := config.WindowTopLeft()
+    bottomRight := config.WindowBottomRight()
+    size := topLeft - bottomRight
+    horizUnit := real(size) / float64(config.Width)
+    verticalUnit := imag(size) / float64(config.Height)
 
-func NewSequentialRenderer() *SequentialRenderer {
-    return &SequentialRenderer{}
-}
+    widthI := int(config.Width)
+    heightI := int(config.Height)
 
-func (renderer *SequentialRenderer) Render(argP *RenderParameters) (*image.NRGBA, error) {
-    args := *argP
-    var bottomRight complex128 = windowSize * complex(args.Zoom, 0)
-    horizUnit := real(bottomRight) / float64(args.Width)
-    verticalUnit := imag(bottomRight) / float64(args.Height)
-
-
-    widthI := int(args.Width)
-    heightI := int(args.Height)
-
-    pic := image.NewNRGBA(image.Rectangle{
-        Min: image.ZP,
-        Max: image.Point{
-            X: widthI,
-            Y: heightI,
-        },
-    })
-
-    palette := NewRedscalePalette(args.IterateLimit)
-    x := args.XOffset
+    x := real(topLeft)
     for i := 0; i < widthI; i++ {
-        y := args.YOffset
+        y := imag(topLeft)
         for j := 0; j < heightI; j++ {
             c := complex(x, y)
-            member := Mandelbrot(c, args.IterateLimit, args.DivergeLimit)
+            member := Mandelbrot(c, config.IterateLimit, config.DivergeLimit)
             color := palette.Color(member)
             pic.Set(i, j, color)
             y -= verticalUnit
@@ -55,5 +29,5 @@ func (renderer *SequentialRenderer) Render(argP *RenderParameters) (*image.NRGBA
         x += horizUnit
     }
     
-    return pic, nil
+    return pic
 }
