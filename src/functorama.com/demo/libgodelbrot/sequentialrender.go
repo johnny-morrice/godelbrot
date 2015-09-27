@@ -7,8 +7,8 @@ func SeqentialRender(config *RenderConfig, palette Palette) (*image.NRGBA, error
 
 func SequentialRenderImage(configP *RenderConfig, palette Palette, pic *image.NRGBA) *image.NRGBA {}
     config := *configP
-    topLeft := config.WindowTopLeft()
-    bottomRight := config.WindowBottomRight()
+    topLeft := config.PlaneTopLeft()
+    bottomRight := config.PlaneBottomRight()
     size := topLeft - bottomRight
     horizUnit := real(size) / float64(config.Width)
     verticalUnit := imag(size) / float64(config.Height)
@@ -16,10 +16,12 @@ func SequentialRenderImage(configP *RenderConfig, palette Palette, pic *image.NR
     widthI := int(config.Width)
     heightI := int(config.Height)
 
+    imageLeft, imageTop := config.ImageTopLeft()
+
     x := real(topLeft)
-    for i := 0; i < widthI; i++ {
+    for i := imageLeft; i < widthI; i++ {
         y := imag(topLeft)
-        for j := 0; j < heightI; j++ {
+        for j := imageTop; j < heightI; j++ {
             c := complex(x, y)
             member := Mandelbrot(c, config.IterateLimit, config.DivergeLimit)
             color := palette.Color(member)

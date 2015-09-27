@@ -23,7 +23,7 @@ func RegionRender(configP *RenderConfig, palette Palette) (*image.NRGBA, error) 
     // Add detail from the small regions next
     for _, region := range smallRegions {
         // Create config for rendering this region
-        smallConfig := RenderConfig{}
+        smallConfig := RenderConfig{config}
         regionConfig(region, configP, &smallConfig)
         SequentialRenderImage(smallConfig, palette, pic)
     }
@@ -63,4 +63,16 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
     }
 
     return completeRegions, smallRegions
+}
+
+// Write image and plane position data to the small config
+func regionConfig(smallRegion *Region, largeConfig *RenderConfig, smallConfig *RenderConfig) {
+    rect := largeConfig.RegionRect(smallRegion)
+    topLeft = smallRegion.topLeft.c
+    smallConfig.Width = uint(rect.Dx)
+    smallConfig.Height = uint(rect.Dy)
+    smallConfig.ImageLeft = uint(rect.Min.X)
+    smallConfig.ImageTop = uint(rect.Max.Y)
+    smallConfig.XOffset = real(topLeft)
+    smallConfig.YOffset = imag(topLeft)
 }
