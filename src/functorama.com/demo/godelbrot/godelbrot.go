@@ -67,6 +67,8 @@ func main() {
     switch args.mode {
     case "sequential":
         renderer = libgodelbrot.NewSequentialRenderer()
+    case "region":
+        render = libgodelbrot.NewRegionRenderer()
     default:
         log.Fatal("Unknown renderer")
     }

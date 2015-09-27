@@ -1,26 +1,34 @@
 package libgodelbrot
 
+import (
+    "image/color"
+)
+
 type Cacher func (iterateLimit uint8, index uint8) color.NRGBA
 
 type CachePalette struct {
-    setColor color.NRGBA
+    memberColor color.NRGBA
     scale []color.NRGBA
     limit uint8
 }
 
-func NewCachePalette(iterateLimit uint8, cacher Cacher) CachePalette {
-    palette := make([]color.NRGBA, iterateLimit, iterateLimit)
-    for i := 0; i < iterateLimit; i++ {
-        palette.scale[i] = cacher.cache(iteraterLimit, uint8(i))
+func NewCachePalette(iterateLimit uint8, member color.NRGBA, cacher Cacher) CachePalette {
+    colors := make([]color.NRGBA, iterateLimit, iterateLimit)
+    iLimit := int(iterateLimit)
+    for i := 0; i < iLimit; i++ {
+        colors[i] = cacher(iterateLimit, uint8(i))
     }
-    return palette
+    return CachePalette{
+        memberColor: member,
+        scale: colors,
+        limit: iterateLimit,
+    }
 }
 
 // CachePalette implements Palette
 func (palette CachePalette) Color(member MandelbrotMember) color.NRGBA {
     if member.InSet {
-        return palette.setColor
-        }
+        return palette.memberColor
     } else {
         return palette.scale[member.InvDivergence]
     }

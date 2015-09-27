@@ -2,7 +2,6 @@ package libgodelbrot
 
 import (
     "math/cmplx"
-    "image/color"
 )
 
 
