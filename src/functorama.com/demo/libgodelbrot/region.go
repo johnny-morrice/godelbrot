@@ -71,33 +71,81 @@ type Subregion struct {
     children []*Region
 }
 
-func (r Region) Subdivide(iterateLimit uint8, divergeLimit float64) Subregion {
+func (r Region) Subdivide(config *RenderConfig) Subregion {
     points := r.Points()
     // Ensure points are all evaluated
     for _, p := range points {
         if (!p.evaluated) {
-            p.membership =  Mandelbrot(p.c, iterateLimit, divergeLimit)
+            p.membership =  Mandelbrot(p.c, config.IterateLimit, config.DivergeLimit)
             p.evaluated = true
         }
     }
 
-    // If inverse divergence on all points is the same, no need to subdivide
-    divide := false
-    last := points[0].membership.InvDivergence
-    for _, p := range points[1:] {
-        if p.membership.InvDivergence != last {
-            divide = true
-            break
-        }
+    // If we appear to be in the set
+    // Do some extra work to be sure the result isn't a fluke due to the
+    // Curved shape and unform colour of the set
+    if r.OnSetCurve(config) {
+        return r.Split()
     }
 
-    if divide {
-        return r.Split();
-    } else {
+    if r.Uniform() {
         return Subregion{
             populated: false,
         }
+    } else {
+        return r.Split()
     }
+}
+
+// Assume points have all been evaluated, true if they have equal InvDivergence
+func (r Region) Uniform() bool {
+    // If inverse divergence on all points is the same, no need to subdivide
+    points := r.Points()
+    first := points[0].membership.InvDivergence
+    for _, p := range points[1:] {
+        if p.membership.InvDivergence != first {
+            return false
+        }
+    }
+    return true
+}
+
+// Assume points have all been evaluated, true if this region appears to
+// be in the mandelbrot set but in fact is not entirely
+func (r Region) OnSetCurve(config *RenderConfig) bool {
+    points := r.Points()
+ 
+    allInSet := true
+    for _, p := range points {
+        if !p.membership.InSet {
+            allInSet = false
+        }
+    }
+
+    if allInSet {
+        sqrtChecks := 5
+        sqrtChecksF := float64(sqrtChecks)
+        tl := r.topLeft.c
+        br := r.bottomRight.c
+        w := real(br) - real(tl)
+        h := imag(tl) - imag(br)
+        vUnit := h / sqrtChecksF
+        hUnit := w / sqrtChecksF
+        x := real(tl)
+        for i := 0; i < sqrtChecks; i++ {
+            y := imag(tl)
+            for j := 0; j < sqrtChecks; j++ {
+                member := Mandelbrot(complex(x, y), config.IterateLimit, config.DivergeLimit)
+                if !member.InSet {
+                    return true
+                }
+                y -= vUnit
+            }
+            x += hUnit
+        }
+    }
+
+    return false
 }
 
 func (r Region) Split() Subregion {

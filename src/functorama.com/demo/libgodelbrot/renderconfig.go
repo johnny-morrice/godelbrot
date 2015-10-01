@@ -30,31 +30,40 @@ type RenderParameters struct {
     BottomRight complex128
 }
 
-// Machine prepared input, caching interim results
-type RenderConfig struct {
-    RenderParameters
-    // One pixel's space on the plane
-    HorizUnit float64
-    VerticalUnit float64
-    ImageLeft uint
-    ImageTop uint
+func (config RenderParameters) PlaneTopLeft() complex128 {
+    return config.TopLeft
 }
 
-// Use magic values to create default config
-func DefaultConfig() *RenderConfig {
-    params := RenderParameters{
-        IterateLimit: DefaultIterations,
-        DivergeLimit: DefaultDivergeLimit,
-        Width: DefaultImageWidth,
-        Height: DefaultImageHeight,
-        TopLeft: MagicOffset,
-        Zoom: DefaultZoom,
-        Frame: ZoomFrame,
-        RegionCollapse: DefaultCollapse,
+// Top right of window onto complex plane
+func (config RenderParameters) PlaneBottomRight() complex128 {
+    if config.Frame == ZoomFrame {
+        scaled := MagicSetSize * complex(config.Zoom, 0)
+        topLeft := config.PlaneTopLeft()
+        right := real(topLeft) + real(scaled)
+        bottom := imag(topLeft) - imag(scaled)
+        return complex(right, bottom)
+    } else if config.Frame == CornerFrame {
+        return config.BottomRight
+    } else {
+        config.framePanic()
     }
-    return params.Configure()
+    panic("Bug")
+    return 0
 }
 
+func (config RenderParameters) framePanic() {
+    panic(fmt.Sprintf("Unknown frame: %v", config.Frame))
+}
+
+func (config RenderParameters) BlankImage() *image.NRGBA {
+    return image.NewNRGBA(image.Rectangle{
+        Min: image.ZP,
+        Max: image.Point{
+            X: int(config.Width),
+            Y: int(config.Height),
+        },
+    })
+}
 func (args RenderParameters) PlaneSize() complex128 {
     if args.Frame == ZoomFrame {
         return complex(args.Zoom, 0) * MagicSetSize
@@ -82,43 +91,29 @@ func (args RenderParameters) Configure() *RenderConfig {
     }
 }
 
-func (config RenderParameters) PlaneTopLeft() complex128 {
-    return config.TopLeft
+// Machine prepared input, caching interim results
+type RenderConfig struct {
+    RenderParameters
+    // One pixel's space on the plane
+    HorizUnit float64
+    VerticalUnit float64
+    ImageLeft uint
+    ImageTop uint
 }
 
-// Top right of window onto complex plane
-func (config RenderParameters) PlaneBottomRight() complex128 {
-    if config.Frame == ZoomFrame {
-        scaled := MagicSetSize * complex(config.Zoom, 0)
-        topLeft := config.PlaneTopLeft()
-        right := real(topLeft) + real(scaled)
-        bottom := imag(topLeft) - imag(scaled)
-        return complex(right, bottom)
-    } else if config.Frame == CornerFrame {
-        return config.BottomRight
-    } else {
-        config.framePanic()
+// Use magic values to create default config
+func DefaultConfig() *RenderConfig {
+    params := RenderParameters{
+        IterateLimit: DefaultIterations,
+        DivergeLimit: DefaultDivergeLimit,
+        Width: DefaultImageWidth,
+        Height: DefaultImageHeight,
+        TopLeft: MagicOffset,
+        Zoom: DefaultZoom,
+        Frame: ZoomFrame,
+        RegionCollapse: DefaultCollapse,
     }
-    panic("Bug")
-    return 0
-}
-
-func (config RenderParameters) framePanic() {
-    panic(fmt.Sprintf("Unknown frame: %v", config.Frame))
-}
-
-func (config RenderConfig) ImageTopLeft() (uint, uint) {
-    return config.ImageLeft, config.ImageTop
-}
-
-func (config RenderParameters) BlankImage() *image.NRGBA {
-    return image.NewNRGBA(image.Rectangle{
-        Min: image.ZP,
-        Max: image.Point{
-            X: int(config.Width),
-            Y: int(config.Height),
-        },
-    })
+    return params.Configure()
 }
 
 func (config RenderConfig) PlaneToPixel(c complex128) (rx uint, ry uint) {
@@ -137,4 +132,8 @@ func (config RenderConfig) PlaneToPixel(c complex128) (rx uint, ry uint) {
     ry = uint(math.Ceil(-sy))
 
     return
+}
+
+func (config RenderConfig) ImageTopLeft() (uint, uint) {
+    return config.ImageLeft, config.ImageTop
 }

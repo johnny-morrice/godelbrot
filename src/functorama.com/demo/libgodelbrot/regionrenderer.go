@@ -39,8 +39,6 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
     completeRegions := make([]*Region, 0, meg)
     smallRegions := make([]*Region, 0, meg)
     splittingRegions := make([]*Region, 1, meg)
-    iterateLimit := config.IterateLimit
-    divergeLimit := config.DivergeLimit
 
     // Split regions
     splittingRegions[0] = whole
@@ -54,7 +52,7 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
             smallRegions = append(smallRegions, splitee)
         } else {
             // If the region is not too small, two things can happen
-            subregion := splitee.Subdivide(iterateLimit, divergeLimit)
+            subregion := splitee.Subdivide(config)
             // B. The region needs subdivided because it covers distinct parts of the plane 
             if subregion.populated {
                 splittingRegions = append(splittingRegions, subregion.children...)
