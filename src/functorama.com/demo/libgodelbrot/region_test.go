@@ -11,7 +11,7 @@ type regionSameness struct {
     same bool
 }
 
-func sameRegion(a *Region, b *Region) regionSameness {
+func sameRegion(a Region, b Region) regionSameness {
     aPoints := a.Points()
     bPoints := b.Points()
 
@@ -46,14 +46,14 @@ func TestRegionSplitPos(t *testing.T) {
 
     subjectRegion := NewRegion(topLeft, bottomRight)
 
-    expected := []*Region{
+    expected := []Region{
         NewRegion(topLeft, midPoint),
         NewRegion(topSideMid, rightSideMid),
         NewRegion(leftSideMid, bottomSideMid),
         NewRegion(midPoint, bottomRight),
     }
 
-    actual := subjectRegion.Split()
+    actual := subjectRegion.Split(NewEscapePointHeap(1024))
 
     for i, ex := range expected {
         similarity := sameRegion(ex, actual.children[i])
@@ -85,14 +85,14 @@ func TestRegionSplitNeg(t *testing.T) {
 
     subjectRegion := NewRegion(topLeft, bottomRight)
 
-    expected := []*Region{
+    expected := []Region{
         NewRegion(topLeft, midPoint),
         NewRegion(topSideMid, rightSideMid),
         NewRegion(leftSideMid, bottomSideMid),
         NewRegion(midPoint, bottomRight),
     }
 
-    actual := subjectRegion.Split()
+    actual := subjectRegion.Split(NewEscapePointHeap(1024))
 
     for i, ex := range expected {
         similarity := sameRegion(ex, actual.children[i])
@@ -124,14 +124,14 @@ func TestRegionSplitPosAndNeg(t *testing.T) {
 
     subjectRegion := NewRegion(topLeft, bottomRight)
 
-    expected := []*Region{
+    expected := []Region{
         NewRegion(topLeft, midPoint),
         NewRegion(topSideMid, rightSideMid),
         NewRegion(leftSideMid, bottomSideMid),
         NewRegion(midPoint, bottomRight),
     }
 
-    actual := subjectRegion.Split()
+    actual := subjectRegion.Split(NewEscapePointHeap(1024))
 
     for i, ex := range expected {
         similarity := sameRegion(ex, actual.children[i])

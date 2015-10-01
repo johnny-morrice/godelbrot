@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "image"
     "fmt"
+    "runtime"
 )
 
 type renderCommand uint
@@ -13,7 +14,7 @@ const (
 
 type renderInput struct {
     command renderCommand
-    regions []*Region
+    regions []Region
 }
 
 type renderResult uint
@@ -25,8 +26,8 @@ type pixelMember struct {
 }
 
 type renderOutput struct {
-    uniformRegions []*Region
-    children []*Region
+    uniformRegions []Region
+    children []Region
     members []pixelMember
 }
 
@@ -42,7 +43,7 @@ type RenderTracker struct {
     // Drawing context
     context DrawingContext
     // Local buffer of unprocessed regions
-    buffer []*Region
+    buffer []Region
 }
 
 func NewRenderTracker(drawingContext DrawingContext) *RenderTracker {
@@ -76,7 +77,7 @@ func (tracker *RenderTracker) Busy() bool {
 }
 
 // Render a set of regions using the next thread in the round robin scheme
-func (tracker *RenderTracker) RenderRegions(regions []*Region) {
+func (tracker *RenderTracker) RenderRegions(regions []Region) {
 
     tracker.buffer = append(tracker.buffer, regions...)
 
@@ -121,19 +122,19 @@ func (tracker *RenderTracker) Draw(output renderOutput) {
     for _, uniform := range output.uniformRegions {
         tracker.context.DrawUniform(uniform)
     }
-/*
+
     for _, member := range output.members {
         tracker.context.DrawPointAt(member.i, member.j, member.MandelbrotMember)
     }
-    */
+    
 }
 
 func (tracker *RenderTracker) cleanBuffer() {
     tracker.buffer = newBuffer(tracker.context.Config.BufferSize)
 }
 
-func newBuffer(bufferSize uint) []*Region {
-    return make([]*Region, 0, bufferSize)
+func newBuffer(bufferSize uint) []Region {
+    return make([]Region, 0, bufferSize)
 }
 
 // Render the Mandelbrot set concurrently
@@ -142,10 +143,11 @@ func (tracker *RenderTracker) Render() {
 
     for i, inputChan := range tracker.input {
         outputChan := tracker.output[i]
-        go RegionRenderProcess(uint(i), tracker.context.Config, inputChan, outputChan)
+        heap := NewEscapePointHeap(Meg)
+        go RegionRenderProcess(uint(i), heap, tracker.context.Config, inputChan, outputChan)
     }
 
-    tracker.RenderRegions([]*Region{initialRegion})
+    tracker.RenderRegions([]Region{initialRegion})
 
     for tracker.Busy() {
         for i, outputChan := range tracker.output {
@@ -170,24 +172,24 @@ func newRenderOutput(config *RenderConfig) renderOutput {
     buffSize := config.BufferSize
     memberSize := config.RegionCollapse * config.RegionCollapse * config.BufferSize
     return renderOutput{
-        uniformRegions: make([]*Region, 0, buffSize),
+        uniformRegions: make([]Region, 0, buffSize),
         // What is the correct size for this?
         members: make([]pixelMember, 0, memberSize),
         // The magic number of 4 represents the splitting factor
-        children: make([]*Region, 0, buffSize),
+        children: make([]Region, 0, buffSize),
     }
 }
 
 // A pass through the region rendering process, comprising many steps
-func RegionRenderPass(config *RenderConfig, regions []*Region) renderOutput {
+func RegionRenderPass(config *RenderConfig, heap *EscapePointHeap, regions []Region) renderOutput {
     output := newRenderOutput(config)
     for _, region := range regions {
-        RegionRenderStep(config, region, &output)
+        RegionRenderStep(config, heap, region, &output)
     }
     return output
 }
 
-func RegionRenderStep(config *RenderConfig, region *Region, output *renderOutput) {
+func RegionRenderStep(config *RenderConfig, heap *EscapePointHeap, region Region, output *renderOutput) {
     if region.Collapse(config) {
         smallConfig := region.Subconfig(config)
         MandelbrotSequence(smallConfig, func (i int, j int, member MandelbrotMember) {
@@ -196,7 +198,7 @@ func RegionRenderStep(config *RenderConfig, region *Region, output *renderOutput
         return
     }
 
-    subregion := region.Subdivide(config)
+    subregion := region.Subdivide(config, heap)
     if subregion.populated {
         output.children = append(output.children, subregion.children...)
         return
@@ -206,12 +208,12 @@ func RegionRenderStep(config *RenderConfig, region *Region, output *renderOutput
 }
 
 // Implements a single render process
-func RegionRenderProcess(threadNum uint, config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
+func RegionRenderProcess(threadNum uint, heap *EscapePointHeap, config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
     for {
         input := <- inputChan
         switch input.command {
         case render:
-            outputChan <- RegionRenderPass(config, input.regions)
+            outputChan <- RegionRenderPass(config, heap, input.regions)
         case stop:
             return
         default:
@@ -227,6 +229,7 @@ func ConcurrentRegionRender(config *RenderConfig, palette Palette) (*image.NRGBA
 }
 
 func ConcurrentRegionRenderImage(drawingContext DrawingContext) {
+    runtime.GOMAXPROCS(int(drawingContext.Config.RenderThreads) + 1)
     tracker := NewRenderTracker(drawingContext)
     tracker.Render()
 }

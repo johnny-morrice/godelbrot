@@ -4,26 +4,9 @@ import (
     "image"
 )
 
-type EscapePoint struct {
-    evaluated bool
-    c complex128
-    membership MandelbrotMember
-}
-
-func NewEscapePointReals(r float64, i float64) *EscapePoint {
-    return NewEscapePoint(complex(r, i))
-}
-
-func NewEscapePoint(c complex128) *EscapePoint {
-    return &EscapePoint{
-        evaluated: false,
-        c: c,
-    }
-}
-
 type Subregion struct {
     populated bool
-    children []*Region
+    children []Region
 }
 
 type Region struct {
@@ -34,7 +17,7 @@ type Region struct {
     midPoint *EscapePoint
 }
 
-func NewRegion(topLeft complex128, bottomRight complex128) *Region {
+func NewRegion(topLeft complex128, bottomRight complex128) Region {
     left := real(topLeft)
     right := real(bottomRight)
     top := imag(topLeft)
@@ -52,7 +35,7 @@ func NewRegion(topLeft complex128, bottomRight complex128) *Region {
     br := NewEscapePoint(bottomRight)
     mid := NewEscapePoint(midPos)
 
-    return &Region{
+    return Region{
         topLeft: tl,
         topRight: tr,
         bottomLeft: bl,
@@ -61,7 +44,7 @@ func NewRegion(topLeft complex128, bottomRight complex128) *Region {
     }  
 }
 
-func WholeRegion(config *RenderConfig) *Region {
+func WholeRegion(config *RenderConfig) Region {
     return NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
 }
 
@@ -75,7 +58,7 @@ func (r Region) Points() []*EscapePoint {
     }
 }
 
-func (r Region) Subdivide(config *RenderConfig) Subregion {
+func (r Region) Subdivide(config *RenderConfig, heap *EscapePointHeap) Subregion {
     points := r.Points()
     // Ensure points are all evaluated
     for _, p := range points {
@@ -89,7 +72,7 @@ func (r Region) Subdivide(config *RenderConfig) Subregion {
     // Do some extra work to be sure the result isn't a fluke due to the
     // Curved shape and unform colour of the set
     if r.OnSetCurve(config) {
-        return r.Split()
+        return r.Split(heap)
     }
 
     if r.Uniform() {
@@ -97,7 +80,7 @@ func (r Region) Subdivide(config *RenderConfig) Subregion {
             populated: false,
         }
     } else {
-        return r.Split()
+        return r.Split(heap)
     }
 }
 
@@ -152,7 +135,7 @@ func (r Region) OnSetCurve(config *RenderConfig) bool {
     return false
 }
 
-func (r Region) Split() Subregion {
+func (r Region) Split(heap *EscapePointHeap) Subregion {
     topLeftPos := r.topLeft.c
     bottomRightPos := r.bottomRight.c
     midPos := r.midPoint.c
@@ -164,10 +147,10 @@ func (r Region) Split() Subregion {
     midR := real(midPos)
     midI := imag(midPos)
 
-    topSideMid := NewEscapePointReals(midR, top)
-    bottomSideMid := NewEscapePointReals(midR, bottom)
-    leftSideMid := NewEscapePointReals(left, midI)
-    rightSideMid := NewEscapePointReals(right, midI)
+    topSideMid := heap.EscapePoint(midR, top)
+    bottomSideMid := heap.EscapePoint(midR, bottom)
+    leftSideMid := heap.EscapePoint(left, midI)
+    rightSideMid := heap.EscapePoint(right, midI)
 
     leftSectorMid := left + ((midR - left) / 2.0)
     rightSectorMid := midR + ((right - midR) / 2.0)
@@ -179,33 +162,33 @@ func (r Region) Split() Subregion {
         topRight: topSideMid,
         bottomLeft: leftSideMid,
         bottomRight: r.midPoint,
-        midPoint: NewEscapePointReals(leftSectorMid, topSectorMid),
+        midPoint: heap.EscapePoint(leftSectorMid, topSectorMid),
     }
     tr := Region{
         topLeft: topSideMid,
         topRight: r.topRight,
         bottomLeft: r.midPoint,
         bottomRight: rightSideMid,
-        midPoint: NewEscapePointReals(rightSectorMid, topSectorMid),
+        midPoint: heap.EscapePoint(rightSectorMid, topSectorMid),
     }
     bl := Region{
         topLeft: leftSideMid,
         topRight: r.midPoint,
         bottomLeft: r.bottomLeft,
         bottomRight: bottomSideMid,
-        midPoint: NewEscapePointReals(leftSectorMid, bottomSectorMid),
+        midPoint: heap.EscapePoint(leftSectorMid, bottomSectorMid),
     }
     br := Region{
         topLeft: r.midPoint,
         topRight: rightSideMid,
         bottomLeft: bottomSideMid,
         bottomRight: r.bottomRight,
-        midPoint: NewEscapePointReals(rightSectorMid, bottomSectorMid),
+        midPoint: heap.EscapePoint(rightSectorMid, bottomSectorMid),
     }
 
     return Subregion{
         populated: true,
-        children: []*Region{&tl, &tr, &bl, &br},
+        children: []Region{tl, tr, bl, br},
     }
 }
 

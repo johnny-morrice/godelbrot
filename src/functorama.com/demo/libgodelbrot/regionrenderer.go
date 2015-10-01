@@ -13,7 +13,8 @@ func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
 func RegionRenderImage(drawingContext DrawingContext) {
     config := drawingContext.Config
     initialRegion := WholeRegion(config)
-    uniformRegions, smallRegions := subdivideRegions(config, initialRegion)
+    heap := NewEscapePointHeap(Meg)
+    uniformRegions, smallRegions := subdivideRegions(config, initialRegion, heap)
 
     // Draw uniform regions first
     for _, region := range uniformRegions {
@@ -26,11 +27,11 @@ func RegionRenderImage(drawingContext DrawingContext) {
     }
 }
 
-func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region) {
+func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap) ([]Region, []Region) {
    // Lots of preallocated space for regions and region pointers
-    completeRegions := make([]*Region, 0, Meg)
-    smallRegions := make([]*Region, 0, Meg)
-    splittingRegions := make([]*Region, 1, Meg)
+    completeRegions := make([]Region, 0, Meg)
+    smallRegions := make([]Region, 0, Meg)
+    splittingRegions := make([]Region, 1, Meg)
 
     // Split regions
     splittingRegions[0] = whole
@@ -44,7 +45,7 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
             smallRegions = append(smallRegions, splitee)
         } else {
             // If the region is not too small, two things can happen
-            subregion := splitee.Subdivide(config)
+            subregion := splitee.Subdivide(config, heap)
             // B. The region needs subdivided because it covers distinct parts of the plane 
             if subregion.populated {
                 splittingRegions = append(splittingRegions, subregion.children...)
@@ -58,7 +59,7 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
     return completeRegions, smallRegions
 }
 
-func RenderSequentialRegion(region *Region, drawingContext DrawingContext) {
+func RenderSequentialRegion(region Region, drawingContext DrawingContext) {
     // Create config for rendering this region
     smallConfig := region.Subconfig(drawingContext.Config)
     smallContext := CreateContext(smallConfig, drawingContext.ColorPalette, drawingContext.Pic)

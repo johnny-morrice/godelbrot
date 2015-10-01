@@ -92,7 +92,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
 func main() {
     args := commandLine{}
     parseArguments(&args)
-
+    
     var modes = map[string]libgodelbrot.Renderer{
         "sequence": libgodelbrot.SequentialRender,
         "region": libgodelbrot.RegionRender,

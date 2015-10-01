@@ -19,7 +19,7 @@ func CreateContext(config *RenderConfig, palette Palette, pic *image.NRGBA) Draw
     }
 }
 
-func (context DrawingContext) DrawUniform(region *Region) {
+func (context DrawingContext) DrawUniform(region Region) {
     member := region.midPoint.membership
     color := context.ColorPalette.Color(member)
     uniform := image.NewUniform(color)
