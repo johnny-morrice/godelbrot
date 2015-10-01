@@ -4,6 +4,7 @@ import (
     "image"
     "math"
     "fmt"
+    "runtime"
 )
 
 type CoordFrame uint
@@ -105,6 +106,13 @@ type RenderConfig struct {
 
 // Use magic values to create default config
 func DefaultConfig() *RenderConfig {
+    cpus := runtime.NumCPU()
+    var threads uint
+    if cpus > 1 {
+        threads = uint(cpus - 1)
+    } else {
+        threads = 1
+    }
     params := RenderParameters{
         IterateLimit: DefaultIterations,
         DivergeLimit: DefaultDivergeLimit,
@@ -114,6 +122,7 @@ func DefaultConfig() *RenderConfig {
         Zoom: DefaultZoom,
         Frame: ZoomFrame,
         RegionCollapse: DefaultCollapse,
+        RenderThreads: threads,
     }
     return params.Configure()
 }

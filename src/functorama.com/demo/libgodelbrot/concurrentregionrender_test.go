@@ -1,15 +1,15 @@
-package libgodelbrot
+package libgodelbrot 
 
 import (
     "testing"
 )
 
-func BenchmarkSequentialRender(b *testing.B) {
+func BenchmarkConcurrentRegionRender(b *testing.B) {
     config := DefaultConfig()
     redscale := NewRedscalePalette(DefaultIterations)
     pic := config.BlankImage()
     b.ResetTimer()
     for i := 0; i < b.N; i++ {
-        SequentialRenderImage(CreateContext(config, redscale, pic))
+        ConcurrentRegionRenderImage(CreateContext(config, redscale, pic))
     }
 }

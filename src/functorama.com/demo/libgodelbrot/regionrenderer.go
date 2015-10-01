@@ -28,10 +28,9 @@ func RegionRenderImage(drawingContext DrawingContext) {
 
 func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region) {
    // Lots of preallocated space for regions and region pointers
-    const meg uint = 1048576
-    completeRegions := make([]*Region, 0, meg)
-    smallRegions := make([]*Region, 0, meg)
-    splittingRegions := make([]*Region, 1, meg)
+    completeRegions := make([]*Region, 0, Meg)
+    smallRegions := make([]*Region, 0, Meg)
+    splittingRegions := make([]*Region, 1, Meg)
 
     // Split regions
     splittingRegions[0] = whole

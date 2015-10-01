@@ -16,3 +16,6 @@ const DefaultImageWidth uint = 800
 const DefaultImageHeight uint = 600
 const DefaultZoom float64 = 1.0
 const DefaultCollapse uint  = 2
+
+// A fairly large number
+const Meg uint = 1048576

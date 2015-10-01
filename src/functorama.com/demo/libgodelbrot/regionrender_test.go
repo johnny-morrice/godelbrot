@@ -10,6 +10,6 @@ func BenchmarkRegionRender(b *testing.B) {
     pic := config.BlankImage()
     b.ResetTimer()
     for i := 0; i < b.N; i++ {
-        RegionRenderImage(config, redscale, pic)
+        RegionRenderImage(CreateContext(config, redscale, pic))
     }
 }

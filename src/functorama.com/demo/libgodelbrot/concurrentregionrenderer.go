@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "image"
     "fmt"
+    "reflect"
 )
 
 type renderCommand uint
@@ -61,8 +62,8 @@ func NewRenderTracker(drawingContext DrawingContext) *RenderTracker {
     }
     for i := 0; i < int(jobs); i++ {
         tracker.processing[i] = 0
-        inputChan := make(chan renderInput, 1024)
-        outputChan := make(chan renderOutput, 1024)
+        inputChan := make(chan renderInput, Meg)
+        outputChan := make(chan renderOutput, Meg)
         tracker.input[i] = inputChan
         tracker.output[i] = outputChan
     }
@@ -85,6 +86,7 @@ func (tracker *RenderTracker) RenderRegion(region *Region) {
         command: render,
         region: region,
     }
+
     threadIndex := tracker.nextThread
     tracker.input[threadIndex] <- input
     tracker.processing[threadIndex]++
@@ -120,22 +122,33 @@ func (tracker *RenderTracker) Render() {
 
     for i, inputChan := range tracker.input {
         outputChan := tracker.output[i]
-        go RegionRenderProcess(tracker.context.Config, inputChan, outputChan)
+        go RegionRenderProcess(uint(i), tracker.context.Config, inputChan, outputChan)
     }
 
     tracker.RenderRegion(initialRegion)
 
-    for tracker.Busy() {
-        for i, outputChan := range tracker.output {
-            select {
-            case firstOut := <- outputChan:
-                // Wait on one less output from the thread
-                tracker.processing[i]--
-                tracker.Draw(firstOut)
-            default:
-                // Do nothing, wait till the next comes in
+    cases := make([]reflect.SelectCase, len(tracker.output))
+    for i, outputChan := range tracker.output {
+            cases[i] = reflect.SelectCase{
+                Dir: reflect.SelectRecv, 
+                Chan: reflect.ValueOf(outputChan),
             }
+    }
+
+    for tracker.Busy() {
+        index, recv, okay := reflect.Select(cases)
+        if okay {
+            output := recv.Interface().(renderOutput)
+            tracker.processing[index]--
+            tracker.Draw(output)
+        } else {
+            panic(fmt.Sprintf("Output channel %v closed", index))
         }
+    }
+
+    // Shut down threads
+    for _, input := range tracker.input {
+        input <- renderInput{command: stop}
     }
 }
 
@@ -146,10 +159,11 @@ func RegionRenderPass(config *RenderConfig, region *Region) renderOutput {
         area := rect.Dx() * rect.Dy()
         renderedPoints := renderOutput{
             result: small,
-            members: make([]pixelMember, area, area),
+            members: make([]pixelMember, area),
         }
         index := 0
-        MandelbrotSequence(config, func (i int, j int, member MandelbrotMember) {
+        smallConfig := region.Subconfig(config)
+        MandelbrotSequence(smallConfig, func (i int, j int, member MandelbrotMember) {
             renderedPoints.members[index] = pixelMember{i: i, j: j, MandelbrotMember: member}
             index++
         })
@@ -172,15 +186,17 @@ func RegionRenderPass(config *RenderConfig, region *Region) renderOutput {
 }
 
 // Implements a single render process
-func RegionRenderProcess(config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
-    input := <- inputChan
-    switch input.command {
-    case render:
-        outputChan <- RegionRenderPass(config, input.region)
-    case stop:
-        return
-    default:
-        panic(fmt.Sprintf("Unknown render command: %v", input.command))
+func RegionRenderProcess(threadNum uint, config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
+    for {
+        input := <- inputChan
+        switch input.command {
+        case render:
+            outputChan <- RegionRenderPass(config, input.region)
+        case stop:
+            return
+        default:
+            panic(fmt.Sprintf("Unknown render command in thread %v: %v", threadNum, input.command))
+        }
     }
 }
 
