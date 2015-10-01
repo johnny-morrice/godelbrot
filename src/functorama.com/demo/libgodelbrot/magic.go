@@ -3,10 +3,10 @@ package libgodelbrot
 // This module defines magic numbers
 
 // Normalized size of box containing Mandelbrot set
-const MagicSetSize complex128 = 2.48 + 2.24i
+const MagicSetSize complex128 = 2.60 + 2.24i
 
 // Default offset for top left of plane containing set
-const MagicOffset complex128 = -2.1 + 1.13i
+const MagicOffset complex128 = -2.01 + 1.13i
 
 // Defaults for the rendering system
 // See RengerConfig
