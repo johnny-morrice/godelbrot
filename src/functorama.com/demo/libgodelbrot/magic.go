@@ -15,11 +15,12 @@ const DefaultDivergeLimit float64 = 4.0
 const DefaultImageWidth uint = 800
 const DefaultImageHeight uint = 600
 const DefaultZoom float64 = 1.0
-const DefaultCollapse uint  = 2
+const DefaultCollapse uint = 2
 const DefaultBufferSize uint = 256
 
 // A fairly large number
 const Meg uint = 1048576
+
 // A smaller number
 const Kilo uint = 1024
 const K64 uint = Kilo * 64

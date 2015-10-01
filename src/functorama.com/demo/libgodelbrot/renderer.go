@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "image"
+	"image"
 )
 
-type Renderer func (config *RenderConfig, palette Palette) (*image.NRGBA, error)
+type Renderer func(config *RenderConfig, palette Palette) (*image.NRGBA, error)
