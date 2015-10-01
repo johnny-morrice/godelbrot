@@ -6,17 +6,22 @@ import (
 )
 
 func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
-    initialRegion := NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
+    pic := config.BlankImage()
+    RegionRenderImage(config, palette, pic)
+    return pic, nil
+}
 
+func RegionRenderImage(config *RenderConfig, palette Palette, pic *image.NRGBA) {
+    initialRegion := NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
     uniformRegions, smallRegions := subdivideRegions(config, initialRegion)
 
-    // Render image
-    pic := config.BlankImage()
     // Draw uniform regions first
     for _, region := range uniformRegions {
         member := region.midPoint.membership
         uniform := image.NewUniform(palette.Color(member))
-        draw.Draw(pic, config.RegionRect(region), uniform, image.ZP, draw.Src)
+        rect := region.Rect(config)
+        draw.Draw(pic, rect, uniform, image.ZP, draw.Src)
+        _ = "breakpoint"
     }
 
     // Add detail from the small regions next
@@ -26,7 +31,6 @@ func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
         regionConfig(region, config, &smallConfig)
         SequentialRenderImage(&smallConfig, palette, pic)
     }
-    return pic, nil
 }
 
 func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region) {
@@ -66,12 +70,12 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
 
 // Write image and plane position data to the small config
 func regionConfig(smallRegion *Region, largeConfig *RenderConfig, smallConfig *RenderConfig) {
-    rect := largeConfig.RegionRect(smallRegion)
-    topLeft := smallRegion.topLeft.c
+    rect := smallRegion.Rect(largeConfig)
     smallConfig.Width = uint(rect.Dx())
     smallConfig.Height = uint(rect.Dy())
     smallConfig.ImageLeft = uint(rect.Min.X)
     smallConfig.ImageTop = uint(rect.Max.Y)
-    smallConfig.XOffset = real(topLeft)
-    smallConfig.YOffset = imag(topLeft)
+    smallConfig.TopLeft = smallRegion.topLeft.c
+    smallConfig.BottomRight = smallRegion.bottomRight.c
+    smallConfig.Frame = CornerFrame
 }

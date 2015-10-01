@@ -1,5 +1,9 @@
 package libgodelbrot
 
+import (
+    "image"
+)
+
 type EscapePoint struct {
     evaluated bool
     c complex128
@@ -158,4 +162,10 @@ func (r Region) Split() Subregion {
         populated: true,
         children: []*Region{&tl, &tr, &bl, &br},
     }
+}
+
+func (region Region) Rect(config *RenderConfig) image.Rectangle {
+    l, t := config.PlaneToPixel(region.topLeft.c)
+    r, b := config.PlaneToPixel(region.bottomRight.c)
+    return image.Rect(int(l), int(t), int(r), int(b))
 }

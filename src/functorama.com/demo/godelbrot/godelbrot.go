@@ -15,16 +15,21 @@ type commandLine struct {
     width uint
     height uint
     filename string
-    xOffset float64
-    yOffset float64
+    realMin float64
+    realMax float64
+    imagMin float64
+    imagMax float64
     zoom float64
     mode string 
+    frame string
     regionCollapse uint  
 }
 
 func parseArguments(args *commandLine) {
-    xOffset := real(libgodelbrot.MagicOffset)
-    yOffset := imag(libgodelbrot.MagicOffset)
+    realMin := real(libgodelbrot.MagicOffset)
+    imagMax := imag(libgodelbrot.MagicOffset)
+    realMax := realMin + real(libgodelbrot.MagicSetSize)
+    imagMin := imagMax - imag(libgodelbrot.MagicSetSize)
 
     flag.UintVar(&args.iterateLimit, 
         "iterateLimit", 
@@ -34,10 +39,13 @@ func parseArguments(args *commandLine) {
     flag.UintVar(&args.width, "imageWidth", libgodelbrot.DefaultImageWidth, "Width of output PNG")
     flag.UintVar(&args.height, "imageHeight", libgodelbrot.DefaultImageHeight, "Height of output PNG")
     flag.StringVar(&args.filename, "output", "mandelbrot.png", "Name of output PNG")
-    flag.Float64Var(&args.xOffset, "realOffset", xOffset, "Leftmost position of complex plane projected onto PNG image")
-    flag.Float64Var(&args.yOffset, "imagOffset", yOffset, "Topmost position of complex plane projected onto PNG image")
-    flag.Float64Var(&args.zoom, "zoom", libgodelbrot.DefaultZoom, "Look into the eyeball")
-    flag.StringVar(&args.mode, "mode", "sequential", "Render mode")
+    flag.Float64Var(&args.realMin, "realMin", realMin, "Leftmost position of complex plane projected onto PNG image")
+    flag.Float64Var(&args.imagMax, "imagMax", imagMax, "Topmost position of complex plane projected onto PNG image")
+    flag.Float64Var(&args.zoom, "zoom", libgodelbrot.DefaultZoom, "Zoom format")
+    flag.Float64Var(&args.realMax, "realMax", realMax, "Rightmost position of complex plane projection")
+    flag.Float64Var(&args.imagMin, "imagMin", imagMin, "Bottommost position of complex plane projection")
+    flag.StringVar(&args.mode, "mode", "sequence", "Render mode.  Either 'sequence' or 'region'")
+    flag.StringVar(&args.frame, "frame", "corner", "Coordinate frame.  Either 'corner' or 'zoom'")
     flag.UintVar(&args.regionCollapse, "collapse", libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
     flag.Parse()
 }
@@ -60,8 +68,8 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
         DivergeLimit: args.divergeLimit,
         Width: args.width,
         Height: args.height,
-        XOffset: args.xOffset,
-        YOffset: args.yOffset,
+        TopLeft: complex(args.realMin, args.imagMax),
+        BottomRight: complex(args.realMax, args.imagMin),
         Zoom: args.zoom,
         RegionCollapse: args.regionCollapse,
     }
@@ -72,13 +80,13 @@ func main() {
     args := commandLine{}
     parseArguments(&args)
 
-    var renderer libgodelbrot.Renderer
-    switch args.mode {
-    case "sequential":
-        renderer = libgodelbrot.SequentialRender
-    case "region":
-        renderer = libgodelbrot.RegionRender
-    default:
+    var modes = map[string]libgodelbrot.Renderer{
+        "sequence": libgodelbrot.SequentialRender,
+        "region": libgodelbrot.RegionRender,
+    }
+    renderer := modes[args.mode]
+
+    if renderer == nil {
         log.Fatal("Unknown renderer")
     }
 
