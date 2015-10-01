@@ -31,6 +31,8 @@ type RenderParameters struct {
     BottomRight complex128
     // Number of render threads
     RenderThreads uint
+    // Size of thread input buffer
+    BufferSize uint
 }
 
 func (config RenderParameters) PlaneTopLeft() complex128 {
@@ -123,6 +125,7 @@ func DefaultConfig() *RenderConfig {
         Frame: ZoomFrame,
         RegionCollapse: DefaultCollapse,
         RenderThreads: threads,
+        BufferSize: DefaultBufferSize,
     }
     return params.Configure()
 }

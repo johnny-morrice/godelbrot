@@ -5,3 +5,5 @@ cpu.out
 mem.out
 libgodelbrot.test
 src/github.com
+*.memprof
+*.cpuprof

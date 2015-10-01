@@ -24,6 +24,7 @@ type commandLine struct {
     frame string
     regionCollapse uint
     renderThreads uint
+    threadBuffer uint
 }
 
 func parseArguments(args *commandLine) {
@@ -56,6 +57,7 @@ func parseArguments(args *commandLine) {
     flag.StringVar(&args.frame, "frame", "corner", "Coordinate frame.  Either 'corner' or 'zoom'")
     flag.UintVar(&args.regionCollapse, "collapse", libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
     flag.UintVar(&args.renderThreads, "jobs", renderThreads, "Number of rendering threads in concurrent renderer")
+    flag.UintVar(&args.threadBuffer, "buffer", libgodelbrot.DefaultBufferSize, "Size of per-thread buffer")
     flag.Parse()
 }
 
@@ -82,6 +84,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
         Zoom: args.zoom,
         RegionCollapse: args.regionCollapse,
         RenderThreads: args.renderThreads,
+        BufferSize: args.threadBuffer,
     }
     return parameters.Configure(), nil
 }
