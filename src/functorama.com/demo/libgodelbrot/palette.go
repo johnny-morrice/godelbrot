@@ -1,6 +1,9 @@
 package libgodelbrot
 
+import (
+    "image/color"
+)
 
 type Palette interface {
-    Color(point MandelbrotMember)
+    Color(point MandelbrotMember) color.NRGBA
 }

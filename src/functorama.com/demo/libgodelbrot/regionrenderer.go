@@ -5,11 +5,10 @@ import (
     "image"
 )
 
-func RegionRender(configP *RenderConfig, palette Palette) (*image.NRGBA, error) {
-    config := *configP
-    initialRegion := NewRegion(config.WindowTopLeft(), config.WindowBottomRight())
+func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
+    initialRegion := NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
 
-    uniformRegions, smallRegions := subdivideRegions(initialRegion)
+    uniformRegions, smallRegions := subdivideRegions(config, initialRegion)
 
     // Render image
     pic := config.BlankImage()
@@ -23,9 +22,9 @@ func RegionRender(configP *RenderConfig, palette Palette) (*image.NRGBA, error) 
     // Add detail from the small regions next
     for _, region := range smallRegions {
         // Create config for rendering this region
-        smallConfig := RenderConfig{config}
-        regionConfig(region, configP, &smallConfig)
-        SequentialRenderImage(smallConfig, palette, pic)
+        smallConfig := *config
+        regionConfig(region, config, &smallConfig)
+        SequentialRenderImage(&smallConfig, palette, pic)
     }
     return pic, nil
 }
@@ -40,10 +39,10 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
     divergeLimit := config.DivergeLimit
 
     // Split regions
-    splittingRegions[0] = initialRegion
+    splittingRegions[0] = whole
     for i := 0; i < len(splittingRegions); i++ {
         splitee := splittingRegions[i]
-        x, y := splitee.PixelSize()
+        x, y := splitee.PixelSize(config)
         // There are three things that can happen to a region...
         //
         // A. The region can be so small that we divide no further
@@ -68,9 +67,9 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
 // Write image and plane position data to the small config
 func regionConfig(smallRegion *Region, largeConfig *RenderConfig, smallConfig *RenderConfig) {
     rect := largeConfig.RegionRect(smallRegion)
-    topLeft = smallRegion.topLeft.c
-    smallConfig.Width = uint(rect.Dx)
-    smallConfig.Height = uint(rect.Dy)
+    topLeft := smallRegion.topLeft.c
+    smallConfig.Width = uint(rect.Dx())
+    smallConfig.Height = uint(rect.Dy())
     smallConfig.ImageLeft = uint(rect.Min.X)
     smallConfig.ImageTop = uint(rect.Max.Y)
     smallConfig.XOffset = real(topLeft)

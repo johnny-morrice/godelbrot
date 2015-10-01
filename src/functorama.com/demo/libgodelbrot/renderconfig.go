@@ -19,7 +19,7 @@ type RenderParameters struct {
 
 // Machine prepared input, caching interim results
 type RenderConfig struct {
-    RenderConfig
+    RenderParameters
     // One pixel's space on the plane
     HorizUnit float64
     VerticalUnit float64
@@ -27,12 +27,15 @@ type RenderConfig struct {
     ImageTop uint
 }
 
-func (args RenderParameters) Configure() &RenderParameters {
-    size := args.PlaneTopLeft() - args.PlaneBottomRight()
-    config := RenderParameters{args}
-    config.HorizUnit := real(size) / float64(config.Width)
-    config.VerticalUnit := imag(size) / float64(config.Height)
-    return &config
+func (args RenderParameters) Configure() *RenderConfig {
+    size := args.PlaneBottomRight() - args.PlaneTopLeft()
+    return &RenderConfig{
+        RenderParameters: args,
+        HorizUnit: real(size) / float64(args.Width),
+        VerticalUnit: imag(size) / float64(args.Height),
+        ImageLeft: 0,
+        ImageTop: 0,
+    }
 }
 
 // Top left of window onto complex plane
@@ -42,19 +45,19 @@ func (config RenderParameters) PlaneTopLeft() complex128 {
 
 // Top right of window onto complex plane
 func (config RenderParameters) PlaneBottomRight() complex128 {
-    return windowSize * complex(config.Zoom, 0)
+    return config.PlaneTopLeft() + (MagicSetSize * complex(config.Zoom, 0))
 }
 
 func (config RenderConfig) ImageTopLeft() (uint, uint) {
     return config.ImageLeft, config.ImageTop
 }
 
-func (config RenderParameters) BlankImage() image.NRGBA {
-    pic := image.NewNRGBA(image.Rectangle{
+func (config RenderParameters) BlankImage() *image.NRGBA {
+    return image.NewNRGBA(image.Rectangle{
         Min: image.ZP,
         Max: image.Point{
-            X: widthI,
-            Y: heightI,
+            X: int(config.Width),
+            Y: int(config.Height),
         },
     })
 }
@@ -64,7 +67,7 @@ func (config RenderConfig) PlaneToPixel(c complex128) (uint, uint) {
     x := (real(c) - config.XOffset) / config.HorizUnit
     y := (imag(c) - config.YOffset) / config.VerticalUnit
     // Remember that we draw downwards
-    return math.Floor(x), math.Ceil(-y)
+    return uint(math.Floor(x)), uint(math.Ceil(-y))
 }
 
 func (config RenderConfig) RegionRect(region *Region) image.Rectangle {

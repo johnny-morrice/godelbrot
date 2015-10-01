@@ -26,7 +26,7 @@ func parseArguments(args *commandLine) {
     xOffset := real(libgodelbrot.MagicOffset)
     yOffset := imag(libgodelbrot.MagicOffset)
 
-    flag.UintVar(&args.iterateLimit, "iterateLimit", 255, "Maximum number of iterations")
+    flag.UintVar(&args.iterateLimit, "iterateLimit", libgodelbrot.DefaultIterations, "Maximum number of iterations")
     flag.Float64Var(&args.divergeLimit, "divergeLimit", 4.0, "Limit where function is said to diverge to infinity")
     flag.UintVar(&args.width, "imageWidth", 800, "Width of output PNG")
     flag.UintVar(&args.height, "imageHeight", 600, "Height of output PNG")
@@ -35,7 +35,7 @@ func parseArguments(args *commandLine) {
     flag.Float64Var(&args.yOffset, "imagOffset", yOffset, "Topmost position of complex plane projected onto PNG image")
     flag.Float64Var(&args.zoom, "zoom", 1.0, "Look into the eyeball")
     flag.StringVar(&args.mode, "mode", "sequential", "Render mode")
-    flag.UintVar(&args.regionCollapse, 2, "Pixel width of region at which sequential render is forced")
+    flag.UintVar(&args.regionCollapse, "collapse", 2, "Pixel width of region at which sequential render is forced")
     flag.Parse()
 }
 
@@ -52,7 +52,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
         return nil, errors.New("zoom out of bounds (positive float64)")
     }
 
-    parameters := libgodelbrot.RenderConfig{
+    parameters := libgodelbrot.RenderParameters{
         IterateLimit: uint8(args.iterateLimit),
         DivergeLimit: args.divergeLimit,
         Width: args.width,
@@ -62,8 +62,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
         Zoom: args.zoom,
         RegionCollapse: args.regionCollapse,
     }
-    config := parameters.Configure()
-    return config, nil
+    return parameters.Configure(), nil
 }
 
 func main() {
@@ -86,7 +85,7 @@ func main() {
     }
 
     // Redscale is the only palette we have available
-    redscale := NewRedscalePalette(config.IterateLimit)
+    redscale := libgodelbrot.NewRedscalePalette(config.IterateLimit)
 
     image, renderError := renderer(config, redscale)
     if renderError != nil {

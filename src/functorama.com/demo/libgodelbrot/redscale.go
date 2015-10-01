@@ -11,7 +11,7 @@ type RedscalePalette struct {
 
 func NewRedscalePalette(iterateLimit uint8) RedscalePalette {
     black := color.NRGBA{
-        R: 0, G: 0, B: 0, A: 0,
+        R: 0, G: 0, B: 0, A: 255,
     }
     return RedscalePalette{
         NewCachePalette(iterateLimit, black, redscaleCacher),
@@ -20,8 +20,10 @@ func NewRedscalePalette(iterateLimit uint8) RedscalePalette {
 
 // Cache redscale colour values
 func redscaleCacher(limit uint8, index uint8) color.NRGBA {
+    calibIndex := float64(limit - index)
+    interval := 255.0 / float64(limit)
     return color.NRGBA{
-        R: index * (255 / limit),
+        R:  uint8(calibIndex * interval),
         G: 0,
         B: 0,
         A: 255,

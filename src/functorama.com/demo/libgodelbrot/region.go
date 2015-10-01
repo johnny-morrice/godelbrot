@@ -25,7 +25,7 @@ type Region struct {
     midPoint *EscapePoint
 }
 
-func NewRegion(topLeft complex128, bottomRight complex128) Region {
+func NewRegion(topLeft complex128, bottomRight complex128) *Region {
     left := real(topLeft)
     right := real(bottomRight)
     top := imag(topLeft)
@@ -43,7 +43,7 @@ func NewRegion(topLeft complex128, bottomRight complex128) Region {
     br := NewEscapePoint(bottomRight)
     mid := NewEscapePoint(midPos)
 
-    return Region{
+    return &Region{
         topLeft: tl,
         topRight: tr,
         bottomLeft: bl,
@@ -52,8 +52,11 @@ func NewRegion(topLeft complex128, bottomRight complex128) Region {
     }  
 }
 
-func (r Region) PixelSize(argP *RenderParameters) (uint, uint) {
-    
+func (r Region) PixelSize(args *RenderConfig) (uint, uint) {
+    top, left := args.PlaneToPixel(r.topLeft.c)
+    bottom, right := args.PlaneToPixel(r.bottomRight.c)
+    return uint(bottom - top), uint(right - left)
+
 }
 
 func (r Region) Points() []*EscapePoint {
