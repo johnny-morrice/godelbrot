@@ -6,10 +6,12 @@ import (
     "fmt"
 )
 
+type CoordFrame uint
+
 // Co-ordinate frames
 const (
-    CornerFrame = iota
-    ZoomFrame = iota
+    CornerFrame = CoordFrame(iota)
+    ZoomFrame = CoordFrame(iota)
 )
 
 // User input 
@@ -21,7 +23,7 @@ type RenderParameters struct {
     Zoom float64
     RegionCollapse uint
     // Co-ordinate frames
-    Frame uint
+    Frame CoordFrame
     // Top left of view onto plane
     TopLeft complex128
     // Optional Bottom right corner

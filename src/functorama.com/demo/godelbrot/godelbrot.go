@@ -44,7 +44,7 @@ func parseArguments(args *commandLine) {
     flag.Float64Var(&args.zoom, "zoom", libgodelbrot.DefaultZoom, "Zoom format")
     flag.Float64Var(&args.realMax, "realMax", realMax, "Rightmost position of complex plane projection")
     flag.Float64Var(&args.imagMin, "imagMin", imagMin, "Bottommost position of complex plane projection")
-    flag.StringVar(&args.mode, "mode", "sequence", "Render mode.  Either 'sequence' or 'region'")
+    flag.StringVar(&args.mode, "mode", "region", "Render mode.  Either 'sequence' or 'region'")
     flag.StringVar(&args.frame, "frame", "corner", "Coordinate frame.  Either 'corner' or 'zoom'")
     flag.UintVar(&args.regionCollapse, "collapse", libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
     flag.Parse()

@@ -56,13 +56,6 @@ func NewRegion(topLeft complex128, bottomRight complex128) *Region {
     }  
 }
 
-func (r Region) PixelSize(args *RenderConfig) (uint, uint) {
-    top, left := args.PlaneToPixel(r.topLeft.c)
-    bottom, right := args.PlaneToPixel(r.bottomRight.c)
-    return uint(bottom - top), uint(right - left)
-
-}
-
 func (r Region) Points() []*EscapePoint {
     return []*EscapePoint{
         r.topLeft, 
@@ -78,7 +71,7 @@ type Subregion struct {
     children []*Region
 }
 
-func (r *Region) Subdivide(iterateLimit uint8, divergeLimit float64) Subregion {
+func (r Region) Subdivide(iterateLimit uint8, divergeLimit float64) Subregion {
     points := r.Points()
     // Ensure points are all evaluated
     for _, p := range points {
@@ -168,4 +161,10 @@ func (region Region) Rect(config *RenderConfig) image.Rectangle {
     l, t := config.PlaneToPixel(region.topLeft.c)
     r, b := config.PlaneToPixel(region.bottomRight.c)
     return image.Rect(int(l), int(t), int(r), int(b))
+}
+
+func (r Region) Collapse(config *RenderConfig) bool {
+    rect := r.Rect(config)
+    iCollapse := int(config.RegionCollapse)
+    return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
 }
