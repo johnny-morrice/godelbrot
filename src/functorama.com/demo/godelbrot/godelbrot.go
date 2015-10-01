@@ -30,7 +30,7 @@ func parseArguments(args *commandLine) {
     flag.Float64Var(&args.divergeLimit, "divergeLimit", 4.0, "Limit where function is said to diverge to infinity")
     flag.UintVar(&args.width, "imageWidth", 800, "Width of output PNG")
     flag.UintVar(&args.height, "imageHeight", 600, "Height of output PNG")
-    flag.StringVar(&args.filename, "filename", "mandelbrot.png", "Name of output PNG")
+    flag.StringVar(&args.filename, "output", "mandelbrot.png", "Name of output PNG")
     flag.Float64Var(&args.xOffset, "realOffset", xOffset, "Leftmost position of complex plane projected onto PNG image")
     flag.Float64Var(&args.yOffset, "imagOffset", yOffset, "Topmost position of complex plane projected onto PNG image")
     flag.Float64Var(&args.zoom, "zoom", 1.0, "Look into the eyeball")
