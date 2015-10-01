@@ -203,17 +203,3 @@ func (r Region) Collapse(config *RenderConfig) bool {
     iCollapse := int(config.RegionCollapse)
     return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
 }
-
-func (r Region) Subconfig(config *RenderConfig) *RenderConfig {
-    smallConfig := *config
-    left, top := config.PlaneToPixel(r.topLeft.c)
-    right, bottom := config.PlaneToPixel(r.bottomRight.c)
-    smallConfig.Width = uint(right - left)
-    smallConfig.Height = uint(bottom - top)
-    smallConfig.ImageLeft = left
-    smallConfig.ImageTop = top
-    smallConfig.TopLeft = r.topLeft.c
-    smallConfig.BottomRight = r.bottomRight.c
-    smallConfig.Frame = CornerFrame
-    return &smallConfig
-}

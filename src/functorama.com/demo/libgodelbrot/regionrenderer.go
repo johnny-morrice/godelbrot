@@ -13,8 +13,9 @@ func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
 func RegionRenderImage(drawingContext DrawingContext) {
     config := drawingContext.Config
     initialRegion := WholeRegion(config)
-    heap := NewEscapePointHeap(Meg)
-    uniformRegions, smallRegions := subdivideRegions(config, initialRegion, heap)
+    escapePointHeap := NewEscapePointHeap(Meg)
+    renderConfigHeap := NewRenderConfigHeap(config, Meg)
+    uniformRegions, smallRegions := subdivideRegions(config, initialRegion, escapePointHeap)
 
     // Draw uniform regions first
     for _, region := range uniformRegions {
@@ -23,7 +24,7 @@ func RegionRenderImage(drawingContext DrawingContext) {
 
     // Add detail from the small regions next
     for _, region := range smallRegions {
-        RenderSequentialRegion(region, drawingContext)
+        RenderSequentialRegion(region, drawingContext, renderConfigHeap)
     }
 }
 
@@ -59,9 +60,9 @@ func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap)
     return completeRegions, smallRegions
 }
 
-func RenderSequentialRegion(region Region, drawingContext DrawingContext) {
+func RenderSequentialRegion(region Region, drawingContext DrawingContext, heap *RenderConfigHeap) {
     // Create config for rendering this region
-    smallConfig := region.Subconfig(drawingContext.Config)
+    smallConfig := heap.Subconfig(region)
     smallContext := CreateContext(smallConfig, drawingContext.ColorPalette, drawingContext.Pic)
     SequentialRenderImage(smallContext)
 }

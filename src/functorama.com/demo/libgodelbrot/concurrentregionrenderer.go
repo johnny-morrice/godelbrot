@@ -137,14 +137,22 @@ func newBuffer(bufferSize uint) []Region {
     return make([]Region, 0, bufferSize)
 }
 
+type renderHeaps struct {
+    escapePointHeap *EscapePointHeap
+    renderConfigHeap *RenderConfigHeap
+}
+
 // Render the Mandelbrot set concurrently
 func (tracker *RenderTracker) Render() {
     initialRegion := WholeRegion(tracker.context.Config)
 
     for i, inputChan := range tracker.input {
         outputChan := tracker.output[i]
-        heap := NewEscapePointHeap(Meg)
-        go RegionRenderProcess(uint(i), heap, tracker.context.Config, inputChan, outputChan)
+        heaps := renderHeaps{
+            renderConfigHeap: NewRenderConfigHeap(tracker.context.Config, Meg), 
+            escapePointHeap: NewEscapePointHeap(Meg),
+        }
+        go RegionRenderProcess(uint(i), heaps, tracker.context.Config, inputChan, outputChan)
     }
 
     tracker.RenderRegions([]Region{initialRegion})
@@ -181,24 +189,24 @@ func newRenderOutput(config *RenderConfig) renderOutput {
 }
 
 // A pass through the region rendering process, comprising many steps
-func RegionRenderPass(config *RenderConfig, heap *EscapePointHeap, regions []Region) renderOutput {
+func RegionRenderPass(config *RenderConfig, heaps renderHeaps, regions []Region) renderOutput {
     output := newRenderOutput(config)
     for _, region := range regions {
-        RegionRenderStep(config, heap, region, &output)
+        RegionRenderStep(config, heaps, region, &output)
     }
     return output
 }
 
-func RegionRenderStep(config *RenderConfig, heap *EscapePointHeap, region Region, output *renderOutput) {
+func RegionRenderStep(config *RenderConfig, heaps renderHeaps, region Region, output *renderOutput) {
     if region.Collapse(config) {
-        smallConfig := region.Subconfig(config)
+        smallConfig := heaps.renderConfigHeap.Subconfig(region)
         MandelbrotSequence(smallConfig, func (i int, j int, member MandelbrotMember) {
             output.members = append(output.members, pixelMember{i: i, j: j, MandelbrotMember: member})
         })
         return
     }
 
-    subregion := region.Subdivide(config, heap)
+    subregion := region.Subdivide(config, heaps.escapePointHeap)
     if subregion.populated {
         output.children = append(output.children, subregion.children...)
         return
@@ -208,12 +216,12 @@ func RegionRenderStep(config *RenderConfig, heap *EscapePointHeap, region Region
 }
 
 // Implements a single render process
-func RegionRenderProcess(threadNum uint, heap *EscapePointHeap, config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
+func RegionRenderProcess(threadNum uint, heaps renderHeaps, config *RenderConfig, inputChan <- chan renderInput, outputChan chan <- renderOutput) {
     for {
         input := <- inputChan
         switch input.command {
         case render:
-            outputChan <- RegionRenderPass(config, heap, input.regions)
+            outputChan <- RegionRenderPass(config, heaps, input.regions)
         case stop:
             return
         default:
