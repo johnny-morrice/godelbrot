@@ -227,8 +227,8 @@ func (r Region) Subconfig(config *RenderConfig) *RenderConfig {
     right, bottom := config.PlaneToPixel(r.bottomRight.c)
     smallConfig.Width = uint(right - left)
     smallConfig.Height = uint(bottom - top)
-    smallConfig.ImageLeft = top
-    smallConfig.ImageTop = left
+    smallConfig.ImageLeft = left
+    smallConfig.ImageTop = top
     smallConfig.TopLeft = r.topLeft.c
     smallConfig.BottomRight = r.bottomRight.c
     smallConfig.Frame = CornerFrame

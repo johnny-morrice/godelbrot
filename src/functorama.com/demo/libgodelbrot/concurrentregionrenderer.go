@@ -121,10 +121,11 @@ func (tracker *RenderTracker) Draw(output renderOutput) {
     for _, uniform := range output.uniformRegions {
         tracker.context.DrawUniform(uniform)
     }
-
+/*
     for _, member := range output.members {
         tracker.context.DrawPointAt(member.i, member.j, member.MandelbrotMember)
     }
+    */
 }
 
 func (tracker *RenderTracker) cleanBuffer() {
