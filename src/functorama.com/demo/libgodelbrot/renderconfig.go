@@ -27,6 +27,21 @@ type RenderConfig struct {
     ImageTop uint
 }
 
+// Use magic values to create default config
+func DefaultConfig() *RenderConfig {
+    params := RenderParameters{
+        IterateLimit: DefaultIterations,
+        DivergeLimit: DefaultDivergeLimit,
+        Width: DefaultImageWidth,
+        Height: DefaultImageHeight,
+        XOffset: real(MagicOffset),
+        YOffset: imag(MagicOffset),
+        Zoom: DefaultZoom,
+        RegionCollapse: DefaultCollapse,
+    }
+    return params.Configure()
+}
+
 func (args RenderParameters) Configure() *RenderConfig {
     size := args.PlaneBottomRight() - args.PlaneTopLeft()
     return &RenderConfig{
