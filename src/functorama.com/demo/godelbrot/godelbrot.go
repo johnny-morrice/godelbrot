@@ -26,6 +26,7 @@ type commandLine struct {
 	regionCollapse uint
 	renderThreads  uint
 	threadBuffer   uint
+	storedPalette  string
 }
 
 func parseArguments(args *commandLine) {
@@ -56,6 +57,7 @@ func parseArguments(args *commandLine) {
 	flag.UintVar(&args.regionCollapse, "collapse", libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
 	flag.UintVar(&args.renderThreads, "jobs", renderThreads, "Number of rendering threads in concurrent renderer")
 	flag.UintVar(&args.threadBuffer, "buffer", libgodelbrot.DefaultBufferSize, "Size of per-thread buffer")
+	flag.StringVar(&args.storedPalette, "storedPalette", "pretty", "Name of stored palette (pretty|redscale)")
 	flag.Parse()
 }
 
@@ -91,7 +93,7 @@ func main() {
 	args := commandLine{}
 	parseArguments(&args)
 
-	var modes = map[string]libgodelbrot.Renderer{
+	modes := map[string]libgodelbrot.Renderer{
 		"sequence":   libgodelbrot.SequentialRender,
 		"region":     libgodelbrot.RegionRender,
 		"concurrent": libgodelbrot.ConcurrentRegionRender,
@@ -107,10 +109,18 @@ func main() {
 		log.Fatal(validationError)
 	}
 
-	// Redscale is the only palette we have available
-	redscale := libgodelbrot.NewRedscalePalette(config.IterateLimit)
+	palettes := map[string]libgodelbrot.PaletteFactory{
+		"pretty": libgodelbrot.NewPrettyPalette,
+		"redscale": libgodelbrot.NewRedscalePalette,
+	}
 
-	image, renderError := renderer(config, redscale)
+	palette := palettes[args.storedPalette](config.IterateLimit)
+
+	if palette == nil {
+		log.Fatal("Unknown palette")
+	}
+
+	image, renderError := renderer(config, palette)
 	if renderError != nil {
 		log.Fatal(renderError)
 	}

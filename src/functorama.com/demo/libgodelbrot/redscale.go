@@ -8,7 +8,7 @@ type RedscalePalette struct {
 	CachePalette
 }
 
-func NewRedscalePalette(iterateLimit uint8) RedscalePalette {
+func NewRedscalePalette(iterateLimit uint8) Palette {
 	black := color.NRGBA{
 		R: 0, G: 0, B: 0, A: 255,
 	}
