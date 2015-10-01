@@ -58,8 +58,8 @@ func NewRenderTracker(drawingContext DrawingContext) *RenderTracker {
     }
     for i := 0; i < int(jobs); i++ {
         tracker.processing[i] = 0
-        inputChan := make(chan renderInput, Meg)
-        outputChan := make(chan renderOutput, Meg)
+        inputChan := make(chan renderInput, Kilo)
+        outputChan := make(chan renderOutput, Kilo)
         tracker.input[i] = inputChan
         tracker.output[i] = outputChan
     }
@@ -149,8 +149,8 @@ func (tracker *RenderTracker) Render() {
     for i, inputChan := range tracker.input {
         outputChan := tracker.output[i]
         heaps := renderHeaps{
-            renderConfigHeap: NewRenderConfigHeap(tracker.context.Config, Meg), 
-            escapePointHeap: NewEscapePointHeap(Meg),
+            renderConfigHeap: NewRenderConfigHeap(tracker.context.Config, Kilo), 
+            escapePointHeap: NewEscapePointHeap(K64),
         }
         go RegionRenderProcess(uint(i), heaps, tracker.context.Config, inputChan, outputChan)
     }

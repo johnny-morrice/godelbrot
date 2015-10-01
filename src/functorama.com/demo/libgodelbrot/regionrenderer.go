@@ -13,8 +13,8 @@ func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
 func RegionRenderImage(drawingContext DrawingContext) {
     config := drawingContext.Config
     initialRegion := WholeRegion(config)
-    escapePointHeap := NewEscapePointHeap(Meg)
-    renderConfigHeap := NewRenderConfigHeap(config, Meg)
+    escapePointHeap := NewEscapePointHeap(K64)
+    renderConfigHeap := NewRenderConfigHeap(config, K64)
     uniformRegions, smallRegions := subdivideRegions(config, initialRegion, escapePointHeap)
 
     // Draw uniform regions first
@@ -30,9 +30,9 @@ func RegionRenderImage(drawingContext DrawingContext) {
 
 func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap) ([]Region, []Region) {
    // Lots of preallocated space for regions and region pointers
-    completeRegions := make([]Region, 0, Meg)
-    smallRegions := make([]Region, 0, Meg)
-    splittingRegions := make([]Region, 1, Meg)
+    completeRegions := make([]Region, 0, K64)
+    smallRegions := make([]Region, 0, K64)
+    splittingRegions := make([]Region, 1, K64)
 
     // Split regions
     splittingRegions[0] = whole
