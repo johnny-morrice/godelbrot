@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "math/cmplx"
+    "math"
 )
 
 
@@ -14,7 +14,8 @@ type MandelbrotMember struct {
 func Mandelbrot(c complex128, iterateLimit uint8, divergeLimit float64) MandelbrotMember {
     var z complex128 = 0
     var i uint8 = 0
-    for ; i < iterateLimit && cmplx.Abs(z) < divergeLimit; i++ {
+    sqrtDl := math.Sqrt(divergeLimit)
+    for ; i < iterateLimit && withinMandLimit(z, sqrtDl) ; i++ {
         z = (z * z) + c
     }
 
@@ -23,4 +24,12 @@ func Mandelbrot(c complex128, iterateLimit uint8, divergeLimit float64) Mandelbr
         InvDivergence: i,
         C: c,
     }
+}
+
+func withinMandLimit(z complex128, limit float64) bool {
+    // Approximate cmplx.Abs
+    negLimit := -limit
+    x := real(z)
+    y := imag(z)
+    return x < limit && x > negLimit && y < limit && y > negLimit
 }
