@@ -1,35 +1,28 @@
 package libgodelbrot
 
 import (
-    "image/draw"
     "image"
 )
 
 func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
     pic := config.BlankImage()
-    RegionRenderImage(config, palette, pic)
+    RegionRenderImage(CreateContext(config, palette, pic))
     return pic, nil
 }
 
-func RegionRenderImage(config *RenderConfig, palette Palette, pic *image.NRGBA) {
-    initialRegion := NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
+func RegionRenderImage(drawingContext DrawingContext) {
+    config := drawingContext.Config
+    initialRegion := WholeRegion(config)
     uniformRegions, smallRegions := subdivideRegions(config, initialRegion)
 
     // Draw uniform regions first
     for _, region := range uniformRegions {
-        member := region.midPoint.membership
-        color := palette.Color(member)
-        uniform := image.NewUniform(color)
-        rect := region.Rect(config)
-        draw.Draw(pic, rect, uniform, image.ZP, draw.Src)
+        drawingContext.DrawUniform(region)
     }
 
     // Add detail from the small regions next
     for _, region := range smallRegions {
-        // Create config for rendering this region
-        smallConfig := *config
-        regionConfig(region, config, &smallConfig)
-        SequentialRenderImage(&smallConfig, palette, pic)
+        RenderSequentialRegion(region, drawingContext)
     }
 }
 
@@ -66,16 +59,9 @@ func subdivideRegions(config *RenderConfig, whole *Region) ([]*Region, []*Region
     return completeRegions, smallRegions
 }
 
-var badPtr *Region
-
-// Write image and plane position data to the small config
-func regionConfig(smallRegion *Region, largeConfig *RenderConfig, smallConfig *RenderConfig) {
-    rect := smallRegion.Rect(largeConfig)
-    smallConfig.Width = uint(rect.Dx())
-    smallConfig.Height = uint(rect.Dy())
-    smallConfig.ImageLeft = uint(rect.Min.X)
-    smallConfig.ImageTop = uint(rect.Min.Y)
-    smallConfig.TopLeft = smallRegion.topLeft.c
-    smallConfig.BottomRight = smallRegion.bottomRight.c
-    smallConfig.Frame = CornerFrame
+func RenderSequentialRegion(region *Region, drawingContext DrawingContext) {
+    // Create config for rendering this region
+    smallConfig := region.Subconfig(drawingContext.Config)
+    smallContext := CreateContext(smallConfig, drawingContext.ColorPalette, drawingContext.Pic)
+    SequentialRenderImage(smallContext)
 }

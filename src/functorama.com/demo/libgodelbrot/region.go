@@ -21,6 +21,11 @@ func NewEscapePoint(c complex128) *EscapePoint {
     }
 }
 
+type Subregion struct {
+    populated bool
+    children []*Region
+}
+
 type Region struct {
     topLeft *EscapePoint
     topRight *EscapePoint
@@ -56,6 +61,10 @@ func NewRegion(topLeft complex128, bottomRight complex128) *Region {
     }  
 }
 
+func WholeRegion(config *RenderConfig) *Region {
+    return NewRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
+}
+
 func (r Region) Points() []*EscapePoint {
     return []*EscapePoint{
         r.topLeft, 
@@ -64,11 +73,6 @@ func (r Region) Points() []*EscapePoint {
         r.bottomRight, 
         r.midPoint,
     }
-}
-
-type Subregion struct {
-    populated bool
-    children []*Region
 }
 
 func (r Region) Subdivide(config *RenderConfig) Subregion {
@@ -215,4 +219,17 @@ func (r Region) Collapse(config *RenderConfig) bool {
     rect := r.Rect(config)
     iCollapse := int(config.RegionCollapse)
     return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
+}
+
+func (r Region) Subconfig(config *RenderConfig) *RenderConfig {
+    smallConfig := *config
+    rect := r.Rect(config)
+    smallConfig.Width = uint(rect.Dx())
+    smallConfig.Height = uint(rect.Dy())
+    smallConfig.ImageLeft = uint(rect.Min.X)
+    smallConfig.ImageTop = uint(rect.Min.Y)
+    smallConfig.TopLeft = r.topLeft.c
+    smallConfig.BottomRight = r.bottomRight.c
+    smallConfig.Frame = CornerFrame
+    return &smallConfig
 }

@@ -28,6 +28,8 @@ type RenderParameters struct {
     TopLeft complex128
     // Optional Bottom right corner
     BottomRight complex128
+    // Number of render threads
+    RenderThreads uint
 }
 
 func (config RenderParameters) PlaneTopLeft() complex128 {

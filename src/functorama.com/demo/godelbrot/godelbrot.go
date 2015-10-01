@@ -4,10 +4,10 @@ import (
     "flag"
     "log"
     "os"
+    "runtime"
     "image/png"
     "errors"
-    "functorama.com/demo/libgodelbrot"
-)
+    "functorama.com/demo/libgodelbrot")
 
 type commandLine struct {
     iterateLimit uint
@@ -22,7 +22,8 @@ type commandLine struct {
     zoom float64
     mode string 
     frame string
-    regionCollapse uint  
+    regionCollapse uint
+    renderThreads uint
 }
 
 func parseArguments(args *commandLine) {
@@ -30,6 +31,13 @@ func parseArguments(args *commandLine) {
     imagMax := imag(libgodelbrot.MagicOffset)
     realMax := realMin + real(libgodelbrot.MagicSetSize)
     imagMin := imagMax - imag(libgodelbrot.MagicSetSize)
+
+    var renderThreads uint
+    if cpus := runtime.NumCPU(); cpus > 1 {
+        renderThreads = uint(cpus - 1)
+    } else {
+        renderThreads = 1
+    }
 
     flag.UintVar(&args.iterateLimit, 
         "iterateLimit", 
@@ -47,6 +55,7 @@ func parseArguments(args *commandLine) {
     flag.StringVar(&args.mode, "mode", "region", "Render mode.  Either 'sequence' or 'region'")
     flag.StringVar(&args.frame, "frame", "corner", "Coordinate frame.  Either 'corner' or 'zoom'")
     flag.UintVar(&args.regionCollapse, "collapse", libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
+    flag.UintVar(&args.renderThreads, "jobs", renderThreads, "Number of rendering threads in concurrent renderer")
     flag.Parse()
 }
 
@@ -72,6 +81,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
         BottomRight: complex(args.realMax, args.imagMin),
         Zoom: args.zoom,
         RegionCollapse: args.regionCollapse,
+        RenderThreads: args.renderThreads,
     }
     return parameters.Configure(), nil
 }
@@ -83,6 +93,7 @@ func main() {
     var modes = map[string]libgodelbrot.Renderer{
         "sequence": libgodelbrot.SequentialRender,
         "region": libgodelbrot.RegionRender,
+        "concurrent": libgodelbrot.ConcurrentRegionRender,
     }
     renderer := modes[args.mode]
 
