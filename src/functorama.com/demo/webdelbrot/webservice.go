@@ -38,6 +38,8 @@ type godelbrotPacket struct {
     renderMetadata
 }
 
+const godelbrotHeader string = "X-Godelbrot-Packet"
+
 func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
     // For now, always use concurrent render and pretty palette
     iterateLimit := uint8(255)
@@ -52,10 +54,10 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
 
     return func (w http.ResponseWriter, req *http.Request) {
         metadata := baseMetadata
-        jsonPacket := req.FormValue("godelbrotPacket")
+        jsonPacket := req.Header.Get(godelbrotHeader)
 
         if len(jsonPacket) == 0 {
-            http.Error(w, "No data in form value 'godelbrotPacket'", 400)
+            http.Error(w, fmt.Sprintf("No data found in header '%v'", godelbrotHeader), 400)
         }
         userPacket := godelbrotPacket{}
         jsonError := json.Unmarshal([]byte(jsonPacket), &userPacket)
@@ -96,7 +98,7 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
             renderMetadata: metadata,
         }
 
-        jsonHeader, marshalError := json.Marshal(responsePacket)
+        responseHeaderPacket, marshalError := json.Marshal(responsePacket)
 
         if marshalError != nil {
             http.Error(w, fmt.Sprintf("Error marshalling response header: %v", marshalError), 500)
@@ -104,7 +106,7 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
 
         // Respond to the request
         w.Header().Set("Content-Type", "image/png")
-        w.Header().Set("X-Godelbrot-Packet", string(jsonHeader))
+        w.Header().Set(godelbrotHeader, string(responseHeaderPacket))
         pngError := png.Encode(w, pic)
 
         if pngError != nil {
