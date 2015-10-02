@@ -31,9 +31,18 @@ func main() {
 
     handlers := map[string]func(http.ResponseWriter, *http.Request) {
         "/":                makeIndexHandler(args.static),
-        "/style.css":       makeStyleHandler(args.static),
-        "/godelbrot.js":    makeJavascriptHandler(args.static),
         "/service":         makeWebserviceHandler(),
+    }
+
+    staticFiles := map[string]string {
+        "style.css": "text/css",
+        "godelbrot.js": "application/javascript",
+        "favicon.ico": "image/x-icon",
+        "small-logo.png": "image.png",
+    }
+
+    for filename, mime := range staticFiles {
+        handlers[filename] = makeFileHandler(filepath.Join(args.static, filename), mime)
     }
 
     for patt, h := range handlers {
@@ -55,14 +64,7 @@ func makeFileHandler(path string, mime string) func(http.ResponseWriter, *http.R
     }
 }
 
+// A lot of 
 func makeIndexHandler(static string) func(http.ResponseWriter, *http.Request) {
     return makeFileHandler(filepath.Join(static, "index.html"), "text/html")
-}
-
-func makeStyleHandler(static string) func(http.ResponseWriter, *http.Request) {
-    return makeFileHandler(filepath.Join(static, "style.css"), "text/css")
-}
-
-func makeJavascriptHandler(static string) func(http.ResponseWriter, *http.Request) {
-    return makeFileHandler(filepath.Join(static, "godelbrot.js"), "application/javascript")
 }

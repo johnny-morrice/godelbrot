@@ -1,0 +1,18 @@
+body {
+    font-family: monospace;
+    color:  rgb(200, 200, 200);
+    background-color: black;
+}
+
+#toolbar {
+    background-color: rgb(200, 200, 200);
+    color: black;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.control {
+    text-decoration: underline;
+}
