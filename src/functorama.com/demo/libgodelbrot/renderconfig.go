@@ -133,8 +133,7 @@ type RenderConfig struct {
 	ImageTop     uint
 }
 
-// Use magic values to create default config
-func DefaultConfig() *RenderConfig {
+func DefaultRenderThreads() uint {
 	cpus := runtime.NumCPU()
 	var threads uint
 	if cpus > 1 {
@@ -142,6 +141,12 @@ func DefaultConfig() *RenderConfig {
 	} else {
 		threads = 1
 	}
+	return threads
+}
+
+// Use magic values to create default config
+func DefaultConfig() *RenderConfig {
+	threads := DefaultRenderThreads()
 	params := RenderParameters{
 		IterateLimit:   DefaultIterations,
 		DivergeLimit:   DefaultDivergeLimit,

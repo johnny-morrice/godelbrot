@@ -18,8 +18,6 @@ type renderInput struct {
 	regions []Region
 }
 
-type renderResult uint
-
 type pixelMember struct {
 	i int
 	j int
