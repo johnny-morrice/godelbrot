@@ -2,13 +2,10 @@ package main
 
 import (
     "flag"
-    "os"
     "log"
-    "html/template"
     "net/http"
-    "filepath"
+    "path/filepath"
     "fmt"
-    "functorama.com/demo/libgodelbrot"
 )
 
 type commandLine struct {
@@ -22,7 +19,7 @@ type commandLine struct {
 
 func parseArguments() commandLine {
     args := commandLine{}
-    flag.UintVar(&args.port, "port", 8080, "Port on which to listen"),
+    flag.UintVar(&args.port, "port", 8080, "Port on which to listen")
     flag.StringVar(&args.addr, "addr", "127.0.0.1", "Interface on which to listen")
     flag.StringVar(&args.static, "static", "static", "Path to static files")
     flag.Parse()
@@ -32,15 +29,15 @@ func parseArguments() commandLine {
 func main() {
     args := parseArguments()
 
-    handlers := map[string]Handler {
+    handlers := map[string]func(http.ResponseWriter, *http.Request) {
         "/":                makeIndexHandler(args.static),
         "/style.css":       makeStyleHandler(args.static),
         "/godelbrot.js":    makeJavascriptHandler(args.static),
-        "/service":         makeWebServiceHandler(),
+        "/service":         makeWebserviceHandler(),
     }
 
     for patt, h := range handlers {
-        http.Handle(patt, h)
+        http.HandleFunc(patt, h)
     }
 
     serveAddr := fmt.Sprintf("%v:%v", args.addr, args.port)
@@ -51,21 +48,21 @@ func main() {
     }
 }
 
-func makeFileHandler(path string, mime string) {
+func makeFileHandler(path string, mime string) func(http.ResponseWriter, *http.Request) {
     return func (w http.ResponseWriter, req *http.Request) {
         w.Header().Set("Content-Type", mime)
-        ServeFile(w, req, path)
+        http.ServeFile(w, req, path)
     }
 }
 
-func makeIndexHandler(static string) {
+func makeIndexHandler(static string) func(http.ResponseWriter, *http.Request) {
     return makeFileHandler(filepath.Join(static, "index.html"), "text/html")
 }
 
-func makeStyleHandler(static string) {
+func makeStyleHandler(static string) func(http.ResponseWriter, *http.Request) {
     return makeFileHandler(filepath.Join(static, "style.css"), "text/css")
 }
 
-func makeJavascriptHandler(static string) {
+func makeJavascriptHandler(static string) func(http.ResponseWriter, *http.Request) {
     return makeFileHandler(filepath.Join(static, "godelbrot.js"), "application/javascript")
 }
