@@ -10,35 +10,35 @@ import (
     "functorama.com/demo/libgodelbrot"
 )
 
-type webCommand uint
-
+type WebCommand string
 const (
-    render = webCommand(iota)
-    displayImage = webCommand(iota)
+    render = WebCommand("render")
+    displayImage = WebCommand("displayImage")
 )
 
-type webRenderParameters struct {
-    imageWidth uint
-    imageHeight uint
-    realMin float64
-    realMax float64
-    imagMin float64
-    imagMax float64
+type WebRenderParameters struct {
+    ImageWidth uint
+    ImageHeight uint
+    RealMin float64
+    RealMax float64
+    ImagMin float64
+    ImagMax float64
 }
 
-type renderMetadata struct {
-    renderer string
-    palette string
-    renderDuration string
+type RenderMetadata struct {
+    Renderer string
+    Palette string
+    RenderDuration string
 }
 
-type godelbrotPacket struct {
-    command webCommand
-    renderArgs webRenderParameters
-    renderMetadata
+type GodelbrotPacket struct {
+    Command WebCommand
+    Render WebRenderParameters
+    Metadata RenderMetadata
 }
 
 const godelbrotHeader string = "X-Godelbrot-Packet"
+const godelbrotGetParam string = "godelbrotPacket"
 
 func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
     // For now, always use concurrent render and pretty palette
@@ -47,36 +47,45 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
     renderer := libgodelbrot.ConcurrentRegionRender
     threads := libgodelbrot.DefaultRenderThreads()
 
-    baseMetadata := renderMetadata{
-        renderer: "ConcurrentRegionRender",
-        palette: "Pretty",
+    baseMetadata := RenderMetadata{
+        Renderer: "ConcurrentRegionRender",
+        Palette: "Pretty",
     }
 
     return func (w http.ResponseWriter, req *http.Request) {
         metadata := baseMetadata
-        jsonPacket := req.Header.Get(godelbrotHeader)
+        jsonPacket := req.URL.Query().Get(godelbrotGetParam)
 
         if len(jsonPacket) == 0 {
-            http.Error(w, fmt.Sprintf("No data found in header '%v'", godelbrotHeader), 400)
+            http.Error(w, fmt.Sprintf("No data found in parameter '%v'", godelbrotHeader), 400)
+            return
         }
-        userPacket := godelbrotPacket{}
-        jsonError := json.Unmarshal([]byte(jsonPacket), &userPacket)
+
+        jsonBytes := []byte(jsonPacket)
+        userPacket := GodelbrotPacket{}
+        jsonError := json.Unmarshal(jsonBytes, &userPacket)
 
         if jsonError != nil {
             http.Error(w, fmt.Sprintf("Invalid JSON packet: %v", jsonError), 400)
+            return
         }
 
-        args := userPacket.renderArgs
+        args := userPacket.Render
+
+        if args.ImageWidth == 0 || args.ImageHeight == 0 {
+            http.Error(w, "ImageHeight and ImageWidth cannot be 0", 422)
+            return
+        }
 
         params := libgodelbrot.RenderParameters{
             IterateLimit: iterateLimit,
             DivergeLimit: 4.0,
-            Width: args.imageWidth,
-            Height: args.imageHeight,
+            Width: args.ImageWidth,
+            Height: args.ImageHeight,
             RegionCollapse: 2,
             Frame: libgodelbrot.CornerFrame,
-            TopLeft: complex(args.realMin, args.imagMax),
-            BottomRight: complex(args.realMax, args.imagMin),
+            TopLeft: complex(args.RealMin, args.ImagMax),
+            BottomRight: complex(args.RealMax, args.ImagMin),
             RenderThreads: threads,
             BufferSize: libgodelbrot.DefaultBufferSize,
             FixAspect: true,
@@ -87,16 +96,18 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
         t0 := time.Now()
         pic, renderError := renderer(config, palette)
         t1 := time.Now()
-        metadata.renderDuration = t1.Sub(t0).String()
+        metadata.RenderDuration = t1.Sub(t0).String()
 
         if renderError != nil {
             log.Fatal(fmt.Sprintf("Render error: %v", renderError))
         }
 
-        responsePacket := godelbrotPacket{
-            command: displayImage,
-            renderMetadata: metadata,
+        responsePacket := GodelbrotPacket{
+            Command: displayImage,
+            Metadata: metadata,
         }
+
+        log.Println("Render complete in ", metadata.RenderDuration)
 
         responseHeaderPacket, marshalError := json.Marshal(responsePacket)
 
@@ -110,7 +121,7 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
         pngError := png.Encode(w, pic)
 
         if pngError != nil {
-            log.Fatal("Error encoding PNG: %v", pngError)
+            log.Fatal("Error encoding PNG: ", pngError)
         }
     }
 }

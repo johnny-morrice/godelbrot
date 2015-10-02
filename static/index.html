@@ -6,10 +6,11 @@
     <link rel="stylesheet" href="style.css">
     <script src="godelbrot.js"></script>
   </head>
-  <body>
-    <div id="toolbar">
-        Godelbrot fractal explorer
-        <img class="logo" src="small-logo.png" alt="Little Mandelbrot set">
+  <body onload="render(-2.01, 0.59, -1.89, 1.13)">
+    <img class="center" id="fractal" src="" alt="Mandelbrot set">
+    <div id="toolbar" class="center">
+        <img class="logo" src="small-logo.png" alt="Godelbrot logo">
+        <span>Godelbrot fractal explorer</span> |
         <span class="control">restart</span>
         <span class="control">back</span>
     </div>
