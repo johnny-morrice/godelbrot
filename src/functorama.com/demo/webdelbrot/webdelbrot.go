@@ -64,7 +64,6 @@ func makeFileHandler(path string, mime string) func(http.ResponseWriter, *http.R
     }
 }
 
-// A lot of 
 func makeIndexHandler(static string) func(http.ResponseWriter, *http.Request) {
     return makeFileHandler(filepath.Join(static, "index.html"), "text/html")
 }
