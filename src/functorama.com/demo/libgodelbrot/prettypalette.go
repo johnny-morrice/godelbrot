@@ -19,14 +19,17 @@ func NewPrettyPalette(iterateLimit uint8) Palette {
 
 // Cache redscale colour values
 func prettyCacher(limit uint8, index uint8) color.NRGBA {
-    linear := float64(limit - index)
-    qx := linear - 122.5
-    qa := 255.0 / (122.5 * 122.5)
+    limitF := float64(limit)
+    linear := limitF - float64(index)
+    mid := float64(limit) / 2.0
+    quart := mid / 2.0
+    qx := linear - mid
+    qa := limitF / (mid * mid)
     quadratic := qa * qx * qx
-    cx := linear - 61.25
-    ca := - 255 / (61.25 * 61.25 * 61.25)
+    cx := linear - quart
+    ca := - limitF / (quart * quart * quart)
     cubic := ca * cx * cx * cx
-    interval := 255.0 / float64(limit)
+    interval := 255.0 / limitF
     return color.NRGBA{
         R: uint8(linear * interval),
         G: uint8(quadratic * interval),

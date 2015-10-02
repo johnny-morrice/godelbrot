@@ -33,6 +33,8 @@ type RenderParameters struct {
 	RenderThreads uint
 	// Size of thread input buffer
 	BufferSize uint
+	// Fix aspect
+	FixAspect bool
 }
 
 func (config RenderParameters) PlaneTopLeft() complex128 {
@@ -83,10 +85,35 @@ func (args RenderParameters) PlaneSize() complex128 {
 	return 0
 }
 
+// Configure the render parameters into something working
+// Fixes aspect ratio
 func (args RenderParameters) Configure() *RenderConfig {
 	planeSize := args.PlaneSize()
 	planeWidth := real(planeSize)
 	planeHeight := imag(planeSize)
+
+	imageAspect := float64(args.Width) / float64(args.Height)
+	planeAspect := planeWidth / planeHeight
+
+	if args.FixAspect {
+		tl := args.PlaneTopLeft()
+		// If the plane aspect is greater than image aspect
+		// Then the plane is too short, so must be made taller
+		if planeAspect > imageAspect {
+			taller := planeWidth / imageAspect
+			br := tl + complex(planeWidth, -taller)
+			args.BottomRight = br
+			args.Frame = CornerFrame
+		} else if planeAspect < imageAspect {
+			// If the plane aspect is less than the image aspect
+			// Then the plane is too thin, and must be made fatter
+			fatter := planeHeight * imageAspect
+			br := tl + complex(fatter, -planeHeight)
+			args.BottomRight = br
+			args.Frame = CornerFrame
+		}
+	}
+
 	return &RenderConfig{
 		RenderParameters: args,
 		HorizUnit:        planeWidth / float64(args.Width),

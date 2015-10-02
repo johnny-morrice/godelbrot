@@ -27,6 +27,7 @@ type commandLine struct {
 	renderThreads  uint
 	threadBuffer   uint
 	storedPalette  string
+	fixAspect 	   bool
 }
 
 func parseArguments(args *commandLine) {
@@ -58,6 +59,7 @@ func parseArguments(args *commandLine) {
 	flag.UintVar(&args.renderThreads, "jobs", renderThreads, "Number of rendering threads in concurrent renderer")
 	flag.UintVar(&args.threadBuffer, "buffer", libgodelbrot.DefaultBufferSize, "Size of per-thread buffer")
 	flag.StringVar(&args.storedPalette, "storedPalette", "pretty", "Name of stored palette (pretty|redscale)")
+	flag.BoolVar(&args.fixAspect, "fixAspect", true, "Fix aspect ratio: do not deform image")
 	flag.Parse()
 }
 
@@ -85,6 +87,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.RenderConfig, erro
 		RegionCollapse: args.regionCollapse,
 		RenderThreads:  args.renderThreads,
 		BufferSize:     args.threadBuffer,
+		FixAspect:		args.fixAspect,
 	}
 	return parameters.Configure(), nil
 }
