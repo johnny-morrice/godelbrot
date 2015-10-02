@@ -42,7 +42,7 @@ func main() {
     }
 
     for filename, mime := range staticFiles {
-        handlers[filename] = makeFileHandler(filepath.Join(args.static, filename), mime)
+        handlers["/" + filename] = makeFileHandler(filepath.Join(args.static, filename), mime)
     }
 
     for patt, h := range handlers {
