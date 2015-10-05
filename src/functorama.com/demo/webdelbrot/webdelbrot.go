@@ -6,6 +6,7 @@ import (
     "net/http"
     "path/filepath"
     "fmt"
+    "runtime"
 )
 
 type commandLine struct {
@@ -28,6 +29,9 @@ func parseArguments() commandLine {
 
 func main() {
     args := parseArguments()
+
+    // Set number of cores
+    runtime.GOMAXPROCS(runtime.NumCPU())
 
     handlers := map[string]func(http.ResponseWriter, *http.Request) {
         "/":                makeIndexHandler(args.static),

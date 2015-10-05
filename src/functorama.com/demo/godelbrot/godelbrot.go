@@ -123,6 +123,9 @@ func main() {
 		log.Fatal("Unknown palette")
 	}
 
+	// Set number of cores
+	runtime.GOMAXPROCS(int(config.RenderThreads) + 1)
+
 	image, renderError := renderer(config, palette)
 	if renderError != nil {
 		log.Fatal(renderError)

@@ -3,7 +3,6 @@ package libgodelbrot
 import (
 	"fmt"
 	"image"
-	"runtime"
 )
 
 type renderCommand uint
@@ -236,7 +235,6 @@ func ConcurrentRegionRender(config *RenderConfig, palette Palette) (*image.NRGBA
 }
 
 func ConcurrentRegionRenderImage(drawingContext DrawingContext) {
-	runtime.GOMAXPROCS(int(drawingContext.Config.RenderThreads) + 1)
 	tracker := NewRenderTracker(drawingContext)
 	tracker.Render()
 }
