@@ -7,12 +7,15 @@
     <script src="godelbrot.js"></script>
   </head>
   <body onload="restart()" onresize="resize()">
-    <img class="center" id="fractal" src="" alt="Mandelbrot set">
+    <img class="center" id="fractal" src="" 
+      onclick="fractalZoomBox(event);" onmousemove="fractalSelect(event);" 
+      alt="Mandelbrot set">
     <div id="toolbar">
         <img class="logo" src="small-logo.png" alt="Godelbrot logo">
         <span>Godelbrot fractal explorer</span> |
         <a class="control" href="" onclick="return restartClick();">restart</a>
         <a class="control" href="" onclick="return fractalBackClick();">back</a>
+        <span class="feedback" id="status"></span>
     </div>
   </body>
 </html>

@@ -26,6 +26,11 @@ RenderHistory.prototype.clear = function() {
     this.hist = [];
 }
 
+// Last Mandelbrot render command
+RenderHistory.prototype.last = function() {
+    return this.hist[0];
+}
+
 // Singleton namespace for fractal history
 var History = {};
 
@@ -76,6 +81,17 @@ Mandelbrot.prototype.resize = function() {
     return new Mandelbrot(fractalDimensions, imageDimensions());
 }
 
+// Conversion unit from image to plane
+Mandelbrot.prototype.planeUnits = function() {
+    var width = this.realMax - this.realMin;
+    var height = this.imagMax - this.imagMin;
+    var elemDim = imageDimensions(); 
+    var units = {};
+    units.real = width / elemDim.imageWidth;
+    units.imag = height / elemDim.imageHeight;
+    return units;
+}
+
 // Restart the application
 function restart() {
     var renderHistory = History.getRenderHistory();
@@ -112,9 +128,36 @@ function resize() {
     History.getRenderHistory().resizeRender();
 }
 
+// Open or close and zoom into the zoom box
+function fractalZoomBox(event) {
+    return clickCallback(function () {
+
+    })
+}
+
+// Update status bar with fractal location and redraw the zoombox
+function fractalSelect(event) {
+    var c = imageToPlane(event.clientX, event.clientY);
+    var status = document.getElementById("status");
+    status.textContent = "r: " + c.real + " i: " + c.imag;
+}
+
 // Complex plane utilities
+
+function imageToPlane(x, y) {
+    var mandelbrot = History.getRenderHistory().last();
+    var planeUnits = mandelbrot.planeUnits();
+    var absR = x * planeUnits.real;
+    var absI = y * planeUnits.imag;
+    var r = mandelbrot.realMin + absR;
+    var i = mandelbrot.imagMax - absI;
+    var c = {};
+    c.real = r;
+    c.imag = i;
+    return c;
+}
+
 function defaultMandelbrotDimensions() {
-    var elemDim = imageDimensions();
     var dimensions = {};
     var realMin = -2.01;
     var realMax = 0.59;
@@ -125,20 +168,20 @@ function defaultMandelbrotDimensions() {
     var pHeight = imagMax - imagMin;
 
     var pAspect = pWidth / pHeight;
-    var imageAspect = elemDim.imageWidth / elemDim.imageHeight;
+    var iAspect = imageAspect();
 
     var expectWidth;
-    if (pAspect > imageAspect) {
+    if (pAspect > iAspect) {
         // Expecting excess at bottom of image
-        var taller = pWidth / imageAspect;
+        var taller = pWidth / iAspect;
         // Add excess to top and bottom, in order to center image
         var resize = taller - pHeight;
         var centerResize = resize / 2;
         imagMin -= centerResize;
         imagMax += centerResize;
-    } else if (pAspect < imageAspect) {
+    } else if (pAspect < iAspect) {
         // Expecting excess at right of image
-        var fatter = pHeight * imageAspect;
+        var fatter = pHeight * iAspect;
         var resize = fatter - pWidth;
         var centerResize = resize / 2;
         realMin -= centerResize;
@@ -162,6 +205,12 @@ function imageDimensions() {
     dimensions.imageWidth = window.innerWidth;
     dimensions.imageHeight = window.innerHeight - elemHeight(toolbar);
     return dimensions;
+}
+
+// Aspect ratio of image
+function imageAspect() {
+    var elemDim = imageDimensions();
+    return elemDim.imageWidth / elemDim.imageHeight;
 }
 
 function elemHeight(element) {
