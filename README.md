@@ -2,7 +2,7 @@
 
 ## Summary
 
-A web-based mandelbrot viewer in Go.
+A web-based, multithreaded mandelbrot viewer in Go
 
 godelbrot has no dependencies outside of the go compiler, and its standard 
 library.
