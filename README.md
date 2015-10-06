@@ -29,7 +29,13 @@ To run in your web browser
     $ export GOPATH=/path/to/godelbrot
     $ cd /path/to/godelbrot
     $ go install functorama.com/demo/webdelbrot
-    $ bin/godelbrot
+    $ bin/webdelbrot
+
+Now points your browser to localhost:8080 and you should see the fractal.
+
+Left click to begin highlighting zoom region.  Left click again to zoom.
+
+Middle quick or "q" to cancel zoom selection.
 
 ## Credits
 
