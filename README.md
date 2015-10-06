@@ -2,7 +2,7 @@
 
 ## Summary
 
-A web-based, multithreaded mandelbrot viewer in Go
+A web-based, multithreaded Mandelbrot set explorer in Go
 
 ## Dependencies
 
