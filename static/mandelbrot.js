@@ -25,7 +25,7 @@ Mandelbrot.prototype.render = function() {
     var encoded = encodeURIComponent(json);
     var service = "/service?godelbrotPacket=" + encoded;
     var fractal = document.getElementById("fractal");
-    fractal.src = service
+    fractal.src = service;
 }
 
 // Create new Mandelbrot viewing same area of set but at different image size

@@ -5,19 +5,16 @@ function RenderHistory() {
 
 // Resize and render the fractal on screen
 RenderHistory.prototype.resizeRender = function() {
-    var next = this.hist[0].resize();
-    next.render();
+    this.last().resize().render();
 }
 
 // Render the last fractal in the history
 RenderHistory.prototype.fractalBack = function() {
     var last = this.hist.pop();
-    if (this.hist.length) {
-        this.resizeRender();
-    } else {
+    if (!this.hist.length) {
         this.hist.push(last);
-        this.resizeRender();
     }
+    this.resizeRender();
 }
 
 // Render a new mandelbrot
@@ -33,7 +30,7 @@ RenderHistory.prototype.clear = function() {
 
 // Last Mandelbrot render command
 RenderHistory.prototype.last = function() {
-    return this.hist[0];
+    return this.hist[this.hist.length - 1];
 }
 
 // Singleton namespace for fractal history

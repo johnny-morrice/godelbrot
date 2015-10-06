@@ -9,8 +9,20 @@ ZoomBox.prototype.zoomStep = function(mouseX, mouseY) {
             this.addBox(mouseX, mouseY);
         break;
         case ZoomState.select():
-            // For now, just disable the zoom
+            var cDims = {};
+            var boxDims = this.boxDims;
+            console.log(boxDims);
+            var cMin = imageToPlane(boxDims.minX, boxDims.minY);
+            var cMax = imageToPlane(boxDims.maxX, boxDims.maxY);
+            cDims.realMin = cMin.real;
+            cDims.realMax = cMax.real;
+            cDims.imagMin = cMax.imag; // Note on plane y is upside down
+            cDims.imagMax = cMin.imag; 
+            console.log(cDims);
+            var mandelbrot = new Mandelbrot(cDims, imageDimensions());
+            History.getRenderHistory().render(mandelbrot);
             this.cancel();
+        break;
     }
 }
 
@@ -19,18 +31,18 @@ ZoomBox.prototype.cancel = function() {
     this.removeBox();
 }
 
-ZoomBox.prototype.move = function(x, y) {
+ZoomBox.prototype.move = function(mouseX, mouseY) {
     if (this.state == ZoomState.select()) {
-        this.moveBox(x, y);
+        this.moveBox(mouseX, mouseY);
     }
 }
 
-ZoomBox.prototype.moveBox = function(x, y) {
-    var minX = Math.min(x, this.boxAnchor.x);
-    var minY = Math.min(y, this.boxAnchor.y);
+ZoomBox.prototype.moveBox = function(mouseX, mouseY) {
+    var minX = Math.min(mouseX, this.boxAnchor.x);
+    var minY = Math.min(mouseY, this.boxAnchor.y);
 
-    var maxX = Math.max(x, this.boxAnchor.x);
-    var maxY = Math.max(y, this.boxAnchor.y);
+    var maxX = Math.max(mouseX, this.boxAnchor.x);
+    var maxY = Math.max(mouseY, this.boxAnchor.y);
 
     var imgAspect = imageAspect();
 
@@ -47,9 +59,23 @@ ZoomBox.prototype.moveBox = function(x, y) {
         boxHeight = boxWidth / imgAspect;
     }
 
-    this.boxTopLeft = {}
-    this.boxTopLeft.x = minX;
-    this.boxTopLeft.y = minY;
+    if (minX == this.boxAnchor.x) {
+        maxX = minX + boxWidth;
+    } else {
+        minX = maxX - boxWidth;
+    }
+
+    if (minY == this.boxAnchor.y) {
+        maxY = minY + boxHeight;
+    } else {
+        minY = maxY - boxHeight;
+    }
+
+    this.boxDims = {}
+    this.boxDims.minX = minX;
+    this.boxDims.maxX = maxX;
+    this.boxDims.minY = minY;
+    this.boxDims.maxY = maxY;
     this.box.style.left = minX + "px";
     this.box.style.top = minY + "px";
     this.box.style.maxWidth = boxWidth + "px";
@@ -80,7 +106,7 @@ ZoomBox.prototype.removeBox = function() {
     this.box.parentNode.removeChild(this.box);
     this.boxAnchor = null;
     this.box = null;
-    this.boxTopLeft = null;
+    this.boxDims = null;
 }
 
 // Singleston namespace for zoom states
