@@ -5,10 +5,15 @@
     <title>Godelbrot fractal explorer</title>
     <link rel="stylesheet" href="style.css">
     <script src="godelbrot.js"></script>
+    <script src="complex.js"></script>
+    <script src="image.js"></script>
+    <script src="history.js"></script>
+    <script src="mandelbrot.js"></script>
+    <script src="zoom.js"></script>
   </head>
-  <body onload="restart()" onresize="resize()">
+  <body onload="initialize();" onresize="resize();">
     <img class="center" id="fractal" src="" 
-      onclick="fractalZoomBox(event);" onmousemove="fractalSelect(event);" 
+      onclick="clickZoomBox(event);" onmousemove="fractalSelect(event);" 
       alt="Mandelbrot set">
     <div id="toolbar">
         <img class="logo" src="small-logo.png" alt="Godelbrot logo">

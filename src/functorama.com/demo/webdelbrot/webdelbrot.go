@@ -41,6 +41,11 @@ func main() {
     staticFiles := map[string]string {
         "style.css": "text/css",
         "godelbrot.js": "application/javascript",
+        "history.js": "application/javascript",
+        "mandelbrot.js": "application/javascript",
+        "complex.js": "application/javascript",
+        "image.js": "application/javascript",
+        "zoom.js": "application/javascript",
         "favicon.ico": "image/x-icon",
         "small-logo.png": "image.png",
     }
