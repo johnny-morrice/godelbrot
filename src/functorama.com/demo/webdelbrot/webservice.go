@@ -57,8 +57,6 @@ type renderQueueItem struct {
 }
 
 func launchRenderService() (func(http.ResponseWriter, *http.Request), chan<- renderQueueItem) {
-
-    // Handle 1024 render requests without waiting
     input := make(chan renderQueueItem, libgodelbrot.Kilo)
 
     go handleRenderRequests(input)
