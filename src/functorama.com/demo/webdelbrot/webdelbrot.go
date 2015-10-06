@@ -33,9 +33,11 @@ func main() {
     // Set number of cores
     runtime.GOMAXPROCS(runtime.NumCPU())
 
+    // Begin the rendering service
+    renderHandler, renderChan := launchRenderService()
     handlers := map[string]func(http.ResponseWriter, *http.Request) {
         "/":                makeIndexHandler(args.static),
-        "/service":         makeWebserviceHandler(),
+        "/service":         renderHandler,
     }
 
     staticFiles := map[string]string {
@@ -64,6 +66,9 @@ func main() {
     if httpError != nil {
         log.Fatal(httpError)
     }
+
+    // Shut down render service
+    renderChan <- renderQueueItem{command: queueStop}
 }
 
 func makeFileHandler(path string, mime string) func(http.ResponseWriter, *http.Request) {

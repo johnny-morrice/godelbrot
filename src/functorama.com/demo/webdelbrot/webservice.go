@@ -9,6 +9,7 @@ import (
     "log"
     "functorama.com/demo/libgodelbrot"
     "bytes"
+    "runtime"
 )
 
 type WebCommand string
@@ -41,95 +42,172 @@ type GodelbrotPacket struct {
 const godelbrotHeader string = "X-Godelbrot-Packet"
 const godelbrotGetParam string = "godelbrotPacket"
 
-func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
-    // For now, always use concurrent render and pretty palette
-    iterateLimit := uint8(255)
-    palette := libgodelbrot.NewPrettyPalette(iterateLimit)
-    renderer := libgodelbrot.ConcurrentRegionRender
-    threads := libgodelbrot.DefaultRenderThreads()
+type queueCommand uint
 
-    baseMetadata := RenderMetadata{
-        Renderer: "ConcurrentRegionRender",
-        Palette: "Pretty",
-    }
+const (
+    queueRender = queueCommand(iota)
+    queueStop = queueCommand(iota)
+)
 
+type renderQueueItem struct {
+    command queueCommand
+    w http.ResponseWriter
+    req *http.Request
+    complete chan<- bool
+}
+
+func launchRenderService() (func(http.ResponseWriter, *http.Request), chan<- renderQueueItem) {
+
+    // Handle 1024 render requests without waiting
+    input := make(chan renderQueueItem, libgodelbrot.Kilo)
+
+    go handleRenderRequests(input)
+
+    return httpChanWriter(input), input
+}
+
+func httpChanWriter(input chan<- renderQueueItem) func(http.ResponseWriter, *http.Request) {
     return func (w http.ResponseWriter, req *http.Request) {
-        metadata := baseMetadata
-        jsonPacket := req.URL.Query().Get(godelbrotGetParam)
-
-        if len(jsonPacket) == 0 {
-            http.Error(w, fmt.Sprintf("No data found in parameter '%v'", godelbrotHeader), 400)
-            return
+        done := make(chan bool)
+        input <- renderQueueItem{
+            command: queueRender, 
+            w: w, 
+            req: req,
+            complete: done,
         }
+        // Block until rendering is complete
+        <- done
+    }
+}
 
-        jsonBytes := []byte(jsonPacket)
-        userPacket := GodelbrotPacket{}
-        jsonError := json.Unmarshal(jsonBytes, &userPacket)
+type httpRenderBase struct {
+    queueItem renderQueueItem
+    renderParams libgodelbrot.RenderParameters
+    palette libgodelbrot.Palette
+    renderer libgodelbrot.Renderer
+    metadata RenderMetadata 
+}
 
-        if jsonError != nil {
-            http.Error(w, fmt.Sprintf("Invalid JSON packet: %v", jsonError), 400)
-            return
-        }
+func handleRenderRequests(input <-chan renderQueueItem) {
+    processed := false
+    run := true
 
-        args := userPacket.Render
-
-        if args.ImageWidth == 0 || args.ImageHeight == 0 {
-            http.Error(w, "ImageHeight and ImageWidth cannot be 0", 422)
-            return
-        }
-
-        params := libgodelbrot.RenderParameters{
+    // Values constant across all renders
+    iterateLimit := uint8(255)
+    renderBase := httpRenderBase{
+        renderParams: libgodelbrot.RenderParameters{
             IterateLimit: iterateLimit,
             DivergeLimit: 4.0,
-            Width: args.ImageWidth,
-            Height: args.ImageHeight,
             RegionCollapse: 2,
             Frame: libgodelbrot.CornerFrame,
-            TopLeft: complex(args.RealMin, args.ImagMax),
-            BottomRight: complex(args.RealMax, args.ImagMin),
-            RenderThreads: threads,
+            RenderThreads: libgodelbrot.DefaultRenderThreads(),
             BufferSize: libgodelbrot.DefaultBufferSize,
             FixAspect: true,
-        }
-
-        config := params.Configure()
-
-        t0 := time.Now()
-        pic, renderError := renderer(config, palette)
-        t1 := time.Now()
-        metadata.RenderDuration = t1.Sub(t0).String()
-
-        if renderError != nil {
-            log.Fatal(fmt.Sprintf("Render error: %v", renderError))
-        }
-
-        buff := bytes.Buffer{}
-        pngError := png.Encode(&buff, pic)
-
-        if pngError != nil {
-            log.Println("Error encoding PNG: ", pngError)
-            http.Error(w, fmt.Sprintf("Error encoding PNG: %v", pngError), 500)
-        }
-
-        responsePacket := GodelbrotPacket{
-            Command: displayImage,
-            Metadata: metadata,
-        }
-
-        log.Println("Render complete in ", metadata.RenderDuration, 
-            "plane co-ords: ", config.TopLeft, config.BottomRight)
-
-        responseHeaderPacket, marshalError := json.Marshal(responsePacket)
-
-        if marshalError != nil {
-            http.Error(w, fmt.Sprintf("Error marshalling response header: %v", marshalError), 500)
-        }
-
-        // Respond to the request
-        w.Header().Set("Content-Type", "image/png")
-        w.Header().Set(godelbrotHeader, string(responseHeaderPacket))
-
-        // Write image buffer as http response
-        w.Write(buff.Bytes())
+        },
+        metadata: RenderMetadata{
+            Renderer: "ConcurrentRegionRender",
+            Palette: "Pretty",
+        },
+        palette: libgodelbrot.NewPrettyPalette(iterateLimit),
+        renderer: libgodelbrot.ConcurrentRegionRender,
     }
+
+    for run {
+        select {
+        case queueItem := <- input:
+            switch queueItem.command {
+            case queueRender:
+                renderBase.queueItem = queueItem
+                renderBase.render()
+                processed = true
+            case queueStop:
+                run = false
+            default:
+                panic(fmt.Sprintf("Unknown queueCommand: %v", queueItem.command))
+            } 
+        default:
+            if processed {
+                // No renders waiting...
+                // A good time to force GC!
+                runtime.GC()
+                processed = false 
+            }
+        }
+    }
+}
+
+func (renderBase httpRenderBase) render() {
+
+    jsonPacket := renderBase.queueItem.req.URL.Query().Get(godelbrotGetParam)
+
+    if len(jsonPacket) == 0 {
+        http.Error(renderBase.queueItem.w, fmt.Sprintf("No data found in parameter '%v'", godelbrotHeader), 400)
+        return
+    }
+
+    jsonBytes := []byte(jsonPacket)
+    userPacket := GodelbrotPacket{}
+    jsonError := json.Unmarshal(jsonBytes, &userPacket)
+
+    if jsonError != nil {
+        http.Error(renderBase.queueItem.w, fmt.Sprintf("Invalid JSON packet: %v", jsonError), 400)
+        return
+    }
+
+    args := userPacket.Render
+
+    if args.ImageWidth == 0 || args.ImageHeight == 0 {
+        http.Error(renderBase.queueItem.w, "ImageHeight and ImageWidth cannot be 0", 422)
+        return
+    }
+
+    renderParams := renderBase.renderParams
+    renderParams.Width = args.ImageWidth
+    renderParams.Height = args.ImageHeight
+    renderParams.TopLeft = complex(args.RealMin, args.ImagMax)
+    renderParams.BottomRight = complex(args.RealMax, args.ImagMin)
+
+    config := renderParams.Configure()
+
+    t0 := time.Now()
+    pic, renderError := renderBase.renderer(config, renderBase.palette)
+    t1 := time.Now()
+
+    if renderError != nil {
+        log.Fatal(fmt.Sprintf("Render error: %v", renderError))
+    }
+
+    buff := bytes.Buffer{}
+    pngError := png.Encode(&buff, pic)
+
+    if pngError != nil {
+        log.Println("Error encoding PNG: ", pngError)
+        http.Error(renderBase.queueItem.w, fmt.Sprintf("Error encoding PNG: %v", pngError), 500)
+    }
+
+    // Craft response
+    responsePacket := GodelbrotPacket{
+        Command: displayImage,
+        Metadata: renderBase.metadata,
+    }
+    responsePacket.Metadata.RenderDuration = t1.Sub(t0).String()
+
+    log.Println("Render complete in ", responsePacket.Metadata.RenderDuration, 
+        "plane co-ords: ", config.TopLeft, config.BottomRight)
+
+    responseHeaderPacket, marshalError := json.Marshal(responsePacket)
+
+    if marshalError != nil {
+        http.Error(renderBase.queueItem.w, fmt.Sprintf("Error marshalling response header: %v", marshalError), 500)
+    }
+
+    // Respond to the request
+    renderBase.queueItem.w.Header().Set("Content-Type", "image/png")
+    renderBase.queueItem.w.Header().Set(godelbrotHeader, string(responseHeaderPacket))
+
+    // Write image buffer as http response
+    renderBase.queueItem.w.Write(buff.Bytes())
+
+    // Notify that rendering is complete
+    renderBase.queueItem.complete <- true
 }
