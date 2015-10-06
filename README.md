@@ -1,4 +1,4 @@
-# godelbrot and webdelbrot
+# godelbrot
 
 ## Summary
 
