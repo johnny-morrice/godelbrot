@@ -68,14 +68,13 @@ func (r Region) Subdivide(config *RenderConfig, heap *EscapePointHeap) Subregion
 		}
 	}
 
-	// If we appear to be in the set
-	// Do some extra work to be sure the result isn't a fluke due to the
-	// Curved shape and unform colour of the set
-	if r.OnSetCurve(config) {
-		return r.Split(heap)
-	}
-
 	if r.Uniform() {
+			// If we appear to be in the set
+			// Do some extra work to be sure the result isn't a fluke due to the
+			// Curved shape and unform colour of the set
+			if r.onGlitchCurve(config) {
+				return r.Split(heap)
+			}
 		return Subregion{
 			populated: false,
 		}
@@ -97,19 +96,14 @@ func (r Region) Uniform() bool {
 	return true
 }
 
-// Assume points have all been evaluated, true if this region appears to
-// be in the mandelbrot set but in fact is not entirely
-func (r Region) OnSetCurve(config *RenderConfig) bool {
-	points := r.Points()
-
-	allInSet := true
-	for _, p := range points {
-		if !p.membership.InSet {
-			allInSet = false
-		}
-	}
-
-	if allInSet {
+// A glitch is possible when points are uniform near the set
+// Due to the shape of the set, a rectangular region is not a good approximation
+// An anologous glitch happens when the entire region is much larger than the set
+// We handle both these cases here
+func (r Region) onGlitchCurve(config *RenderConfig) bool {
+	member := r.topLeft.membership
+	iDiv := member.InvDivergence
+	if iDiv == 0 || iDiv == 1 || member.InSet {
 		sqrtChecks := 10
 		sqrtChecksF := float64(sqrtChecks)
 		tl := r.topLeft.c
@@ -123,7 +117,7 @@ func (r Region) OnSetCurve(config *RenderConfig) bool {
 			y := imag(tl)
 			for j := 0; j < sqrtChecks; j++ {
 				member := Mandelbrot(complex(x, y), config.IterateLimit, config.DivergeLimit)
-				if !member.InSet {
+				if member.InvDivergence != iDiv {
 					return true
 				}
 				y -= vUnit

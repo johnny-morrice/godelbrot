@@ -114,11 +114,41 @@ function resize() {
 
 // Complex plane utilities
 function defaultMandelbrotDimensions() {
+    var elemDim = imageDimensions();
     var dimensions = {};
-    dimensions.realMin = -2.01;
-    dimensions.realMax = 0.59;
-    dimensions.imagMin = -1.89;
-    dimensions.imagMax = 1.60;
+    var realMin = -2.01;
+    var realMax = 0.59;
+    var imagMin = -1.89;
+    var imagMax = 1.58;
+
+    var pWidth = realMax - realMin;
+    var pHeight = imagMax - imagMin;
+
+    var pAspect = pWidth / pHeight;
+    var imageAspect = elemDim.imageWidth / elemDim.imageHeight;
+
+    if (pAspect > imageAspect) {
+        // Expecting excess at bottom of image
+        var resize = pWidth / imageAspect;
+        // Add excess to top and bottom, in order to center image
+        var centerResize = resize / 4;
+        // My maths is telling me, this should be divided by 2
+        // My screen is telling it is divided by 4
+        imagMin -= centerResize;
+        imagMax += centerResize;
+    } else if (pAspect < imageAspect) {
+        // Expecting excess at right of image
+        var resize = pHeight * imageAspect;
+        var centerResize = resize / 4;
+        realMin -= centerResize;
+        realMax += centerResize;
+    }
+
+    dimensions.realMax = realMax;
+    dimensions.realMin = realMin;
+    dimensions.imagMax = imagMax;
+    dimensions.imagMin = imagMin;
+
     return dimensions;
 }
 

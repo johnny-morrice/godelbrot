@@ -116,7 +116,8 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
             Metadata: metadata,
         }
 
-        log.Println("Render complete in ", metadata.RenderDuration)
+        log.Println("Render complete in ", metadata.RenderDuration, 
+            "plane co-ords: ", config.TopLeft, config.BottomRight)
 
         responseHeaderPacket, marshalError := json.Marshal(responsePacket)
 
