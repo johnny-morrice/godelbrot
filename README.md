@@ -1,14 +1,17 @@
-# godelbrot
+# godelbrot and webdelbrot
 
 ## Summary
 
-A sketchy mandelbrot viewer in Go
+A web-based mandelbrot viewer in Go
 
 godelbrot has no dependencies outside of the go compiler, and its standard library.
 
 ## Usage
 
-We hacked this thing up this afternoon, and haven't made it go-gettable yet.
+This package has been hacked up quickly, and haven't made it go-gettable yet.
+
+Wide distribution isn't a priority till we reach out development goals (more on 
+them to come!)
 
 To get started, clone this repository and then
 
