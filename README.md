@@ -4,6 +4,8 @@
 
 A web-based, multithreaded mandelbrot viewer in Go
 
+## Dependencies
+
 godelbrot has no dependencies outside of the go compiler, and its standard 
 library.
 
