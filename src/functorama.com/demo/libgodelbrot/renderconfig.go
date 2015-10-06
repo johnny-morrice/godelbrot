@@ -85,9 +85,7 @@ func (args RenderParameters) PlaneSize() complex128 {
 	return 0
 }
 
-// Configure the render parameters into something working
-// Fixes aspect ratio
-func (args RenderParameters) Configure() *RenderConfig {
+func fixAspectRatio(args *RenderParameters) {
 	planeSize := args.PlaneSize()
 	planeWidth := real(planeSize)
 	planeHeight := imag(planeSize)
@@ -113,11 +111,19 @@ func (args RenderParameters) Configure() *RenderConfig {
 			args.Frame = CornerFrame
 		}
 	}
+}
+
+// Configure the render parameters into something working
+// Fixes aspect ratio
+func (args RenderParameters) Configure() *RenderConfig {
+	corrected := &args
+	fixAspectRatio(corrected)
+	planeSize := args.PlaneSize()
 
 	return &RenderConfig{
-		RenderParameters: args,
-		HorizUnit:        planeWidth / float64(args.Width),
-		VerticalUnit:     planeHeight / float64(args.Height),
+		RenderParameters: *corrected,
+		HorizUnit:        real(planeSize) / float64(args.Width),
+		VerticalUnit:     imag(planeSize) / float64(args.Height),
 		ImageLeft:        0,
 		ImageTop:         0,
 	}
