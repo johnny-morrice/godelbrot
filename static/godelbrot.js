@@ -127,19 +127,20 @@ function defaultMandelbrotDimensions() {
     var pAspect = pWidth / pHeight;
     var imageAspect = elemDim.imageWidth / elemDim.imageHeight;
 
+    var expectWidth;
     if (pAspect > imageAspect) {
         // Expecting excess at bottom of image
-        var resize = pWidth / imageAspect;
+        var taller = pWidth / imageAspect;
         // Add excess to top and bottom, in order to center image
-        var centerResize = resize / 4;
-        // My maths is telling me, this should be divided by 2
-        // My screen is telling it is divided by 4
+        var resize = taller - pHeight;
+        var centerResize = resize / 2;
         imagMin -= centerResize;
         imagMax += centerResize;
     } else if (pAspect < imageAspect) {
         // Expecting excess at right of image
-        var resize = pHeight * imageAspect;
-        var centerResize = resize / 4;
+        var fatter = pHeight * imageAspect;
+        var resize = fatter - pWidth;
+        var centerResize = resize / 2;
         realMin -= centerResize;
         realMax += centerResize;
     }
