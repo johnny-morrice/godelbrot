@@ -14,7 +14,7 @@ support 1.5 at the date of publication.
 
 This package has been hacked up quickly, and we haven't made it go-gettable yet.
 
-Wide distribution isn't a priority till we reach out development goals (more on 
+Wide distribution isn't a priority till we reach our development goals (more on 
 them to come!)
 
 To get started with the command line tool, clone this repository and then
