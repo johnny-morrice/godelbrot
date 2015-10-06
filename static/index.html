@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="style.css">
     <script src="godelbrot.js"></script>
   </head>
-  <body onload="render(-2.01, 0.59, -1.89, 1.13)">
+  <body onload="restart()" onresize="resize()">
     <img class="center" id="fractal" src="" alt="Mandelbrot set">
-    <div id="toolbar" class="center">
+    <div id="toolbar">
         <img class="logo" src="small-logo.png" alt="Godelbrot logo">
         <span>Godelbrot fractal explorer</span> |
-        <span class="control">restart</span>
-        <span class="control">back</span>
+        <a class="control" href="" onclick="return restartClick();">restart</a>
+        <a class="control" href="" onclick="return fractalBackClick();">back</a>
     </div>
   </body>
 </html>
