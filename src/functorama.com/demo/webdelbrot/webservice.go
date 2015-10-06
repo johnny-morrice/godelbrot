@@ -8,6 +8,7 @@ import (
     "image/png"
     "log"
     "functorama.com/demo/libgodelbrot"
+    "bytes"
 )
 
 type WebCommand string
@@ -102,6 +103,14 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
             log.Fatal(fmt.Sprintf("Render error: %v", renderError))
         }
 
+        buff := bytes.Buffer{}
+        pngError := png.Encode(&buff, pic)
+
+        if pngError != nil {
+            log.Println("Error encoding PNG: ", pngError)
+            http.Error(w, fmt.Sprintf("Error encoding PNG: %v", pngError), 500)
+        }
+
         responsePacket := GodelbrotPacket{
             Command: displayImage,
             Metadata: metadata,
@@ -118,10 +127,8 @@ func makeWebserviceHandler() func(http.ResponseWriter, *http.Request) {
         // Respond to the request
         w.Header().Set("Content-Type", "image/png")
         w.Header().Set(godelbrotHeader, string(responseHeaderPacket))
-        pngError := png.Encode(w, pic)
 
-        if pngError != nil {
-            log.Fatal("Error encoding PNG: ", pngError)
-        }
+        // Write image buffer as http response
+        w.Write(buff.Bytes())
     }
 }
