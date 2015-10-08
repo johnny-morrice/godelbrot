@@ -25,8 +25,8 @@ func NewRegion(topLeft complex128, bottomRight complex128) Region {
 	trPos := complex(right, top)
 	blPos := complex(left, bottom)
 	midPos := complex(
-		left+((right-left)/2.0),
-		bottom+((top-bottom)/2.0),
+		(right+left) / 2.0,
+		(top+bottom) / 2.0,
 	)
 
 	tl := NewEscapePoint(topLeft)
@@ -101,9 +101,9 @@ func (r Region) Uniform() bool {
 // An anologous glitch happens when the entire region is much larger than the set
 // We handle both these cases here
 func (r Region) onGlitchCurve(config *RenderConfig) bool {
-	member := r.topLeft.membership
-	iDiv := member.InvDivergence
-	if iDiv == 0 || iDiv == 1 || member.InSet {
+	checkMember := r.topLeft.membership
+	iDiv := checkMember.InvDivergence
+	if iDiv == 0 || iDiv == 1 || checkMember.InSet {
 		sqrtChecks := 10
 		sqrtChecksF := float64(sqrtChecks)
 		tl := r.topLeft.c
@@ -146,10 +146,10 @@ func (r Region) Split(heap *EscapePointHeap) Subregion {
 	leftSideMid := heap.EscapePoint(left, midI)
 	rightSideMid := heap.EscapePoint(right, midI)
 
-	leftSectorMid := left + ((midR - left) / 2.0)
-	rightSectorMid := midR + ((right - midR) / 2.0)
-	topSectorMid := midI + ((top - midI) / 2.0)
-	bottomSectorMid := bottom + ((midI - bottom) / 2.0)
+	leftSectorMid := (midR + left) / 2.0
+	rightSectorMid :=  (right + midR) / 2.0
+	topSectorMid := (top + midI) / 2.0
+	bottomSectorMid := (midI + bottom) / 2.0
 
 	tl := Region{
 		topLeft:     r.topLeft,
