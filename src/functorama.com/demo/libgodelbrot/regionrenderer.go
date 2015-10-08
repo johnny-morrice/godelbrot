@@ -12,10 +12,8 @@ func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
 
 func RegionRenderImage(drawingContext DrawingContext) {
 	config := drawingContext.Config
-	initialRegion := WholeRegion(config)
-	escapePointHeap := NewEscapePointHeap(K64)
-	renderConfigHeap := NewRenderConfigHeap(config, K64)
-	uniformRegions, smallRegions := subdivideRegions(config, initialRegion, escapePointHeap)
+	initialRegion := config.WholeRegionRenderContext()
+	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
@@ -24,15 +22,15 @@ func RegionRenderImage(drawingContext DrawingContext) {
 
 	// Add detail from the small regions next
 	for _, region := range smallRegions {
-		RenderSequentialRegion(region, drawingContext, renderConfigHeap)
+		RenderSequentialRegion(region)
 	}
 }
 
-func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap) ([]Region, []Region) {
+func SubdivideRegions(whole RegionRenderContext) ([]RegionRenderContext, []RegionRenderContext) {
 	// Lots of preallocated space for regions and region pointers
-	completeRegions := make([]Region, 0, K64)
-	smallRegions := make([]Region, 0, K64)
-	splittingRegions := make([]Region, 1, K64)
+	completeRegions := make([]RegionRenderContext, 0, allocMedium)
+	smallRegions := make([]RegionRenderContext, 0, allocMedium)
+	splittingRegions := make([]RegionRenderContext, 1, allocMedium)
 
 	// Split regions
 	splittingRegions[0] = whole
@@ -46,10 +44,9 @@ func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap)
 			smallRegions = append(smallRegions, splitee)
 		} else {
 			// If the region is not too small, two things can happen
-			subregion := splitee.Subdivide(config, heap)
 			// B. The region needs subdivided because it covers distinct parts of the plane
-			if subregion.populated {
-				splittingRegions = append(splittingRegions, subregion.children...)
+			if Subdivide(splitee) {
+				splittingRegions = append(splittingRegions, splitee.Children() ...)
 				// C. The region need not be divided
 			} else {
 				completeRegions = append(completeRegions, splitee)
@@ -60,9 +57,7 @@ func subdivideRegions(config *RenderConfig, whole Region, heap *EscapePointHeap)
 	return completeRegions, smallRegions
 }
 
-func RenderSequentialRegion(region Region, drawingContext DrawingContext, heap *RenderConfigHeap) {
-	// Create config for rendering this region
-	smallConfig := heap.Subconfig(region)
-	smallContext := CreateContext(smallConfig, drawingContext.ColorPalette, drawingContext.Pic)
+func RenderSequentialRegion(region RegionRenderContext) {
+	smallContext := region.SubSequentialConfig()
 	SequentialRenderImage(smallContext)
 }

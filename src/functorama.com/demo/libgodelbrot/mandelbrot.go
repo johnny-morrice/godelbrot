@@ -1,34 +1,23 @@
 package libgodelbrot
 
-import (
-	"math"
-)
-
-type MandelbrotMember struct {
-	InSet         bool
-	InvDivergence uint8
-	C             complex128
+type MandelbrotMember interface {
+    InverseDivergence() uint8
+    SetMember() bool
 }
 
-func Mandelbrot(c complex128, iterateLimit uint8, divergeLimit float64) MandelbrotMember {
-	var z complex128 = 0
-	var i uint8 = 0
-	sqrtDl := math.Sqrt(divergeLimit)
-	for ; i < iterateLimit && withinMandLimit(z, sqrtDl); i++ {
-		z = (z * z) + c
-	}
-
-	return MandelbrotMember{
-		InSet:         i >= iterateLimit,
-		InvDivergence: i,
-		C:             c,
-	}
+type MandelbrotKind interface {
+    Mandelbrot(iterateLimit uint8, divergeLimit float64)
 }
 
-func withinMandLimit(z complex128, limit float64) bool {
-	// Approximate cmplx.Abs
-	negLimit := -limit
-	x := real(z)
-	y := imag(z)
-	return x < limit && x > negLimit && y < limit && y > negLimit
+type BaseMandelbrot struct {
+    InvDivergence uint8
+    InSet bool
+}
+
+func (base BaseMandelbrot) InverseDivergence() uint8 {
+    return base.InvDivergence
+}
+
+func (base BaseMandelbrot) SetMember() bool {
+    return base.InSet
 }

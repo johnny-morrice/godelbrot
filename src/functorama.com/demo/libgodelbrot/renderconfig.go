@@ -35,6 +35,8 @@ type RenderParameters struct {
 	BufferSize uint
 	// Fix aspect
 	FixAspect bool
+	// Factory for complex types
+	Complex ComplexFactory
 }
 
 func (config RenderParameters) PlaneTopLeft() complex128 {
