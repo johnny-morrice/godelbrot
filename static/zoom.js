@@ -11,14 +11,12 @@ ZoomBox.prototype.zoomStep = function(mouseX, mouseY) {
         case ZoomState.select():
             var cDims = {};
             var boxDims = this.boxDims;
-            console.log(boxDims);
             var cMin = imageToPlane(boxDims.minX, boxDims.minY);
             var cMax = imageToPlane(boxDims.maxX, boxDims.maxY);
             cDims.realMin = cMin.real;
             cDims.realMax = cMax.real;
             cDims.imagMin = cMax.imag; // Note on plane y is upside down
             cDims.imagMax = cMin.imag; 
-            console.log(cDims);
             var mandelbrot = new Mandelbrot(cDims, imageDimensions());
             History.getRenderHistory().render(mandelbrot);
             this.cancel();

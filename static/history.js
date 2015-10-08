@@ -10,9 +10,8 @@ RenderHistory.prototype.resizeRender = function() {
 
 // Render the last fractal in the history
 RenderHistory.prototype.fractalBack = function() {
-    var last = this.hist.pop();
-    if (!this.hist.length) {
-        this.hist.push(last);
+    if (this.hist.length > 1) {
+        this.hist.pop();
     }
     this.resizeRender();
 }
