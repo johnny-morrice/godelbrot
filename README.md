@@ -4,6 +4,10 @@
 
 A web-based, multithreaded Mandelbrot set explorer in Go
 
+Check out a running instance on:
+
+http://mandelbrot.functorama.com/
+
 ## Dependencies
 
 godelbrot has no dependencies outside of the go compiler, and its standard 
