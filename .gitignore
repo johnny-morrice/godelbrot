@@ -1,8 +1,7 @@
 bin
 pkg
 mandelbrot.png
-cpu.out
-mem.out
+*.out
 libgodelbrot.test
 src/github.com
 *.memprof
