@@ -5,5 +5,7 @@ mandelbrot.png
 *.out
 libgodelbrot.test
 src/github.com
+src/golang.org
 *.memprof
 *.cpuprof
+

@@ -23,9 +23,12 @@ import (
 
 // Normalized size of box containing Mandelbrot set
 const MagicSetSize complex128 = 2.60 + 2.24i
-
 // Default offset for top left of plane containing set
 const MagicOffset complex128 = -2.01 + 1.13i
+// Named bignums
+var bigZero big.Float = NewFloat(0)
+var bigOne big.Float = NewFloat(1)
+var bigTwo big.Float = NewFloat(2)
 
 // DEFAULTS
 
@@ -35,23 +38,20 @@ const DefaultIterations uint8 = 255
 const DefaultDivergeLimit float64 = 4.0
 const DefaultImageWidth uint = 800
 const DefaultImageHeight uint = 600
-const DefaultZoom float64 = 1.0
 const DefaultCollapse uint = 2
 const DefaultBufferSize uint = 256
+// Default base for newly parsed numbers
+const DefaultBase uint = 10
+// Default high precision for newly created big floats
+const DefaultHighPrec uint = 500
+// What we consider to be a tiny image area, by default
+const DefaultTinyImageArea uint = 40000
+// What we consider to be a small number of render jobs
+const DefaultLowThreading uint = 2
 
 // OPERATIONAL CONSTANTS
 
-// A fairly large number
-const allocLarge uint = 1048576
-
 // A medium sized number
 const allocMedium uint = allocSmall * 64
-
 // A small number
 const allocSmall uint = 1024
-
-
-// Bignums
-var bigZero big.Float = NewFloat(0)
-var bigOne big.Float = NewFloat(1)
-var bigTwo big.Float = NewFloat(2)
