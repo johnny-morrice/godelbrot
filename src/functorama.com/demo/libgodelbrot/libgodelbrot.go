@@ -7,12 +7,12 @@ func Godelbrot(desc RenderDescription) (image.NRGBA, error) {
         return nil, error
     }
 
-    return facade.Render()
+    return facade.Render(), nil
 }
 
 // Based on the description, choose a renderer, numerical system and palette
 // and combine them into a coherent render context
-func GodelbrotRenderContext(desc RenderDescription) (context RenderContext, error) {
+func GodelbrotRenderContext(desc RenderDescription) (RenderContext, error) {
     initializer, err := InitializeContext(desc)
     if err != nil {
         return nil, err

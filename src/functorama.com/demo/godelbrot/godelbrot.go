@@ -3,13 +3,35 @@ package main
 import (
 	"errors"
 	"flag"
-	"functorama.com/demo/libgodelbrot"
 	"image/png"
+	"image"
 	"log"
 	"os"
 	"runtime"
+	"functorama.com/demo/libgodelbrot"
 )
 
+// Golang entry point
+func main() {
+		// Set number of cores
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	args := parseArguments()
+
+	// Render the Mandelbrot set
+	picture, renderError := renderFractal(args
+	if renderError != nil {
+		log.Fatal(renderError)
+	}
+
+	// Save the Mandelbrot set image to a file
+	fileError := writePNGFile(args, picture)
+	if fileError != nil {
+		log.Fatal(renderError)
+	}
+}
+
+// Structure representing our command line arguments
 type commandLine struct {
 	iterateLimit   uint
 	divergeLimit   float64
@@ -30,7 +52,9 @@ type commandLine struct {
 	glitchSamples uint
 }
 
-func parseArguments(args *commandLine) {
+// Parse command line arguments into a `commandLine' structure
+func parseArguments() commandLine {
+	args := commandLine{}
 	realMin := string(real(libgodelbrot.MagicOffset))
 	imagMax := string(imag(libgodelbrot.MagicOffset))
 	realMax := string(realMin + real(libgodelbrot.MagicSetSize))
@@ -78,9 +102,27 @@ func parseArguments(args *commandLine) {
 	flag.BoolVar(&args.fixAspect, "fixAspect", 
 		true, "Resize plane window to fit image aspect ratio")
 	flag.Parse()
+
+	return args
 }
 
-func extractRenderParameters(args commandLine) (libgodelbrot.RenderContext, error) {
+// Given the command line arguments, render the mandelbrot set
+func renderFractal(args commandLine) (image.NRGBA, error) {
+	renderDescription, validationError := extractRenderParameters(args)
+	if validationError != nil {
+		return nil, validationError
+	}
+
+	picture, renderError := libgodelbrot.Godelbrot(renderDescription)
+	if renderError != nil {
+		return nil, renderError
+	}
+
+	return picture, nil
+}
+
+// Validate and extract a render description from the command line arguments
+func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, error) {
 	if args.iterateLimit > 255 {
 		return nil, errors.New("iterateLimit out of bounds (uint8)")
 	}
@@ -104,28 +146,13 @@ func extractRenderParameters(args commandLine) (libgodelbrot.RenderContext, erro
 		Renderer: mode,
 		Jobs: args.jobs,
 	}
-	context := description.CreateInitialRenderContext()
 	
-	return context, nil
+	return description, nil
 }
 
-func main() {
-		// Set number of cores
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	args := commandLine{}
-	parseArguments(&args)
-
-	context, validationError := extractRenderParameters(args)
-	if validationError != nil {
-		log.Fatal(validationError)
-	}
-
-	image, renderError := context.Render()
-	if renderError != nil {
-		log.Fatal(renderError)
-	}
-
+// Given the command line arguments and a picture, write the picture to a PNG
+// file
+func writePNGFile(args commandLine, picture image.NRGBA)
 	file, fileError := os.Create(args.filename)
 
 	if fileError != nil {
@@ -133,7 +160,7 @@ func main() {
 	}
 	defer file.Close()
 
-	writeError := png.Encode(file, image)
+	writeError := png.Encode(file, picture)
 
 	if writeError != nil {
 		log.Fatal(writeError)
