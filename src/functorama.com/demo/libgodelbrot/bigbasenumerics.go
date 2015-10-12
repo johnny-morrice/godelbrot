@@ -107,8 +107,8 @@ func (bigFloat BigBaseNumerics) PictureMax() (int, int) {
     return bigFloat.picXMax, bigFloat.picYMax
 }
 
-func (bigFloat BigBaseNumerics) PlaneTopLeft() complex128 {
-    return complex(bigFloat.realMin, bigFloat.imagMax)
+func (bigFloat BigBaseNumerics) PlaneTopLeft() BigComplex {
+    return BigComplex{bigFloat.realMin, bigFloat.imagMax}
 }
 
 // Size on the plane of 1px
@@ -120,22 +120,28 @@ func (bigFloat BigBaseNumerics) MandelbrotLimits (int, big.Float) {
     return bigFloat.iterLimit, bigFloat.divergeLimit
 }
 
-func (bigFloat BigBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
+func (bigFloat BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
     topLeft := bigFloat.PlaneTopLeft()
     rUnit, iUnit := bigFloat.PixelSize()
+
     // Translate x
-    tx := real(c) - real(topLeft)
+    x := bigFloat.NewBigFloat(0.0)
+    x.Sub(c.Real(), topLeft.Real())
     // Scale x
-    sx := tx / rUnit
+    x.Quo(x, rUnit)
 
     // Translate y
-    ty := imag(c) - imag(topLeft)
+    y := bigFloat.NewBigFloat(0.0)
+    y.Sub(c.Imag(), topLeft.Imag())
     // Scale y
-    sy := ty / iUnit
+    y.Quo(y, iUnit)
 
-    rx = math.Floor(sx)
+    fx, _ = x.Float64()
+    fy, _ = y.Float64()
+
+    rx = math.Floor(fx)
     // Remember that we draw downwards
-    ry = math.Ceil(-sy)
+    ry = math.Ceil(-fy)
 
     return
 }
