@@ -4,18 +4,19 @@ import (
 	"image"
 )
 
-type SequentialRenderContext interface {
-	MandelbrotSequence()
-	SetSequencerDrawingContext(drawingContext DrawingContext)
+type SequentialRenderStrategy struct {
+    Meditator *ContextMediator
 }
 
-func SequentialRender(config SeqentialRenderContext, palette Palette) (*image.NRGBA, error) {
-	pic := config.BlankImage()
-	config.SequentialRenderImage(config, CreateContext(config, palette, pic))
-	return pic, nil
+func NewSequentialRenderer(meditator *ContextMediator) *RegionRenderStrategy {
+    return &SequentialRenderStrategy{Meditator: meditator}
 }
 
-func SequentialRenderImage(config SequentialRenderContext, drawingContext DrawingContext) {
-	config.SetSequencerDrawingContext(drawingContext)
-	config.MandelbrotSequence()
+// The SequentialRenderStrategy implements RenderContext as it draws the
+// Mandelbrot set line by line
+func (renderer SequentialRenderStrategy) Render() (image.NRGBA, error) {
+    numerics := renderer.Meditator.SequentialNumerics()
+    numerics.ImageDrawSequencer()
+    numerics.MandelbrotSequence()
+    return numerics.Picture(), nil
 }

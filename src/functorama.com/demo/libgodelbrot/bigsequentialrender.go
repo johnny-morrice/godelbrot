@@ -1,11 +1,11 @@
 package libgodelbrot
 
-func (config *BigConfig) MandelbrotSequence() {
-    topLeft := config.PlaneTopLeft()
+func (bigFloat *BigFloatNumerics) MandelbrotSequence() {
+    topLeft := bigFloat.PlaneTopLeft()
 
-    imageLeft, imageTop := config.ImageTopLeft()
-    maxH := int(config.Width) + int(imageLeft)
-    maxV := int(config.Height) + int(imageTop)
+    imageLeft, imageTop := bigFloat.ImageTopLeft()
+    maxH := int(bigFloat.Width) + int(imageLeft)
+    maxV := int(bigFloat.Height) + int(imageTop)
 
     x := topLeft.Real()
     for i := int(imageLeft); i < maxH; i++ {
@@ -14,10 +14,10 @@ func (config *BigConfig) MandelbrotSequence() {
             member := BigMandelbrotMember{
                 C: BigComplex{x, y},
             }
-            &member.Mandelbrot(config.IterateLimit, config.DivergeLimit)
-            config.Sequencer(i, j, member)
-            y.Sub(y, config.VerticalUnit)
+            &member.Mandelbrot(bigFloat.IterateLimit, bigFloat.DivergeLimit)
+            bigFloat.Sequencer(i, j, member)
+            y.Sub(y, bigFloat.VerticalUnit)
         }
-        x.Add(x, config.HorizUnit)
+        x.Add(x, bigFloat.HorizUnit)
     }
 }

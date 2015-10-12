@@ -4,33 +4,39 @@ import (
 	"image"
 )
 
-func RegionRender(config *RenderConfig, palette Palette) (*image.NRGBA, error) {
-	pic := config.BlankImage()
-	RegionRenderImage(CreateContext(config, palette, pic))
-	return pic, nil
+type RegionRenderStrategy struct {
+	Context *ContextFacade
 }
 
-func RegionRenderImage(drawingContext DrawingContext) {
-	config := drawingContext.Config
-	initialRegion := config.WholeRegionRenderContext()
+func NewRegionRenderer(meditator *ContextFacade) *RegionRenderStrategy {
+	return &RegionRenderStrategy{Context: meditator}
+}
+
+// The RegionRenderStrategy implements RenderNumerics with this method that
+// draws the Mandelbrot set uses a "similar rectangles" optimization
+func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
+	numerics := renderer.Context.RegionNumerics()
+	initialRegion := numerics.WholeRegion()
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
-		drawingContext.DrawUniform(region)
+		drawingNumerics.DrawUniform(region)
 	}
 
 	// Add detail from the small regions next
 	for _, region := range smallRegions {
 		RenderSequentialRegion(region)
 	}
+
+	return numerics.Picture()
 }
 
-func SubdivideRegions(whole RegionRenderContext) ([]RegionRenderContext, []RegionRenderContext) {
+func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics) {
 	// Lots of preallocated space for regions and region pointers
-	completeRegions := make([]RegionRenderContext, 0, allocMedium)
-	smallRegions := make([]RegionRenderContext, 0, allocMedium)
-	splittingRegions := make([]RegionRenderContext, 1, allocMedium)
+	completeRegions := make([]RegionNumerics, 0, allocMedium)
+	smallRegions := make([]RegionNumerics, 0, allocMedium)
+	splittingRegions := make([]RegionNumerics, 1, allocMedium)
 
 	// Split regions
 	splittingRegions[0] = whole
@@ -55,9 +61,4 @@ func SubdivideRegions(whole RegionRenderContext) ([]RegionRenderContext, []Regio
 	}
 
 	return completeRegions, smallRegions
-}
-
-func RenderSequentialRegion(region RegionRenderContext) {
-	smallContext := region.SubSequentialConfig()
-	SequentialRenderImage(smallContext)
 }

@@ -3,9 +3,6 @@ package libgodelbrot
 type MandelbrotMember interface {
     InverseDivergence() uint8
     SetMember() bool
-}
-
-type MandelbrotKind interface {
     Mandelbrot(iterateLimit uint8, divergeLimit float64)
 }
 

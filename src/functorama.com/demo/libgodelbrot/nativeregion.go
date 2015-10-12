@@ -4,19 +4,21 @@ import (
 	"image"
 )
 
-type NativeSubregion struct {
+type nativeSubregion struct {
 	populated bool
 	children  []NativeRegion
 }
 
-type NativeRegionRenderContext struct {
-	Region NativeRegion
-	Subregion NativeSubregion
-	Config *NativeConfig
-	Heap *NativeEscapePointHeap
+// Extend NativeBaseNumerics and add support for regions
+type NativeRegionNumerics struct {
+	NativeBaseNumerics
+	region nativeRegion
+	subregion nativeSubregion
+	heap *NativeMandelbrotThunkHeap
+	collapseSize int
 }
 
-type NativeRegion struct {
+type nativeRegion struct {
 	topLeft     *NativeEscapePoint
 	topRight    *NativeEscapePoint
 	bottomLeft  *NativeEscapePoint
@@ -24,39 +26,8 @@ type NativeRegion struct {
 	midPoint    *NativeEscapePoint
 }
 
-func CreateNativeRegion(topLeft complex128, bottomRight complex128) NativeRegion {
-	left := real(topLeft)
-	right := real(bottomRight)
-	top := imag(topLeft)
-	bottom := imag(bottomRight)
-	trPos := complex(right, top)
-	blPos := complex(left, bottom)
-	midPos := complex(
-		(right+left) / 2.0,
-		(top+bottom) / 2.0,
-	)
-
-	tl := NewNativeEscapePoint(topLeft)
-	tr := NewNativeEscapePoint(trPos)
-	bl := NewNativeEscapePoint(blPos)
-	br := NewNativeEscapePoint(bottomRight)
-	mid := NewNativeEscapePoint(midPos)
-
-	return NativeRegion{
-		topLeft:     tl,
-		topRight:    tr,
-		bottomLeft:  bl,
-		bottomRight: br,
-		midPoint:    mid,
-	}
-}
-
-func WholeNativeRegion(config *NativeConfig) NativeRegion {
-	return CreateNativeRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
-}
-
-func (context *NativeRegionRenderContext) MandelbrotPoints() {
-	r := context.Region
+func (native *NativeRegionNumerics) MandelbrotPoints() {
+	r := native.Region
 	return []MandelbrotMember {
 		r.topLeft.membership,
 		r.topRight.membership,
@@ -66,8 +37,8 @@ func (context *NativeRegionRenderContext) MandelbrotPoints() {
 	}
 }
 
-func (context *NativeRegionRenderContext) EvaluateAllPoints() {
-	r := context.Region
+func (native *NativeRegionNumerics) EvaluateAllPoints() {
+	r := native.Region
     points := []*NativeEscapePoint{
 		r.topLeft,
 		r.topRight,
@@ -77,11 +48,7 @@ func (context *NativeRegionRenderContext) EvaluateAllPoints() {
 	}
     // Ensure points are all evaluated
     for _, p := range points {
-        if !p.evaluated {
-            p.membership.C = p.c
-            (&p.membership).Mandelbrot(config.IterateLimit, config.DivergeLimit)
-            p.evaluated = true
-        }
+        EvalThunk(p)
     }
 }
 
@@ -89,12 +56,10 @@ func (context *NativeRegionRenderContext) EvaluateAllPoints() {
 // Due to the shape of the set, a rectangular Nativeregion is not a good approximation
 // An anologous glitch happens when the entire Nativeregion is much larger than the set
 // We handle both these cases here
-func (context *NativeRegionRenderContext) OnGlitchCurve() bool {
-	r := context.Region
-	config := context.Config
-	member := r.topLeft.membership
-	iDiv := member.InvDivergence
-	if iDiv == 0 || iDiv == 1 || member.InSet {
+func (native *NativeRegionNumerics) OnGlitchCurve() bool {
+	member := native.RegionMember()
+	iDiv := member.InvDivergence()
+	if iDiv == 0 || iDiv == 1 || member.InSet() {
 		sqrtChecks := 10
 		sqrtChecksF := float64(sqrtChecks)
 		tl := r.topLeft.c
@@ -110,7 +75,7 @@ func (context *NativeRegionRenderContext) OnGlitchCurve() bool {
 				checkMember := NativeMandelbrotMember {
 					C: complex(x, y),
 				}
-				&checkMember.Mandelbrot(config.IterateLimit, config.DivergeLimit)
+				&checkMember.Mandelbrot(native.IterateLimit(), native.DivergeLimit())
 				if member.InvDivergence != iDiv {
 					return true
 				}
@@ -123,9 +88,9 @@ func (context *NativeRegionRenderContext) OnGlitchCurve() bool {
 	return false
 }
 
-func (context *NativeRegionRenderContext) Split() {
-	heap := context.Heap
-	r := context.Region
+func (native *NativeRegionNumerics) Split() {
+	heap := native.Heap
+	r := native.Region
 
 	topLeftPos := r.topLeft.c
 	bottomRightPos := r.bottomRight.c
@@ -177,20 +142,26 @@ func (context *NativeRegionRenderContext) Split() {
 		midPoint:    heap.NativeEscapePoint(rightSectorMid, bottomSectorMid),
 	}
 
-	context.Subregion = NativeSubregion{
+	native.Subregion = NativeSubregion{
 		populated: true,
 		children:  []NativeRegion{tl, tr, bl, br},
 	}
 }
 
-func (context *NativeRegionRenderContext) Rect() image.Rectangle {
-	l, t := context.Config.PlaneToPixel(Nativeregion.topLeft.c)
-	r, b := context.Config.PlaneToPixel(Nativeregion.bottomRight.c)
+func (native *NativeRegionNumerics) Rect() image.Rectangle {
+	l, t := native.PlaneToPixel(native.Region.topLeft.c)
+	r, b := native.PlaneToPixel(native.Region.bottomRight.c)
 	return image.Rect(int(l), int(t), int(r), int(b))
 }
 
-func (context *NativeRegionRenderContext) Collapse() bool {
-	rect := context.rect
-	iCollapse := int(context.Config.NativeRegionCollapse)
+func (native *NativeRegionNumerics) Collapse() bool {
+	rect := native.rect
+	iCollapse := native.collapseSize
 	return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
+}
+
+// Return MandelbrotMember
+// Does not check if the region's thunks have been evaluated
+func (native *NativeRegionNumerics) RegionMember() MandelbrotMember {
+	return native.Region.topLeft.member
 }

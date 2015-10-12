@@ -15,12 +15,6 @@ type renderInput struct {
     regions []RegionRenderContext
 }
 
-type pixelMember struct {
-    i int
-    j int
-    MandelbrotMember
-}
-
 type renderOutput struct {
     uniformRegions []RegionRenderContext
     children       []RegionRenderContext

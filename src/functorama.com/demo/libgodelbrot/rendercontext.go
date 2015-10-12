@@ -6,7 +6,14 @@ import (
     "math/big"
     "math"
     "strconv"
+    "image"
+    "runtime"
 )
+
+// Something that can render the mandelbrot set
+type RenderContext interface {
+    Render() (image.Image, error)
+}
 
 type PaletteKind uint
 
@@ -57,6 +64,33 @@ type RenderDescription {
     Numerics NumericsMode
 }
 
+// Based on the description, choose a renderer, numerical system and palette
+// and combine them into a coherent render context
+func (desc RenderDescription) CreateInitialRenderContext() (context RenderContext, err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            switch r := r.(type) {
+            case runtime.Error:
+                panic(r)
+            default:
+                err = r.(error)
+            }
+        }
+    }()
+
+    context = &ContextFacade{
+        Info: RenderInfo {
+            UserDescription: desc
+        }
+    }
+
+    context.initNumerics()
+    context.initRenderStrategy()
+    context.initPalette()
+
+    return
+}
+
 type RenderInfo struct {
     UserDescription RenderDescription
     // Describe the render strategy in use
@@ -81,124 +115,145 @@ type RenderInfo struct {
     BigImagMax big.Float
 }
 
-type ContextMediator struct {
+type ContextFacade struct {
     Info RenderInfo
     Numerics NumericsSystem
-    Renderer RenderStrategy
+    Renderer RenderContext
     // The palette
     Palette Palette
 }
 
-// Based on the description, choose a renderer, numerical system and palette
-// and combine them into a coherent render context
-func (desc RenderDescription) CreateInitialRenderContext() RenderContext {
-    mediator := &ContextMediator{
-        Info: RenderInfo {
-            UserDescription: desc
-        }
-    }
-
-    mediator.initNumerics()
-    mediator.initRenderStrategy()
-    mediator.initPalette()
+// Provide the iteration and divergence limits
+func (context *ContextFacade) Limits() (uint, float64) {
+    desc := context.Info.UserDescription
+    return desc.IterateLimit, desc.DivergeLimit
 }
 
-func (mediator *ContextMediator) initPalette() {
-    desc := mediator.Info.UserDescription
+// Provide the region collapse size
+func (context *ContextFacade) RegionCollapseSize() uint {
+    return context.Info.UserDescription.RegionCollapse
+}
+
+// Provide the image dimensions
+func (context *ContextFacade) PictureDimensions() (uint, uint) {
+    desc := context.Info.UserDescription
+    return desc.ImageWidth, desc.ImageHeight
+}
+
+// Provide the min and max plane coordinates, respectively, as defined by the user
+func (context *ContextFacade) NativeUserCoords() (complex128, complex128) {
+    info := context.Info
+    return complex(info.RealMin, info.RealMax), complex(info.ImagMin, info.ImagMax)
+}
+
+func (context *ContextFacade) FixAspect() bool {
+    return context.Info.UserDescription.FixAspect
+}
+
+func (context *ContextFacade) SequentialNumerics() SequentialNumerics {
+    return context.Numerics
+}
+
+func (context *ContextFacade) RegionNumerics() RegionNumerics {
+    return context.Numerics
+}
+
+func (context *ContextFacade) initPalette() {
+    desc := context.Info.UserDescription
     // We are planning more types of palettes soon
     switch desc.PaletteType {
     case StoredPalette:
-        mediator.createStoredPalette(desc.PaletteCode)
+        context.createStoredPalette(desc.PaletteCode)
     default:
         panic(fmt.Sprintf("Unknown palette kind: %v", desc.PaletteType))
     }
 }
 
 // Initialize the render system
-func (mediator *ContextMediator) initRenderStrategy() {
-    desc := mediator.Info.UserDescription
+func (context *ContextFacade) initRenderStrategy() {
+    desc := context.Info.UserDescription
     switch desc.RenderMode {
     case AutoDetectRenderMode:
-        mediator.chooseFastRenderStrategy()
+        context.chooseFastRenderStrategy()
     case SequentialRenderMode:
-        mediator.useSequentialRenderer()
+        context.useSequentialRenderer()
     case RegionRenderMode:
-        mediator.useRegionRenderer()
+        context.useRegionRenderer()
     case ConcurrentRegionRenderMode:
-        mediator.useConcurrentRegionRenderer()
+        context.useConcurrentRegionRenderer()
     default:
         panic(fmt.Sprintf("Unknown render mode: %v", desc.RenderMode))
     }
 }
 
 // Initialize the numerics system
-func (mediator *ContextMediator) initNumerics() {  
-    desc := mediator.Info.UserDescription
-    mediator.parseUserCoords()
+func (context *ContextFacade) initNumerics() {  
+    desc := context.Info.UserDescription
+    context.parseUserCoords()
     switch desc.Numerics {
     case AutoDetectNumericsMode:
-        mediator.chooseAccurateNumerics()
+        context.chooseAccurateNumerics()
     case NativeNumericsMode:
-        mediator.useNativeNumerics()
+        context.useNativeNumerics()
     case BigFloatNumericsMode:
-        mediator.useBigFloatNumerics()
+        context.useBigFloatNumerics()
     default:
         panic(fmt.Sprintf("Unknown numerics mode: %v", desc.Numerics))
     }
 }
 
-func (mediator *ContextMediator) createStoredPalette() {
+func (context *ContextFacade) createStoredPalette() {
     palettes := map[string]PaletteFactory {
         "redscale": NewRedscalePalette,
         "pretty": NewPrettyPalette,
     }
-    code := mediator.Info.UserDescription.PaletteCode
+    code := context.Info.UserDescription.PaletteCode
     found := palettes[code]
     if found == nil {
         log.Fatal("Unknown palette: ", code)
     }
-    mediator.Palette = found
+    context.Palette = found
 }
 
-func (mediator *ContextMediator) chooseAccurateNumerics() {
-    desc := mediator.Info.UserDescription
+func (context *ContextFacade) chooseAccurateNumerics() {
+    desc := context.Info.UserDescription
 
     realAccurate := isPixelPerfect(desc.RealMin, desc.RealMax, desc.Width)
     imagAccurate := isPixelPerfect(desc.ImagMin, desc.ImagMax, desc.Height)
 
     if realAccurate && imagAccurate {
-        mediator.useNativeNumerics()
+        context.useNativeNumerics()
     } else {
-        mediator.useBigFloatNumerics()
+        context.useBigFloatNumerics()
     }
 }
 
-func (mediator *ContextMediator) useNativeNumerics() {
-    mediator.Numerics = NewNativeNumerics(mediator)
-    mediator.Info.DetectedNumericsMode = NativeNumericsMode
+func (context *ContextFacade) useNativeNumerics() {
+    context.Numerics = NewNativeNumerics(context)
+    context.Info.DetectedNumericsMode = NativeNumericsMode
 }
 
-func (mediator *ContextMediator) useBigFloatNumerics() {
-    mediator.Info.DetectedNumericsMode = BigFloatNumericsMode
-    mediator.Numerics = NewBigFloatNumerics(mediator)
+func (context *ContextFacade) useBigFloatNumerics() {
+    context.Info.DetectedNumericsMode = BigFloatNumericsMode
+    context.Numerics = NewBigFloatNumerics(context)
 }
 
-func (mediator *ContextMediator) parseUserCoords() {
+func (context *ContextFacade) parseUserCoords() {
     nativeActions := []func(float64) {
-        func (realMin float64) { mediator.Info.NativeRealMin = realMin },
-        func (realMax float64) { mediator.Info.NativeRealMax = realMax },
-        func (imagMin float64) { mediator.Info.NativeImagMin = imagMin },
-        func (imagMax float64) { mediator.Info.NativeImagMax = imagMax },
+        func (realMin float64) { context.Info.NativeRealMin = realMin },
+        func (realMax float64) { context.Info.NativeRealMax = realMax },
+        func (imagMin float64) { context.Info.NativeImagMin = imagMin },
+        func (imagMax float64) { context.Info.NativeImagMax = imagMax },
     }
 
     bigActions := []func(big.Float) {
-        func (realMin big.Float) { mediator.Info.BigRealMin = realMin },
-        func (realMax big.Float) { mediator.Info.BigRealMax = realMax },
-        func (imagMin big.Float) { mediator.Info.BigImagMin = imagMin },
-        func (imagMax big.Float) { mediator.Info.BigImagMax = imagMax },
+        func (realMin big.Float) { context.Info.BigRealMin = realMin },
+        func (realMax big.Float) { context.Info.BigRealMax = realMax },
+        func (imagMin big.Float) { context.Info.BigImagMin = imagMin },
+        func (imagMax big.Float) { context.Info.BigImagMax = imagMax },
     }
 
-    desc := mediator.Info.UserDescription
+    desc := context.Info.UserDescription
     userInput := []string {
         desc.RealMin,
         desc.RealMax,
@@ -216,7 +271,7 @@ func (mediator *ContextMediator) parseUserCoords() {
 
         // Handle errors by vomiting organs
         if nativeErr != nil || bigErr != nil {
-            parseFatal(nativeErr ? nativeErr == nil : bigErr, inputNames[i])
+            parsePanic(nativeErr ? nativeErr == nil : bigErr, inputNames[i])
         }
 
         // Handle parse results
@@ -226,11 +281,11 @@ func (mediator *ContextMediator) parseUserCoords() {
 }
 
 // Choose an optimal strategy for rendering the image
-func (mediator *ContextMediator) chooseFastRenderStrategy() {
-    desc := mediator.Info.UserDescription
+func (context *ContextFacade) chooseFastRenderStrategy() {
+    desc := context.Info.UserDescription
 
     area := desc.ImageWidth * desc.ImageHeight
-    numerics := mediator.Info.DetectedNumericsMode
+    numerics := context.Info.DetectedNumericsMode
 
     if numerics == AutoDetectNumericsMode {
         panic("Must choose render strategy after numerics system")
@@ -239,30 +294,30 @@ func (mediator *ContextMediator) chooseFastRenderStrategy() {
     if area < DefaultTinyImageArea && numerics == NativeNumericsMode {
         // Use `SequenceRenderStrategy' when
         // We have native arithmetic and the image is tiny
-        mediator.useSequentialRenderer()
+        context.useSequentialRenderer()
     } else if desc.Jobs <= DefaultLowThreading {
         // Use `RegionRenderStrategy' when 
         // the number of jobs is small
-        mediator.useRegionRenderer()
+        context.useRegionRenderer()
     } else { 
         // Use `ConcurrentRegionRenderStrategy' otherwise
-        mediator.useConcurrentRegionRenderer()
+        context.useConcurrentRegionRenderer()
     }
 }
 
-func (mediator *ContextMediator) useSequentialRenderer() {
-    mediator.Renderer = NewSequentialRenderer(mediator)
-    mediator.Info.DetectedRenderStrategy = SequenceRenderStrategy
+func (context *ContextFacade) useSequentialRenderer() {
+    context.Renderer = NewSequentialRenderer(context)
+    context.Info.DetectedRenderStrategy = SequenceRenderMode
 }
 
-func (mediator *ContextMediator) useRegionRenderer() {
-    mediator.Renderer = NewRegionRenderer(mediator)
-    mediator.Info.DetectedRenderStrategy = RegionRenderStrategy
+func (context *ContextFacade) useRegionRenderer() {
+    context.Renderer = NewRegionRenderer(context)
+    context.Info.DetectedRenderStrategy = RegionRenderMode
 }
 
-func (mediator *ContextMediator) useConcurrentRegionRenderer() {
-    mediator.Renderer = NewConcurrentRegionRenderer(mediator)
-    mediator.Info.DetectedRenderStrategy
+func (context *ContextFacade) useConcurrentRegionRenderer() {
+    context.Renderer = NewConcurrentRegionRenderer(context)
+    context.Info.DetectedRenderStrategy = ConcurrentRegionRenderMode
 }
 
 // True if we can reperesent the required number of divisions between min and max
@@ -273,9 +328,9 @@ func isPixelPerfect(bottom float64, top float64, divisions uint) bool {
     return bottom < top
 }
 
-// Trigger a fatal error
-func parseFatal(err error, inputName string) {
-    log.Fatal("Could not parse '", inputName, "': ", err)
+// Panic to escape parsing
+func parsePanic(err error, inputName string) {
+    return panic(fmt.Sprintf("Could not parse %v: %v'", inputName, err))
 }
 
 // Parse a big.Float

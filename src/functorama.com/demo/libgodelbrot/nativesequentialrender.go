@@ -1,23 +1,47 @@
 package libgodelbrot
 
-func (config *NativeConfig) MandelbrotSequence() {
-    topLeft := config.PlaneTopLeft()
+type NativeSequentialNumerics struct {
+    NativeBaseNumerics
+    sequencer func(i int, j int, member NativeMandelbrotMember)
+    members []PixelMember
+}
 
-    imageLeft, imageTop := config.ImageTopLeft()
-    maxH := int(config.Width) + int(imageLeft)
-    maxV := int(config.Height) + int(imageTop)
+func (native *NativeSequentialNumerics) MandelbrotSequence() {
+    topLeft := native.PlaneTopLeft()
+
+    imageLeft, imageTop := Native.PictureMin()
+    imageRight, imageBottom := Native.PictureMax()
+    rUnit, iUnit := Native.PlaneUnits()
 
     x := real(topLeft)
-    for i := int(imageLeft); i < maxH; i++ {
+    for i := imageLeft; i < imageRight; i++ {
         y := imag(topLeft)
-        for j := int(imageTop); j < maxV; j++ {
+        for j := imageTop; j < imageBottom; j++ {
             member := NativeMandelbrotMember{
                 C: complex(x, y),
             }
-            &member.Mandelbrot(config.IterateLimit, config.DivergeLimit)
-            config.Sequencer(i, j, *member)
-            y -= config.VerticalUnit
+            &member.Mandelbrot(native.IterateLimit(), native.DivergeLimit())
+            native.sequencer(i, j, *member)
+            y -= iUnit
         }
-        x += config.HorizUnit
+        x += rUnit
     }
+}
+
+func (native *NativeSequentialNumerics) ImageDrawSequencer() {
+    native.sequencer = DrawPointAt
+}
+
+func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
+    native.Sequencer = func (i, j int, member NativeMandelbrotMember) {
+        native.members = append(native.members, PixelMember{
+            I: i, 
+            J: j,
+            MandelbrotMember: NativeMandelbrotMember.MandelbrotMember,
+        }
+    }
+}
+
+func (native *NativeSequentialNumerics) CapturedMembers() []PixelMember {
+    return native.members
 }
