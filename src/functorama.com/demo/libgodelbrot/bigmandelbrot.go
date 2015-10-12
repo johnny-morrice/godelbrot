@@ -11,11 +11,11 @@ type BigMandelbrotMember struct {
 
 func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8, divergeLimit float64) {
     prec := member.C.Prec()
-    z := NewBigComplexNative(0.0, 0.0, prec)
+    z := NewBigComplex(0.0, 0.0, prec)
     sqrtDl := math.Sqrt(divergeLimit)
-    aa := NewFloatPrec(0, prec)
-    bb := NewFloatPrec(0, prec)
-    ab := NewFloatPrec(0, prec)
+    aa := NewBigFloat(0.0, prec)
+    bb := NewBigFloat(0.0, prec)
+    ab := NewBigFloat(0.0, prec)
     i := uint8(0)
     c := member.C
     for ; i < iterateLimit && z.WithinMandLimit(sqrtDl); i++ {

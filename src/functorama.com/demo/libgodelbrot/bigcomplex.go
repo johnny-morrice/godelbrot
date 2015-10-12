@@ -22,10 +22,10 @@ func (c BigComplex) Add(other BigComplex) {
     c.I.Add(other.I)
 }
 
-func NewBigComplexNative(r float64, i float64, prec uint) BigComplex {
+func NewBigComplex(r float64, i float64, prec uint) BigComplex {
     return BigComplex{
-        R: NewFloatPrec(r, prec),
-        I: NewFloatPret(i, prec),
+        R: NewBigFloat(r, prec),
+        I: NewBigFloat(i, prec),
     }
 }
 
@@ -36,7 +36,7 @@ func (f *big.Float) Float() float64 {
 }
  
 // Create a new Float, supplying a precision
-func NewFloatPrec(f float64, prec uint) *big.Float {
+func NewBigFloat(f float64, prec uint) *big.Float {
     b := NewFloat(f)
     b.SetPrec(prec)
     return b

@@ -32,8 +32,6 @@ var bigTwo big.Float = NewFloat(2)
 
 // DEFAULTS
 
-// Defaults for the rendering system
-// See RengerConfig
 const DefaultIterations uint8 = 255
 const DefaultDivergeLimit float64 = 4.0
 const DefaultImageWidth uint = 800
@@ -48,6 +46,8 @@ const DefaultHighPrec uint = 500
 const DefaultTinyImageArea uint = 40000
 // What we consider to be a small number of render jobs
 const DefaultLowThreading uint = 2
+// Default sample size for region glitch-correction
+const DefaultRegionGlitchSampleSize = 10
 
 // OPERATIONAL CONSTANTS
 

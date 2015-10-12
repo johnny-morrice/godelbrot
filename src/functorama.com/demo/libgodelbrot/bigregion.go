@@ -7,65 +7,29 @@ import (
     "math/big"
 )
 
-type BigSubregion struct {
+type bigSubregion struct {
     populated bool
     children  []BigRegion
 }
 
-type BigRegionRenderContext struct {
-    Region BigRegion
-    Subregion BigSubregion
-    Config *BigConfig
-    Heap *BigEscapePointHeap
+type BigRegionNumerics struct {
+    Collapser
+    BigBaseNumerics
+    region bigRegion
+    subregion bigSubregion
+    heap *BigMandelbrotThunkHeap
 }
 
 type BigRegion struct {
-    topLeft     *BigEscapePoint
-    topRight    *BigEscapePoint
-    bottomLeft  *BigEscapePoint
-    bottomRight *BigEscapePoint
-    midPoint    *BigEscapePoint
+    topLeft     *BigMandelbrotThunk
+    topRight    *BigMandelbrotThunk
+    bottomLeft  *BigMandelbrotThunk
+    bottomRight *BigMandelbrotThunk
+    midPoint    *BigMandelbrotThunk
 }
 
-func CreateBigRegion(topLeft BigComplex, bottomRight BigComplex) BigRegion {
-    left := topLeft.Real()
-    right := bottomRight.Real()
-    top := topLeft.Imag()
-    bottom := bottomRight.Imag()
-    trPos := BigComplex{R: right, I: top}
-    blPos := BigComplex{R: left, I: bottom}
-
-    midPos := BigComplex{}
-    
-    midPos.R = right.Copy()
-    midPos.R.Add(midPos.R, left)
-    midPos.R.Quo(midPos.R, bigTwo)
-
-    midPos.I = top.Copy()
-    midPos.I.Add(midPos.I, bottom)
-    midPos.I.Quo(midPos.I, bigTwo)
-
-    tl := NewBigEscapePoint(topLeft)
-    tr := NewBigEscapePoint(trPos)
-    bl := NewBigEscapePoint(blPos)
-    br := NewBigEscapePoint(bottomRight)
-    mid := NewBigEscapePoint(midPos)
-
-    return BigRegion{
-        topLeft:     tl,
-        topRight:    tr,
-        bottomLeft:  bl,
-        bottomRight: br,
-        midPoint:    mid,
-    }
-}
-
-func WholeBigRegion(config *BigConfig) BigRegion {
-    return CreateBigRegion(config.PlaneTopLeft(), config.PlaneBottomRight())
-}
-
-func (context *BigRegionRenderContext) MandelbrotPoints() {
-    r := context.Region
+func (bigFloat *BigRegionNumerics) MandelbrotPoints() {
+    r := bigFloat.Region
     return []MandelbrotMember {
         r.topLeft.membership,
         r.topRight.membership,
@@ -75,8 +39,8 @@ func (context *BigRegionRenderContext) MandelbrotPoints() {
     }
 }
 
-func (context *BigRegionRenderContext) EvaluateAllPoints() {
-    points := []*BigEscapePoint{
+func (bigFloat *BigRegionNumerics) EvaluateAllPoints() {
+    points := []*BigMandelbrotThunk{
         r.topLeft,
         r.topRight,
         r.bottomLeft,
@@ -86,9 +50,7 @@ func (context *BigRegionRenderContext) EvaluateAllPoints() {
     // Ensure points are all evaluated
     for _, p := range points {
         if !p.evaluated {
-            p.membership.C = p.c
-            (&p.membership).Mandelbrot(config.IterateLimit, config.DivergeLimit)
-            p.evaluated = true
+            EvalThunk(p)
         }
     }
 }
@@ -97,13 +59,13 @@ func (context *BigRegionRenderContext) EvaluateAllPoints() {
 // Due to the shape of the set, a rectangular Bigregion is not a good approximation
 // An anologous glitch happens when the entire Bigregion is much larger than the set
 // We handle both these cases here
-func (context *BigRegionRenderContext) OnGlitchCurve() bool {
-    r := context.Region
-    config := context.Config
-    member := r.topLeft.membership
-    iDiv := member.InvDivergence
-    if iDiv == 0 || iDiv == 1 || member.InSet {
-        sqrtChecks := context.Config.GlitchSamples
+func (bigFloat *BigRegionNumerics) OnGlitchCurve() bool {
+    r := bigFloat.Region
+    member := bigFloat.RegionMember()
+    iDiv := member.InvDivergence()
+    iLimit, dLimit := bigFloat.MandelbrotLimits()
+    if iDiv == 0 || iDiv == 1 || member.InSet() {
+        sqrtChecks := bigFloat.GlitchSamples()
         tl := r.topLeft.c
         br := r.bottomRight.c
 
@@ -121,7 +83,7 @@ func (context *BigRegionRenderContext) OnGlitchCurve() bool {
                 checkMember := BigMandelbrotMember {
                     C: BigComplex{R: x, I: y},
                 }
-                &checkMember.Mandelbrot(config.IterateLimit, config.DivergeLimit)
+                &checkMember.Mandelbrot(iLimit, dLimit)
                 if member.InvDivergence != iDiv {
                     return true
                 }
@@ -134,9 +96,9 @@ func (context *BigRegionRenderContext) OnGlitchCurve() bool {
     return false
 }
 
-func (context *BigRegionRenderContext) Split() {
-    heap := context.Heap
-    r := context.Region
+func (bigFloat *BigRegionNumerics) Split() {
+    heap := bigFloat.Heap
+    r := bigFloat.Region
 
     topLeftPos := r.topLeft.c
     bottomRightPos := r.bottomRight.c
@@ -149,10 +111,10 @@ func (context *BigRegionRenderContext) Split() {
     midR := midPos.Real()
     midI := midPos.Imag()
 
-    topSideMid := heap.BigEscapePoint(midR, top)
-    bottomSideMid := heap.BigEscapePoint(midR, bottom)
-    leftSideMid := heap.BigEscapePoint(left, midI)
-    rightSideMid := heap.BigEscapePoint(right, midI)
+    topSideMid := heap.BigMandelbrotThunk(midR, top)
+    bottomSideMid := heap.BigMandelbrotThunk(midR, bottom)
+    leftSideMid := heap.BigMandelbrotThunk(left, midI)
+    rightSideMid := heap.BigMandelbrotThunk(right, midI)
 
     leftSectorMid := left.Copy()
     leftSectorMid.Add(leftSectorMid, midR)
@@ -175,44 +137,44 @@ func (context *BigRegionRenderContext) Split() {
         topRight:    topSideMid,
         bottomLeft:  leftSideMid,
         bottomRight: r.midPoint,
-        midPoint:    heap.BigEscapePoint(leftSectorMid, topSectorMid),
+        midPoint:    heap.BigMandelbrotThunk(leftSectorMid, topSectorMid),
     }
     tr := BigRegion{
         topLeft:     topSideMid,
         topRight:    r.topRight,
         bottomLeft:  r.midPoint,
         bottomRight: rightSideMid,
-        midPoint:    heap.BigEscapePoint(rightSectorMid, topSectorMid),
+        midPoint:    heap.BigMandelbrotThunk(rightSectorMid, topSectorMid),
     }
     bl := BigRegion{
         topLeft:     leftSideMid,
         topRight:    r.midPoint,
         bottomLeft:  r.bottomLeft,
         bottomRight: bottomSideMid,
-        midPoint:    heap.BigEscapePoint(leftSectorMid, bottomSectorMid),
+        midPoint:    heap.BigMandelbrotThunk(leftSectorMid, bottomSectorMid),
     }
     br := BigRegion{
         topLeft:     r.midPoint,
         topRight:    rightSideMid,
         bottomLeft:  bottomSideMid,
         bottomRight: r.bottomRight,
-        midPoint:    heap.BigEscapePoint(rightSectorMid, bottomSectorMid),
+        midPoint:    heap.BigMandelbrotThunk(rightSectorMid, bottomSectorMid),
     }
 
-    context.Subregion = BigSubregion{
+    bigFloat.Subregion = BigSubregion{
         populated: true,
         children:  []BigRegion{tl, tr, bl, br},
     }
 }
 
-func (context *BigRegionRenderContext) Rect() image.Rectangle {
-    l, t := context.Config.PlaneToPixel(Bigregion.topLeft.c)
-    r, b := context.Config.PlaneToPixel(Bigregion.bottomRight.c)
+func (bigFloat *BigRegionNumerics) Rect() image.Rectangle {
+    l, t := bigFloat.PlaneToPixel(Bigregion.topLeft.c)
+    r, b := bigFloat.PlaneToPixel(Bigregion.bottomRight.c)
     return image.Rect(int(l), int(t), int(r), int(b))
 }
 
-func (context *BigRegionRenderContext) Collapse() bool {
-    rect := context.rect
-    iCollapse := int(context.Config.BigRegionCollapse)
-    return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
+// Return MandelbrotMember
+// Does not check if the region's thunks have been evaluated
+func (bigFloat *BigRegionNumerics) RegionMember() MandelbrotMember {
+    return bigFloat.Region.topLeft.member.MandelbrotMember
 }

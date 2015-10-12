@@ -1,32 +1,26 @@
 package libgodelbrot
 
+// Basis for all native numerics
 type NativeBaseNumerics struct {
+    BaseNumerics
+
     realMin float64
     realMax float64
     imagMin float64
     imagMax float64
 
-    picXMin int
-    picXMax int
-    picYMin int
-    picYMax int
-
-    collapse int
-
-    iterLimit int
-    divergeLimit int
-
     rUnit float64
     iUnit float64
+
+    divergeLimit float64
 }
 
-func NewNativeBaseNumerics(context *ContextFacade) *NativeBaseNumerics {
+func CreateNativeBaseNumerics(context *ContextFacade) CreateBaseNumerics {
     planeMin, planeMax := context.NativeUserCoords()
     planeWidth := real(planeMax) - real(planeMin)
     planeHeight := imag(planeMax) - imag(planeMin)
-    pictureWidth, pictureHeight := context.PictureDimensions()
     planeAspect := planeWidth / planeHeight
-    pictureAspect := float64(pictureWidth) / float64(pictureHeight)
+    pictureAspect := context.PictureAspect()
 
     if context.FixAspect() {
         // If the plane aspect is greater than image aspect
@@ -44,35 +38,20 @@ func NewNativeBaseNumerics(context *ContextFacade) *NativeBaseNumerics {
         }
     }
 
-    iLimit, dLimit := context.Limits()
+    _, dLimit := context.Limits()
 
-    return &NativeBaseNumerics{
+    return NativeBaseNumerics{
+        BaseNumerics: CreateBaseNumerics(context)
         realMin: real(planeMin),
         realMax: real(planeMax),
         imagMin: imag(planeMin),
         imagMax: imag(planeMax),
 
-        picXMin: 0,
-        picXMax: pictureWidth,
-        picYMin: 0,
-        picYMax: pictureHeight,
-
-        collapse: context.RegionCollapseSize(),
-
-        iterLimit: iLimit,
         divergeLimit: dLimit,
 
         rUnit: planeWidth / float64(pictureWidth),
         iUnit: planeHeight / float64(pictureHeight),
     }
-}
-
-func (native NativeBaseNumerics) PictureMin() (int, int) {
-    return native.picXMin, native.picYMin
-}
-
-func (native NativeBaseNumerics) PictureMax() (int, int) {
-    return native.picXMax, native.picYMax
 }
 
 func (native NativeBaseNumerics) PlaneTopLeft() complex128 {
@@ -84,12 +63,8 @@ func (native NativeBaseNumerics) PixelSize() (float64, float64) {
     return rUnit, iUnit
 }
 
-func (native NativeBaseNumerics) IterateLimit() int {
-    return native.iterLimit
-}
-
-func (native NativeBaseNumerics) DivergeLimit() float64 {
-    return native.divergeLimit
+func (native NativeBaseNumerics) MandelbrotLimits() (int, float64) {
+    return native.iterLimit, native.divergeLimit
 }
 
 func (native NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {

@@ -15,8 +15,8 @@ func NewRegionRenderer(meditator *ContextFacade) *RegionRenderStrategy {
 // The RegionRenderStrategy implements RenderNumerics with this method that
 // draws the Mandelbrot set uses a "similar rectangles" optimization
 func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
-	numerics := renderer.Context.RegionNumerics()
-	initialRegion := numerics.WholeRegion()
+	// The numerics system is by default a region covering the whole image
+	initialRegion := renderer.Context.Numerics
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	// Draw uniform regions first
@@ -46,7 +46,7 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 		// There are three things that can happen to a region...
 		//
 		// A. The region can be so small that we divide no further
-		if splitee.Collapse(config) {
+		if Collapse(splitee) {
 			smallRegions = append(smallRegions, splitee)
 		} else {
 			// If the region is not too small, two things can happen
@@ -61,4 +61,9 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 	}
 
 	return completeRegions, smallRegions
+}
+
+func Collapse(split RegionNumerics) bool {
+	rect := split.Rect()
+	return rect.Dx() <= split.CollapseSize() || rect.Dy() <= split.CollapseSize()
 }

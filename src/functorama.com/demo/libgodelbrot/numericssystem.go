@@ -28,7 +28,7 @@ type SequentialNumerics interface {
 // Region rendering calculations
 type RegionNumerics interface {
     RegionDrawingContext
-    Collapse() bool
+    CollapseSize() int
     Rect() image.Rectange
     EvaluateAllPoints()
     Split()

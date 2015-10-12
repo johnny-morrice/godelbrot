@@ -9,9 +9,10 @@ type NativeSequentialNumerics struct {
 func (native *NativeSequentialNumerics) MandelbrotSequence() {
     topLeft := native.PlaneTopLeft()
 
-    imageLeft, imageTop := Native.PictureMin()
-    imageRight, imageBottom := Native.PictureMax()
-    rUnit, iUnit := Native.PlaneUnits()
+    imageLeft, imageTop := native.PictureMin()
+    imageRight, imageBottom := native.PictureMax()
+    rUnit, iUnit := native.PixelSize()
+    iterLimit, divergeLimit := native.MandelbrotLimits()
 
     x := real(topLeft)
     for i := imageLeft; i < imageRight; i++ {
@@ -20,7 +21,7 @@ func (native *NativeSequentialNumerics) MandelbrotSequence() {
             member := NativeMandelbrotMember{
                 C: complex(x, y),
             }
-            &member.Mandelbrot(native.IterateLimit(), native.DivergeLimit())
+            &member.Mandelbrot(iterLimit, divergeLimit)
             native.sequencer(i, j, *member)
             y -= iUnit
         }

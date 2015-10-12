@@ -62,6 +62,8 @@ type RenderDescription {
     BufferSize uint
     // Numerical system
     Numerics NumericsMode
+    // Number of samples taken when detecting region render glitches
+    GlitchSamples uint
 }
 
 // Based on the description, choose a renderer, numerical system and palette
@@ -105,13 +107,13 @@ type RenderInfo struct {
     NativeImagMin float64
     // ImagMax as a native float
     NativeImagMax float64
-    // RealMin as a big float
+    // RealMin as a big float (very high precision)
     BigRealMin big.Float
-    // RealMax as a big float
+    // RealMax as a big float (very high precision)
     BigRealMax big.Float
-    // ImagMin as a big float
+    // ImagMin as a big float (very high precision)
     BigImagMin big.Float
-    // ImagMax as a big float
+    // ImagMax as a big float (very high precision)
     BigImagMax big.Float
 }
 
@@ -121,6 +123,10 @@ type ContextFacade struct {
     Renderer RenderContext
     // The palette
     Palette Palette
+}
+
+func (context *ContextFacade) GlitchSamples() uint {
+    return context.Info.UserDescription.GlitchSamples
 }
 
 // Provide the iteration and divergence limits
@@ -140,10 +146,24 @@ func (context *ContextFacade) PictureDimensions() (uint, uint) {
     return desc.ImageWidth, desc.ImageHeight
 }
 
+// Provide the image aspect ratio
+func (context *ContextFacade) PictureAspect() float64 {
+    pictureWidth, pictureHeight := context.PictureDimensions()
+    return float64(pictureWidth) / float64(pictureHeight)
+}
+
+// Provide the min and max plane coordinates, respectively, as defined by the user
+func (context *ContextFacade) BigUserCoords() (BigComplex, BigComplex) {
+    info := context.Info
+    min := BigComplex{info.BigRealMin, info.BigImagMin}
+    max := BigComplex{info.BigRealMax, info.BigImagMax}
+    return min, max
+}
+
 // Provide the min and max plane coordinates, respectively, as defined by the user
 func (context *ContextFacade) NativeUserCoords() (complex128, complex128) {
     info := context.Info
-    return complex(info.RealMin, info.RealMax), complex(info.ImagMin, info.ImagMax)
+    return complex(info.RealMin, info.ImagMin), complex(info.RealMax, info.ImagMax)
 }
 
 func (context *ContextFacade) FixAspect() bool {

@@ -11,11 +11,11 @@ type nativeSubregion struct {
 
 // Extend NativeBaseNumerics and add support for regions
 type NativeRegionNumerics struct {
+	Collapser
 	NativeBaseNumerics
 	region nativeRegion
 	subregion nativeSubregion
 	heap *NativeMandelbrotThunkHeap
-	collapseSize int
 }
 
 type nativeRegion struct {
@@ -59,8 +59,9 @@ func (native *NativeRegionNumerics) EvaluateAllPoints() {
 func (native *NativeRegionNumerics) OnGlitchCurve() bool {
 	member := native.RegionMember()
 	iDiv := member.InvDivergence()
+	iLimit, dLimit := native.MandelbrotLimits()
 	if iDiv == 0 || iDiv == 1 || member.InSet() {
-		sqrtChecks := 10
+		sqrtChecks := native.GlitchSamples()
 		sqrtChecksF := float64(sqrtChecks)
 		tl := r.topLeft.c
 		br := r.bottomRight.c
@@ -75,7 +76,7 @@ func (native *NativeRegionNumerics) OnGlitchCurve() bool {
 				checkMember := NativeMandelbrotMember {
 					C: complex(x, y),
 				}
-				&checkMember.Mandelbrot(native.IterateLimit(), native.DivergeLimit())
+				&checkMember.Mandelbrot(iLimit, dLimit)
 				if member.InvDivergence != iDiv {
 					return true
 				}
@@ -152,12 +153,6 @@ func (native *NativeRegionNumerics) Rect() image.Rectangle {
 	l, t := native.PlaneToPixel(native.Region.topLeft.c)
 	r, b := native.PlaneToPixel(native.Region.bottomRight.c)
 	return image.Rect(int(l), int(t), int(r), int(b))
-}
-
-func (native *NativeRegionNumerics) Collapse() bool {
-	rect := native.rect
-	iCollapse := native.collapseSize
-	return rect.Dx() <= iCollapse || rect.Dy() <= iCollapse
 }
 
 // Return MandelbrotMember

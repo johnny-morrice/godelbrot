@@ -27,6 +27,7 @@ type commandLine struct {
 	storedPalette  string
 	fixAspect 	   bool
 	numericalSystem string
+	glitchSamples uint
 }
 
 func parseArguments(args *commandLine) {
@@ -68,6 +69,8 @@ func parseArguments(args *commandLine) {
 		renderThreads, "Number of rendering threads in concurrent renderer")
 	flag.UintVar(&args.threadBuffer, "buffer", 
 		libgodelbrot.DefaultBufferSize, "Size of per-thread buffer")
+	flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
+		libgodelbrot.DefaultRegionGlitchSampleSize, "Size of region render glitch-correncting sample set")
 	flag.StringVar(&args.storedPalette, "storedPalette", 
 		"pretty", "Name of stored palette (pretty|redscale)")
 	flag.StringVAr(&args.numericalSystem, "numerics",
