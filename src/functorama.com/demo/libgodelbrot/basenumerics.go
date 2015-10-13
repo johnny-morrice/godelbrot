@@ -25,8 +25,8 @@ type BaseNumerics struct {
     iterLimit int
 }
 
-func CreateBaseNumerics(context *ContextFacade) BaseNumerics {
-    iLimit, _ := context.Limits()
+func CreateBaseNumerics(render RenderApplication) BaseNumerics {
+    iLimit, _ := render.Limits()
     return BaseNumerics{
         picXMin: 0,
         picXMax: pictureWidth,

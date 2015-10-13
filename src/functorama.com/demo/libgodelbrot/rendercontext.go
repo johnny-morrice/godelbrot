@@ -10,9 +10,9 @@ import (
     "runtime"
 )
 
-// Something that can render the mandelbrot set
-type RenderContext interface {
-    Render() (image.Image, error)
+// A full Godelbrot render context that can render the fractal to a picture
+type RenderContext interface {    
+    Render() (image.NRGBA, error)
 }
 
 // Available kinds of palettes

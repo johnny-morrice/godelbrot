@@ -5,18 +5,18 @@ import (
 )
 
 type RegionRenderStrategy struct {
-	Context *ContextFacade
+	app RenderApplication
 }
 
-func NewRegionRenderer(meditator *ContextFacade) *RegionRenderStrategy {
-	return &RegionRenderStrategy{Context: meditator}
+func NewRegionRenderer(app RenderApplication) *RegionRenderStrategy {
+	return &RegionRenderStrategy{app: app}
 }
 
 // The RegionRenderStrategy implements RenderNumerics with this method that
 // draws the Mandelbrot set uses a "similar rectangles" optimization
 func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 	// The numerics system is by default a region covering the whole image
-	initialRegion := renderer.Context.Numerics
+	initialRegion := renderer.app.Numerics
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	// Draw uniform regions first

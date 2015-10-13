@@ -23,7 +23,7 @@ func InitializeContext(desc RenderDescription) (context ContextInit, err error) 
         }
     }()
 
-    context = &ContextFacade{
+    context = &ContextInit{
         info: RenderInfo {
             UserDescription: desc
         }
@@ -36,10 +36,10 @@ func InitializeContext(desc RenderDescription) (context ContextInit, err error) 
     return
 }
 
-// Create a facade to interact with the godelbrot system
-func (context *ContextInit) NewFacade() *ContextFacade {
+// Create a simple facade for clients to interface with the Godelbrot system
+func (context *ContextInit) NewFacade() RenderContext {
     return &ContextFacade{
-        ContextInit: *context
+        config: *context
     }
 }
 

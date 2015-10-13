@@ -22,10 +22,10 @@ type BigBaseNumerics struct {
     precision uint
 }
 
-func CreateBigBaseNumerics(context *ContextFacade) BigBaseNumerics {
-    prec := pixelPerfectPrecision(context)
+func CreateBigBaseNumerics(render RenderApplication) BigBaseNumerics {
+    prec := DefaultHighPrec
 
-    planeMin, planeMax := context.BigUserCoords()
+    planeMin, planeMax := render.BigUserCoords()
 
     left := NewBigFloat(0.0, prec)
     right := NewBigFloat(0.0, prec)
@@ -46,12 +46,12 @@ func CreateBigBaseNumerics(context *ContextFacade) BigBaseNumerics {
     planeAspect := NewBigFloat(0.0, prec)
     planeAspect.Quo(planeWidth, planeHeight)
 
-    nativePictureAspect := context.PictureAspect()
+    nativePictureAspect := render.PictureAspect()
     pictureAspect := NewBigFloat(nativePictureAspect, prec)
 
     thindicator := planeAspect.Cmp(pictureAspect)
 
-    if context.FixAspect() {
+    if render.FixAspect() {
         // If the plane aspect is greater than image aspect
         // Then the plane is too short, so must be made taller
         if thindicator == 1 {
@@ -69,9 +69,9 @@ func CreateBigBaseNumerics(context *ContextFacade) BigBaseNumerics {
         }
     }
 
-    iLimit, dLimit := context.Limits()
+    iLimit, dLimit := render.Limits()
 
-    pictureWidthI, pictureHeightI := context.PictureDimensions()
+    pictureWidthI, pictureHeightI := render.PictureDimensions()
     pictureWidth := NewBigFloat(float64(pictureWidthI), prec)
     pictureHeight := NewBigFloat(float64(pictureHeightI), prec)
 
@@ -80,8 +80,8 @@ func CreateBigBaseNumerics(context *ContextFacade) BigBaseNumerics {
     iSize := NewBigFloat(0.0, prec)
     iSize.Quo(planeHeight, pictureHeight)
 
-    return BigBaseNumerics{
-        BaseNumerics: CreateBaseNumerics(context),
+    base := BigBaseNumerics{
+        BaseNumerics: CreateBaseNumerics(render),
         realMin: real(planeMin),
         realMax: real(planeMax),
         imagMin: imag(planeMin),
@@ -93,45 +93,46 @@ func CreateBigBaseNumerics(context *ContextFacade) BigBaseNumerics {
         iUnit: iSize,
         precision: prec,
     }
+
+    // Reduce the precision of the base for swifter rendering
+    base.FastPixelPerfectPrecision()
+
+    return base
 }
 
-func (bigFloat BigBaseNumerics) NewBigFloat(f float64) big.Float {
-    return NewBigFloat(f, big.precision)
+func (base *BigBaseNumerics) PictureMin() (int, int) {
+    return base.picXMin, base.picYMin
 }
 
-func (bigFloat BigBaseNumerics) PictureMin() (int, int) {
-    return bigFloat.picXMin, bigFloat.picYMin
+func (base *BigBaseNumerics) PictureMax() (int, int) {
+    return base.picXMax, base.picYMax
 }
 
-func (bigFloat BigBaseNumerics) PictureMax() (int, int) {
-    return bigFloat.picXMax, bigFloat.picYMax
-}
-
-func (bigFloat BigBaseNumerics) PlaneTopLeft() BigComplex {
-    return BigComplex{bigFloat.realMin, bigFloat.imagMax}
+func (base *BigBaseNumerics) PlaneTopLeft() BigComplex {
+    return BigComplex{base.realMin, base.imagMax}
 }
 
 // Size on the plane of 1px
-func (bigFloat BigBaseNumerics) PixelSize() (big.Float, big.Float) {
+func (base *BigBaseNumerics) PixelSize() (big.Float, big.Float) {
     return rUnit, iUnit
 }
 
-func (bigFloat BigBaseNumerics) MandelbrotLimits (int, big.Float) {
-    return bigFloat.iterLimit, bigFloat.divergeLimit
+func (base *BigBaseNumerics) MandelbrotLimits (int, big.Float) {
+    return base.iterLimit, base.divergeLimit
 }
 
-func (bigFloat BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
-    topLeft := bigFloat.PlaneTopLeft()
-    rUnit, iUnit := bigFloat.PixelSize()
+func (base *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
+    topLeft := base.PlaneTopLeft()
+    rUnit, iUnit := base.PixelSize()
 
     // Translate x
-    x := bigFloat.NewBigFloat(0.0)
-    x.Sub(c.Real(), topLeft.Real())
+    x := base.NewBigFloat(0.0)
+    &x.Sub(c.Real(), topLeft.Real())
     // Scale x
-    x.Quo(x, rUnit)
+    &x.Quo(x, rUnit)
 
     // Translate y
-    y := bigFloat.NewBigFloat(0.0)
+    y := base.NewBigFloat(0.0)
     y.Sub(c.Imag(), topLeft.Imag())
     // Scale y
     y.Quo(y, iUnit)
@@ -144,4 +145,56 @@ func (bigFloat BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
     ry = math.Ceil(-fy)
 
     return
+}
+
+// Change the 
+
+// Reduce precision of the base, while maintaining adequate accuracy
+// To keep things speedy, we will only explore 2 paths through the image
+func (base *BigBaseNumerics) FastPixelPerfectPrecision() {
+    xMin, yMin := base.PictureMin()
+    xMax, yMax := base.PictureMax()
+
+    highPrec = 0
+    rUnit, iUnit := base.PixelSize()
+
+    topLeft := base.PlaneTopLeft()
+    row := topLeft.Real().Copy()
+    column := topLeft.Imag().Copy()
+
+    // Find lowest required prec in the real axis
+    for i := xMin; i < xMax; i++ {
+        rowPrec := row.MinPrec()
+        if rowPrec > highPrec {
+            highPrec = rowPrec
+        }
+        row.Add(row, rUnit)
+    }
+
+    // Find lowest required prec in the y axis
+    for i := yMin; i < yMax; i++ {
+        colPrec := col.MinPrec()
+        if colPrec > highPrec {
+            highPrec = colPrec
+        }
+        row.Sub(column, iUnit)
+    }
+
+    base.SetPrec(highPrec)
+}
+
+// Set the precision of the base
+func (base *BigBaseNumerics) SetPrec(prec uint) {
+    base.precision = prec
+    baseFloats := []big.Float {
+        realMin,
+        realMax,
+        imagMin,
+        imagMax,
+        divergeLimit,
+    }
+
+    for _, f := range(baseFloats) {
+        f.SetPrec(prec)
+    }
 }

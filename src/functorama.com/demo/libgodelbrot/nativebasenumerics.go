@@ -15,14 +15,14 @@ type NativeBaseNumerics struct {
     divergeLimit float64
 }
 
-func CreateNativeBaseNumerics(context *ContextFacade) CreateBaseNumerics {
-    planeMin, planeMax := context.NativeUserCoords()
+func CreateNativeBaseNumerics(render RenderApplication) CreateBaseNumerics {
+    planeMin, planeMax := render.NativeUserCoords()
     planeWidth := real(planeMax) - real(planeMin)
     planeHeight := imag(planeMax) - imag(planeMin)
     planeAspect := planeWidth / planeHeight
-    pictureAspect := context.PictureAspect()
+    pictureAspect := render.PictureAspect()
 
-    if context.FixAspect() {
+    if render.FixAspect() {
         // If the plane aspect is greater than image aspect
         // Then the plane is too short, so must be made taller
         if planeAspect > pictureAspect {
@@ -38,10 +38,10 @@ func CreateNativeBaseNumerics(context *ContextFacade) CreateBaseNumerics {
         }
     }
 
-    _, dLimit := context.Limits()
+    _, dLimit := render.Limits()
 
     return NativeBaseNumerics{
-        BaseNumerics: CreateBaseNumerics(context)
+        BaseNumerics: CreateBaseNumerics(render)
         realMin: real(planeMin),
         realMax: real(planeMax),
         imagMin: imag(planeMin),
