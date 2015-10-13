@@ -36,9 +36,28 @@ func InitializeContext(desc RenderDescription) (context ContextInit, err error) 
     return
 }
 
+// A facade for users to interact with the configured system
+type GodelbrotUserFacade struct {
+    config *ContextInit
+}
+
+
+// The user facade will render an image
+func (facade *GodelbrotUserFacade) Render() (image.NRGBA, error) {
+    return facade.config.RenderContext.Render()
+}
+
 // Create a simple facade for clients to interface with the Godelbrot system
-func (context *ContextInit) NewFacade() RenderContext {
-    return &ContextFacade{
+func (context *ContextInit) NewUserFacade() *GodelbrotUserFacade {
+    return &GodelbrotUserFacade{
+        config: context
+    }
+}
+
+// Create a simple facade for subsystems to interface with larger Godelbrot
+// system
+func (context *ContextInit) NewInnerFacade() *GodelbrotApp {
+    return &GodelbrotApp{
         config: *context
     }
 }

@@ -17,5 +17,5 @@ func GodelbrotRenderContext(desc RenderDescription) (RenderContext, error) {
     if err != nil {
         return nil, err
     }
-    return initializer.CreateFacade(), nil
+    return initializer.NewUserFacade(), nil
 }
