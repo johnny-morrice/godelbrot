@@ -16,15 +16,10 @@ type NumericSystem interface {
     SequentialNumerics
 }
 
-// Initialize these objects before use
-type Initialized interface {
-    Initialize()
-}
-
 // Sequential rendering calculations
 type SequentialNumerics interface {
     DrawingContext
-    Initialized
+    OpaqueFlyweightProxy
     MandelbrotSequence()
     ImageDrawSequencer()
     MemberCaptureSequencer()
@@ -34,7 +29,7 @@ type SequentialNumerics interface {
 // Region rendering calculations
 type RegionNumerics interface {
     RegionDrawingContext
-    Initialized
+    OpaqueFlyweightProxy
     Rect() image.Rectange
     EvaluateAllPoints()
     Split()
@@ -87,7 +82,7 @@ func Uniform(numerics RegionNumerics) bool {
 // Sequence a region, returning points
 func SequenceCollapse(numerics RegionNumerics) []PixelMember {
     sequence := region.RegionalSequenceNumerics()
-    sequence.Initialize()
+    sequence.ClaimExtrinsics()
     sequence.MemberCaptureSequencer()
     MandelbrotSequence(smallConfig)
     return sequence.CapturedMembers()

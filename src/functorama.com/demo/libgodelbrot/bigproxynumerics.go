@@ -5,7 +5,7 @@ type BigRegionNumericsProxy struct {
     Numerics *BigRegionNumerics
 }
 
-func (proxy BigRegionNumericsProxy) Initialize() {
+func (proxy BigRegionNumericsProxy) ClaimExtrinsics() {
     proxy.Numerics.region = Region
 }
 
@@ -14,7 +14,7 @@ type BigSequenceNumericsProxy struct {
     Numerics *BigSequentialNumerics
 }
 
-func (proxy BigSequentialNumerics) Initialize() {
+func (proxy BigSequentialNumerics) ClaimExtrinsics() {
     proxy.Numerics.SubImage(proxy.Region.Rect())
 }
 

@@ -5,7 +5,7 @@ type NativeRegionNumericsProxy struct {
     Numerics *NativeRegionNumerics
 }
 
-func (proxy NativeRegionNumericsProxy) Initialize() {
+func (proxy NativeRegionNumericsProxy) ClaimExtrinsics() {
     proxy.Numerics.region = Region
 }
 
@@ -14,7 +14,7 @@ type NativeSequenceNumericsProxy struct {
     Numerics *NativeSequentialNumerics
 }
 
-func (proxy NativeSequentialNumerics) Initialize() {
+func (proxy NativeSequentialNumerics) ClaimExtrinsics() {
     proxy.Numerics.SubImage(proxy.Region.Rect())
 }
 

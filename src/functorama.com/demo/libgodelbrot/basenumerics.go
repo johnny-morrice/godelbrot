@@ -22,20 +22,20 @@ func  (base BaseRegionNumerics) GlitchSamples() int {
 // Numerics that are aware of a picture and of the Mandelbrot iteration limit
 type BaseNumerics struct {
     picXMin int
-    picXMax int
+    picXMax int // exclusive maximum
     picYMin int
-    picYMax int
+    picYMax int // exclusive maximum
 
     iterLimit int
 }
 
-func CreateBaseNumerics(render RenderApplication) BaseNumerics {
-    iLimit, _ := render.Limits()
+func CreateBaseNumerics(app RenderApplication) BaseNumerics {
+    iLimit, _ := app.Limits()
     return BaseNumerics{
         picXMin: 0,
-        picXMax: pictureWidth,
+        picXMax: app.PictureWidth(),
         picYMin: 0,
-        picYMax: pictureHeight,
+        picYMax: app.PictureHeight(),
         iterLimit: iLimit
     }
 }

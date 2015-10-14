@@ -21,7 +21,7 @@ func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
-		drawingNumerics.Initialize()
+		drawingNumerics.ClaimExtrinsics()
 		drawingNumerics.DrawUniform(region)
 	}
 
@@ -44,7 +44,7 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 	for i := 0; i < len(splittingRegions); i++ {
 		splitee := splittingRegions[i]
 
-		splitee.Initialize()
+		splitee.ClaimExtrinsics()
 		// There are three things that can happen to a region...
 		//
 		// A. The region can be so small that we divide no further
