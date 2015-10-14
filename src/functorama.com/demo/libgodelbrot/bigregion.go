@@ -1,7 +1,5 @@
 package libgodelbrot
 
-// This module sucks because it is a near total clone of the native version
-
 import (
     "image"
     "math/big"
@@ -12,20 +10,41 @@ type bigSubregion struct {
     children  []BigRegion
 }
 
+type BigRegion struct {
+    topLeft     BigMandelbrotMember
+    topRight    BigMandelbrotMember
+    bottomLeft  BigMandelbrotMember
+    bottomRight BigMandelbrotMember
+    midPoint    BigMandelbrotMember
+}
+
 type BigRegionNumerics struct {
     Collapser
     BigBaseNumerics
     region bigRegion
     subregion bigSubregion
-    heap *BigMandelbrotThunkHeap
+    sequentialNumerics *BigSequentialNumerics
 }
 
-type BigRegion struct {
-    topLeft     *BigMandelbrotThunk
-    topRight    *BigMandelbrotThunk
-    bottomLeft  *BigMandelbrotThunk
-    bottomRight *BigMandelbrotThunk
-    midPoint    *BigMandelbrotThunk
+// Return the children of this region
+// This implementation does not create many new objects
+func (bigFloat *BigRegionNumerics) Children() []RegionNumerics {
+    if bigFloat.subregion.populated {
+        nextContexts := make([]RegionNumerics, 0, 4)
+        for i, child := range bigFloat.subregion.children {
+            nextContexts[i] := bigFloat.proxyNumerics(child)
+        }
+        return nextContexts
+    }
+    panic("Region asked to provide non-existent children")
+    return nil
+}
+
+func (bigFloat *BigRegionNumerics) RegionalSequenceNumerics() {
+    return BigSequenceNumericsProxy{
+        Region: bigFloat.region,
+        Numerics: bigFloat.sequentialNumerics,
+    }
 }
 
 func (bigFloat *BigRegionNumerics) MandelbrotPoints() {
@@ -40,7 +59,7 @@ func (bigFloat *BigRegionNumerics) MandelbrotPoints() {
 }
 
 func (bigFloat *BigRegionNumerics) EvaluateAllPoints() {
-    points := []*BigMandelbrotThunk{
+    points := []BigMandelbrotMember{
         r.topLeft,
         r.topRight,
         r.bottomLeft,
@@ -111,10 +130,10 @@ func (bigFloat *BigRegionNumerics) Split() {
     midR := midPos.Real()
     midI := midPos.Imag()
 
-    topSideMid := heap.BigMandelbrotThunk(midR, top)
-    bottomSideMid := heap.BigMandelbrotThunk(midR, bottom)
-    leftSideMid := heap.BigMandelbrotThunk(left, midI)
-    rightSideMid := heap.BigMandelbrotThunk(right, midI)
+    topSideMid := CreateBigMandelbrotMember(midR, top)
+    bottomSideMid := CreateBigMandelbrotMember(midR, bottom)
+    leftSideMid := CreateBigMandelbrotMember(left, midI)
+    rightSideMid := CreateBigMandelbrotMember(right, midI)
 
     leftSectorMid := left.Copy()
     leftSectorMid.Add(leftSectorMid, midR)
@@ -137,28 +156,28 @@ func (bigFloat *BigRegionNumerics) Split() {
         topRight:    topSideMid,
         bottomLeft:  leftSideMid,
         bottomRight: r.midPoint,
-        midPoint:    heap.BigMandelbrotThunk(leftSectorMid, topSectorMid),
+        midPoint:    CreateBigMandelbrotMember(leftSectorMid, topSectorMid),
     }
     tr := BigRegion{
         topLeft:     topSideMid,
         topRight:    r.topRight,
         bottomLeft:  r.midPoint,
         bottomRight: rightSideMid,
-        midPoint:    heap.BigMandelbrotThunk(rightSectorMid, topSectorMid),
+        midPoint:    CreateBigMandelbrotMember(rightSectorMid, topSectorMid),
     }
     bl := BigRegion{
         topLeft:     leftSideMid,
         topRight:    r.midPoint,
         bottomLeft:  r.bottomLeft,
         bottomRight: bottomSideMid,
-        midPoint:    heap.BigMandelbrotThunk(leftSectorMid, bottomSectorMid),
+        midPoint:    CreateBigMandelbrotMember(leftSectorMid, bottomSectorMid),
     }
     br := BigRegion{
         topLeft:     r.midPoint,
         topRight:    rightSideMid,
         bottomLeft:  bottomSideMid,
         bottomRight: r.bottomRight,
-        midPoint:    heap.BigMandelbrotThunk(rightSectorMid, bottomSectorMid),
+        midPoint:    CreateBigMandelbrotMember(rightSectorMid, bottomSectorMid),
     }
 
     bigFloat.Subregion = BigSubregion{
@@ -177,4 +196,12 @@ func (bigFloat *BigRegionNumerics) Rect() image.Rectangle {
 // Does not check if the region's thunks have been evaluated
 func (bigFloat *BigRegionNumerics) RegionMember() MandelbrotMember {
     return bigFloat.Region.topLeft.member.MandelbrotMember
+}
+
+// Quickly create a new *NativeRegionNumerics context
+func (native *NativeRegionNumerics) proxyNumerics(region Region) RegionNumerics {
+    return BigRegionNumericsProxy{
+        Region: region,
+        Numerics: native,
+    }
 }

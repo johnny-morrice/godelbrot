@@ -9,21 +9,42 @@ type nativeSubregion struct {
 	children  []NativeRegion
 }
 
+type nativeRegion struct {
+	topLeft     NativeMandelbrotMember
+	topRight    NativeMandelbrotMember
+	bottomLeft  NativeMandelbrotMember
+	bottomRight NativeMandelbrotMember
+	midPoint    NativeMandelbrotMember
+}
+
 // Extend NativeBaseNumerics and add support for regions
 type NativeRegionNumerics struct {
-	Collapser
+	BaseRegionNumerics
 	NativeBaseNumerics
 	region nativeRegion
 	subregion nativeSubregion
-	heap *NativeMandelbrotThunkHeap
+	sequentialNumerics *NativeSequentialNumerics
 }
 
-type nativeRegion struct {
-	topLeft     *NativeEscapePoint
-	topRight    *NativeEscapePoint
-	bottomLeft  *NativeEscapePoint
-	bottomRight *NativeEscapePoint
-	midPoint    *NativeEscapePoint
+// Return the children of this region
+// This implementation does not create many new objects
+func (native *NativeRegionNumerics) Children() []RegionNumerics {
+	if native.subregion.populated {
+		nextContexts := make([]RegionNumerics, 0, 4)
+		for i, child := range native.subregion.children {
+			nextContexts[i] := native.proxyNumerics(child)
+		}
+		return nextContexts
+	}
+	panic("Region asked to provide non-existent children")
+	return nil
+}
+
+func (native *NativeRegionNumerics) RegionalSequenceNumerics() {
+	return NativeSequenceNumericsProxy{
+		Region: native.region,
+		Numerics: native.sequentialNumerics,
+	}
 }
 
 func (native *NativeRegionNumerics) MandelbrotPoints() {
@@ -39,7 +60,7 @@ func (native *NativeRegionNumerics) MandelbrotPoints() {
 
 func (native *NativeRegionNumerics) EvaluateAllPoints() {
 	r := native.Region
-    points := []*NativeEscapePoint{
+    points := []NativeMandelbrotMember{
 		r.topLeft,
 		r.topRight,
 		r.bottomLeft,
@@ -90,7 +111,6 @@ func (native *NativeRegionNumerics) OnGlitchCurve() bool {
 }
 
 func (native *NativeRegionNumerics) Split() {
-	heap := native.Heap
 	r := native.Region
 
 	topLeftPos := r.topLeft.c
@@ -104,10 +124,10 @@ func (native *NativeRegionNumerics) Split() {
 	midR := real(midPos)
 	midI := imag(midPos)
 
-	topSideMid := heap.NativeEscapePoint(midR, top)
-	bottomSideMid := heap.NativeEscapePoint(midR, bottom)
-	leftSideMid := heap.NativeEscapePoint(left, midI)
-	rightSideMid := heap.NativeEscapePoint(right, midI)
+	topSideMid := NativeMandelbrotMember{C: complex(midR, top)}
+	bottomSideMid := NativeMandelbrotMember{C: complex(midR, bottom)}
+	leftSideMid := NativeMandelbrotMember{C: complex(left, midI)}
+	rightSideMid := NativeMandelbrotMember{C: complex(right, midI)}
 
 	leftSectorMid := (midR + left) / 2.0
 	rightSectorMid :=  (right + midR) / 2.0
@@ -119,28 +139,28 @@ func (native *NativeRegionNumerics) Split() {
 		topRight:    topSideMid,
 		bottomLeft:  leftSideMid,
 		bottomRight: r.midPoint,
-		midPoint:    heap.NativeEscapePoint(leftSectorMid, topSectorMid),
+		midPoint:    NativeMandelbrotMember{C: complex(leftSectorMid, topSectorMid)},
 	}
 	tr := NativeRegion{
 		topLeft:     topSideMid,
 		topRight:    r.topRight,
 		bottomLeft:  r.midPoint,
 		bottomRight: rightSideMid,
-		midPoint:    heap.NativeEscapePoint(rightSectorMid, topSectorMid),
+		midPoint:    NativeMandelbrotMember{C: complex(rightSectorMid, topSectorMid)},
 	}
 	bl := NativeRegion{
 		topLeft:     leftSideMid,
 		topRight:    r.midPoint,
 		bottomLeft:  r.bottomLeft,
 		bottomRight: bottomSideMid,
-		midPoint:    heap.NativeEscapePoint(leftSectorMid, bottomSectorMid),
+		midPoint:    NativeMandelbrotMember{C: complex(leftSectorMid, bottomSectorMid)},
 	}
 	br := NativeRegion{
 		topLeft:     r.midPoint,
 		topRight:    rightSideMid,
 		bottomLeft:  bottomSideMid,
 		bottomRight: r.bottomRight,
-		midPoint:    heap.NativeEscapePoint(rightSectorMid, bottomSectorMid),
+		midPoint:    NativeMandelbrotMember{C: complex(rightSectorMid, bottomSectorMid)},
 	}
 
 	native.Subregion = NativeSubregion{
@@ -159,4 +179,12 @@ func (native *NativeRegionNumerics) Rect() image.Rectangle {
 // Does not check if the region's thunks have been evaluated
 func (native *NativeRegionNumerics) RegionMember() MandelbrotMember {
 	return native.Region.topLeft.member
+}
+
+// Quickly create a new *NativeRegionNumerics context
+func (native *NativeRegionNumerics) proxyNumerics(region Region) RegionNumerics {
+	return NativeRegionNumericsProxy{
+		Region: region,
+		Numerics: native,
+	}
 }

@@ -11,14 +11,20 @@ import (
 // independently.
 
 // A full numerics system
-type NumericsSystem interface {
+type NumericSystem interface {
     RegionNumerics
     SequentialNumerics
+}
+
+// Initialize these objects before use
+type Initialized interface {
+    Initialize()
 }
 
 // Sequential rendering calculations
 type SequentialNumerics interface {
     DrawingContext
+    Initialized
     MandelbrotSequence()
     ImageDrawSequencer()
     MemberCaptureSequencer()
@@ -28,7 +34,7 @@ type SequentialNumerics interface {
 // Region rendering calculations
 type RegionNumerics interface {
     RegionDrawingContext
-    CollapseSize() int
+    Initialized
     Rect() image.Rectange
     EvaluateAllPoints()
     Split()
@@ -76,4 +82,19 @@ func Uniform(numerics RegionNumerics) bool {
         }
     }
     return true
+}
+
+// Sequence a region, returning points
+func SequenceCollapse(numerics RegionNumerics) []PixelMember {
+    sequence := region.RegionalSequenceNumerics()
+    sequence.Initialize()
+    sequence.MemberCaptureSequencer()
+    MandelbrotSequence(smallConfig)
+    return sequence.CapturedMembers()
+}
+
+// Has the region collapsed?
+func Collapse(split RegionNumerics) bool {
+    rect := split.Rect()
+    return rect.Dx() <= split.CollapseSize() || rect.Dy() <= split.CollapseSize()
 }

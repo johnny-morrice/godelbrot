@@ -5,17 +5,18 @@ import (
 )
 
 type SequentialRenderStrategy struct {
-    Meditator *ContextMediator
+    app *GodelbrotApp
 }
 
-func NewSequentialRenderer(meditator *ContextMediator) *RegionRenderStrategy {
-    return &SequentialRenderStrategy{Meditator: meditator}
+func NewSequentialRenderer(app *GodelbrotApp) *RegionRenderStrategy {
+    return &SequentialRenderStrategy{app: meditator}
 }
 
 // The SequentialRenderStrategy implements RenderContext as it draws the
 // Mandelbrot set line by line
 func (renderer SequentialRenderStrategy) Render() (image.NRGBA, error) {
-    numerics := renderer.Meditator.SequentialNumerics()
+    numerics := renderer.app.SequentialNumerics()
+    numerics.Initialize()
     numerics.ImageDrawSequencer()
     numerics.MandelbrotSequence()
     return numerics.Picture(), nil

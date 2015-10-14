@@ -16,11 +16,12 @@ func NewRegionRenderer(app RenderApplication) *RegionRenderStrategy {
 // draws the Mandelbrot set uses a "similar rectangles" optimization
 func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 	// The numerics system is by default a region covering the whole image
-	initialRegion := renderer.app.Numerics
+	initialRegion := renderer.app.RegionNumerics()
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
+		drawingNumerics.Initialize()
 		drawingNumerics.DrawUniform(region)
 	}
 
@@ -43,6 +44,7 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 	for i := 0; i < len(splittingRegions); i++ {
 		splitee := splittingRegions[i]
 
+		splitee.Initialize()
 		// There are three things that can happen to a region...
 		//
 		// A. The region can be so small that we divide no further
@@ -61,9 +63,4 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 	}
 
 	return completeRegions, smallRegions
-}
-
-func Collapse(split RegionNumerics) bool {
-	rect := split.Rect()
-	return rect.Dx() <= split.CollapseSize() || rect.Dy() <= split.CollapseSize()
 }

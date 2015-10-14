@@ -2,7 +2,7 @@ package libgodelbrot
 
 // Draw the Mandelbrot set.  This is the main entry point to libgodelbrot
 func Godelbrot(desc RenderDescription) (image.NRGBA, error) {
-    facade, err := GodelbrotRenderContext(desc)
+    facade, _, err := GodelbrotRenderContext(desc)
     if err != nil {
         return nil, error
     }
@@ -12,10 +12,11 @@ func Godelbrot(desc RenderDescription) (image.NRGBA, error) {
 
 // Based on the description, choose a renderer, numerical system and palette
 // and combine them into a coherent render context
-func GodelbrotRenderContext(desc RenderDescription) (RenderContext, error) {
+// Return the context and information on its settings
+func GodelbrotRenderContext(desc RenderDescription) (RenderContext, RenderInfo, error) {
     initializer, err := InitializeContext(desc)
     if err != nil {
         return nil, err
     }
-    return initializer.NewUserFacade(), nil
+    return initializer.NewUserFacade(), initializer.info, nil
 }

@@ -9,23 +9,26 @@ type RenderTracker struct {
     output []chan renderOutput
     // round robin input scheduler
     nextThread int
-    // Drawing context
-    context DrawingContext
     // Local buffer of unprocessed regions
     buffer []RegionRenderContext
+    // Concurrent render config
+    config ConcurrentRegionParameters
+    // Drawing context for drawing onto image
+    draw DrawingContext
 }
 
-func NewRenderTracker(drawingContext DrawingContext) *RenderTracker {
-    jobs := drawingContext.Config.RenderThreads
+func NewRenderTracker(app GodelbrotApplication) *RenderTracker {
+    config := app.ConcurrentConfig()
     tracker := RenderTracker{
-        processing: make([]uint, jobs),
-        input:      make([]chan renderInput, jobs),
-        output:     make([]chan renderOutput, jobs),
-        buffer:     newBuffer(drawingContext.Config.BufferSize),
+        processing: make([]uint, config.Jobs),
+        input:      make([]chan renderInput, config.Jobs),
+        output:     make([]chan renderOutput, config.Jobs),
+        buffer:     newBuffer(config.BufferSize),
         nextThread: 0,
-        context:    drawingContext,
+        config:    config,
+        draw: app.DrawingContext(),
     }
-    for i := 0; i < int(jobs); i++ {
+    for i := 0; i < int(config.Jobs); i++ {
         tracker.processing[i] = 0
         inputChan := make(chan renderInput, allocSmall)
         outputChan := make(chan renderOutput, allocSmall)
@@ -58,7 +61,7 @@ func (tracker *RenderTracker) RenderRegions(regions []RegionRenderContext) {
 
     // If we're busy, wait for buffer to fill before sending
     if tracker.Busy() {
-        if len(tracker.buffer) >= int(tracker.context.Config.BufferSize) {
+        if len(tracker.buffer) >= int(tracker.config.BufferSize) {
             input.regions = tracker.buffer
             tracker.cleanBuffer()
             tracker.SendInput(input)
@@ -89,7 +92,7 @@ func (tracker *RenderTracker) Draw(output renderOutput) {
     tracker.RenderRegions(output.children)
 
     for _, uniform := range output.uniformRegions {
-        tracker.context.DrawUniform(uniform)
+        uniform.DrawUniform()
     }
 
     for _, member := range output.members {

@@ -9,6 +9,12 @@ type BigMandelbrotMember struct {
     C BigComplex
 }
 
+func CreateBigMandelbrotMember(real, imag) {
+    return BigMandelbrotMember{
+        C: BigComplex{R: real, I: imag},
+    }
+}
+
 func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8, divergeLimit float64) {
     prec := member.C.Prec()
     z := NewBigComplex(0.0, 0.0, prec)

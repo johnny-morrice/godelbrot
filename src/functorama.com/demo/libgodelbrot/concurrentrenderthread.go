@@ -1,64 +1,76 @@
-type renderHeaps struct {
-    escapePointHeap  *EscapePointHeap
-    renderConfigHeap *RenderConfigHeap
+type RenderThread struct {
+    app RenderApplication
+    threadNum uint
+    inputChan <-chan renderInput
+    outputChan chan<- renderOutput
+    config ConcurrentRenderParameters
 }
 
+// Easy method to create render threads
+func RenderThreadFactory(app RenderApplication) {
+    count := 0
+    config := app.ConcurrentConfig()
+    return func(inputChan <-chan renderInput, outputChan chan<- renderOutput) RenderThread {
+        thread := RenderThread{
+            threadNum: count,
+            inputChan: inputChan,
+            outputChan: outputChan,
+            config: config,
+        }
+        count++
+        return thread
+    }
+}
 
-// How much memory should we allocate in advance?
-func newRenderOutput(config *RenderConfig) renderOutput {
-    buffSize := config.BufferSize
-    memberSize := config.RegionCollapse * config.RegionCollapse * config.BufferSize
-    return renderOutput{
-        uniformRegions: make([]RegionRenderContext, 0, buffSize),
-        // What is the correct size for this?
-        members: make([]pixelMember, 0, memberSize),
-        // The magic number of 4 represents the splitting factor
-        children: make([]RegionRenderContext, 0, buffSize),
+// Implements a single render thread
+func (thread RenderThread) Run() {
+    for {
+        input := <-thread.inputChan
+        switch input.command {
+        case render:
+            thread.outputChan <- thread.RegionRenderPass(input.regions)
+        case stop:
+            return
+        default:
+            panic(fmt.Sprintf("Unknown render command in thread %v: %v", threadNum, input.command))
+        }
     }
 }
 
 // A pass through the region rendering process, comprising many steps
-func RegionRenderPass(config *RenderConfig, heaps renderHeaps, regions []RegionRenderContext) renderOutput {
-    output := newRenderOutput(config)
+func (thread RenderThread) Pass(regions []RegionRenderContext) renderOutput {
+    output := thread.createRenderOutput()
     for _, region := range regions {
-        RegionRenderStep(config, heaps, region, &output)
+        thread.Step(region, &output)
     }
     return output
 }
 
-func RegionRenderStep(config *RenderConfig, heaps renderHeaps, region RegionRenderContext, output *renderOutput) {
-    if region.Collapse(config) {
-        smallConfig := heaps.renderConfigHeap.Subconfig(region)
-        MandelbrotSequence(smallConfig, func(i int, j int, member MandelbrotMember) {
-            output.members = append(output.members, pixelMember{i: i, j: j, MandelbrotMember: member})
-        })
+// A single render step
+func (thread RenderThread) Step(region RegionRenderContext, output *renderOutput) {
+    if Collapse(region) {
+        points := SequenceCollapse(region)
+        output.members = append(output.members, points...)
         return
     }
 
-    subregion := region.Subdivide(config, heaps.escapePointHeap)
-    if subregion.populated {
-        output.children = append(output.children, subregion.children...)
+    if Subdivide(region) {
+        output.children = append(output.children, splitee.Children()...)
         return
     }
 
     output.uniformRegions = append(output.uniformRegions, region)
 }
 
-// Implements a single render thread
-func RegionRenderThead(threadNum uint, config *RenderConfig, inputChan <-chan renderInput, outputChan chan<- renderOutput) {
-    heaps := renderHeaps{
-        renderConfigHeap: NewRenderConfigHeap(tracker.context.Config, Kilo),
-        escapePointHeap:  NewEscapePointHeap(K64),
-    }
-    for {
-        input := <-inputChan
-        switch input.command {
-        case render:
-            outputChan <- RegionRenderPass(config, heaps, input.regions)
-        case stop:
-            return
-        default:
-            panic(fmt.Sprintf("Unknown render command in thread %v: %v", threadNum, input.command))
-        }
+// Create a new output packet
+func (thread RenderThread) createRenderOutput() renderOutput {
+    buffSize := thread.config.BufferSize
+    memberSize := thread.config.RegionCollapse * thread.config.RegionCollapse * thread.config.BufferSize
+    return renderOutput{
+        // Q: How much memory should we allocate in advance?
+        uniformRegions: make([]RegionRenderContext, 0, buffSize),
+        // What is the correct size for this?
+        members: make([]pixelMember, 0, memberSize),
+        children: make([]RegionRenderContext, 0, buffSize),
     }
 }

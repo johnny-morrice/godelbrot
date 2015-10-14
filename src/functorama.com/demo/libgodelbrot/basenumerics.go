@@ -1,12 +1,16 @@
 package libgodelbrot
 
+import (
+    "image"
+)
+
 // A reusable notion of collapsable regions
 type BaseRegionNumerics struct {
     glitchSamples int
     collapseSize int
 }
 
-func (collapse *Collapser) CollapseSize() int {
+func (collapse BaseRegionNumerics) CollapseSize() int {
     return collapse.collapseSize
 }
 
@@ -36,10 +40,19 @@ func CreateBaseNumerics(render RenderApplication) BaseNumerics {
     }
 }
 
-func (base BaseNumerics) PictureMin() (int, int) {
+func (base *BaseNumerics) PictureMin() (int, int) {
     return base.picXMin, base.picYMin
 }
 
-func (base BaseNumerics) PictureMax() (int, int) {
+func (base *BaseNumerics) PictureMax() (int, int) {
     return base.picXMax, base.picYMax
+}
+
+
+// Change the drawing context to a sub-part of the image
+func (native *BaseNumerics) SubImage(rect image.Rectange) {
+    native.picXMin = rect.Min.X
+    native.picYmin = rect.Min.Y
+    native.picXMax = rect.Max.X
+    native.picYMax = rect.Max.Y    
 }

@@ -1,10 +1,18 @@
 package libgodelbrot
 
+type RegionParameters struct {
+    GlitchSamples uint
+    RegionCollapseSize uint
+}
+
+type ConcurrentRegionParameters struct {
+    BufferSize uint
+    RenderJobs uint
+}
+
 // An opaque facade used by subsystems to interact with the application at large 
 type RenderApplication interface {
-    GlitchSamples() uint
     Limits() (uint, float64)
-    RegionCollapseSize() uint
     PictureDimensions() (uint, uint)
     PictureAspect() float64
     BigUserCoords() (BigComplex, BigComplex)
@@ -12,4 +20,7 @@ type RenderApplication interface {
     FixAspect() bool
     SequentialNumerics() SequentialNumerics
     RegionNumerics() RegionNumerics
+    RegionConfig() RegionParameters
+    ConcurrentConfig() ConcurrentRegionParameters
+    Draw() DrawingContext
 }

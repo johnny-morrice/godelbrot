@@ -1,12 +1,18 @@
 package libgodelbrot
 
+import (
+    "image"
+)
+
 // Object to initialize the godelbrot system
 type ContextInit struct {
     info RenderInfo
-    numerics NumericsSystem
+    numerics NumericSystem
     renderer RenderContext
     // The palette
     palette Palette
+    // The image upon which to draw image
+    picture *image.NRGBA
 }
 
 // Based on the description, choose a renderer, numerical system and palette
@@ -32,6 +38,7 @@ func InitializeContext(desc RenderDescription) (context ContextInit, err error) 
     context.initNumerics()
     context.initRenderStrategy()
     context.initPalette()
+    context.initImage()
 
     return
 }
@@ -56,10 +63,8 @@ func (context *ContextInit) NewUserFacade() *GodelbrotUserFacade {
 
 // Create a simple facade for subsystems to interface with larger Godelbrot
 // system
-func (context *ContextInit) NewInnerFacade() *GodelbrotApp {
-    return &GodelbrotApp{
-        config: *context
-    }
+func (context *ContextInit) NewInnerFacade() GodelbrotApp {
+    return GodelbrotApp(context)
 }
 
 func (context *ContextInit) initPalette() {
@@ -210,18 +215,30 @@ func (context *ContextInit) chooseFastRenderStrategy() {
 }
 
 func (context *ContextInit) useSequentialRenderer() {
-    context.renderer = NewSequentialRenderer(context)
+    context.renderer = NewSequentialRenderer(context.NewInnerFacade())
     context.info.DetectedRenderStrategy = SequenceRenderMode
 }
 
 func (context *ContextInit) useRegionRenderer() {
-    context.renderer = NewRegionRenderer(context)
+    context.renderer = NewRegionRenderer(context.NewInnerFacade())
     context.info.DetectedRenderStrategy = RegionRenderMode
 }
 
 func (context *ContextInit) useConcurrentRegionRenderer() {
-    context.renderer = NewConcurrentRegionRenderer(context)
+    context.renderer = NewConcurrentRegionRenderer(context.NewInnerFacade())
     context.info.DetectedRenderStrategy = ConcurrentRegionRenderMode
+}
+
+func (context *ContextInit) initPicture() {
+    desc := context.info.Desc
+    bounds := image.Rectangle{
+        Min: image.ZP,
+        Max: image.Point{
+            X: desc.ImageWidth,
+            Y: desc.ImageHeight,
+        },
+    }
+    context.picture = image.NewNRGBA(bounds)
 }
 
 // True if we can reperesent the required number of divisions between min and max
