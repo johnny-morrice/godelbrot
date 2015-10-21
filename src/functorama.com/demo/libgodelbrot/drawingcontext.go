@@ -6,7 +6,7 @@ import (
 )
 
 type DrawingContext interface {
-    Picture() *image.NRGBA
+	Picture() *image.NRGBA
 	Colors() Palette
 }
 

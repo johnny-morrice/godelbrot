@@ -1,13 +1,13 @@
 package libgodelbrot
 
 import (
-    "math/big"
+	"math/big"
 )
 
 func bigEq(a big.Float, b big.Float) {
-    return a.Cmp(b) == 0
+	return a.Cmp(b) == 0
 }
 
 func bigComplexEq(a BigComplex, b BigComplex) {
-    a.Cmp(&b) == 0
+	a.Cmp(&b) == 0
 }

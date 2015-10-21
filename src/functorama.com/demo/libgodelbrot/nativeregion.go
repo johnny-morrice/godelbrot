@@ -9,20 +9,25 @@ type nativeSubregion struct {
 	children  []NativeRegion
 }
 
+type nativeMandelbrotThunk struct {
+	NativeMandelbrotMember
+	evaluated bool
+}
+
 type nativeRegion struct {
-	topLeft     NativeMandelbrotMember
-	topRight    NativeMandelbrotMember
-	bottomLeft  NativeMandelbrotMember
-	bottomRight NativeMandelbrotMember
-	midPoint    NativeMandelbrotMember
+	topLeft     nativeMandelbrotThunk
+	topRight    nativeMandelbrotThunk
+	bottomLeft  nativeMandelbrotThunk
+	bottomRight nativeMandelbrotThunk
+	midPoint    nativeMandelbrotThunk
 }
 
 // Extend NativeBaseNumerics and add support for regions
 type NativeRegionNumerics struct {
 	BaseRegionNumerics
 	NativeBaseNumerics
-	region nativeRegion
-	subregion nativeSubregion
+	region             nativeRegion
+	subregion          nativeSubregion
 	sequentialNumerics *NativeSequentialNumerics
 }
 
@@ -32,7 +37,7 @@ func (native *NativeRegionNumerics) Children() []RegionNumerics {
 	if native.subregion.populated {
 		nextContexts := make([]RegionNumerics, 0, 4)
 		for i, child := range native.subregion.children {
-			nextContexts[i] := native.proxyNumerics(child)
+			nextContexts[i] = native.proxyNumerics(child)
 		}
 		return nextContexts
 	}
@@ -42,14 +47,14 @@ func (native *NativeRegionNumerics) Children() []RegionNumerics {
 
 func (native *NativeRegionNumerics) RegionalSequenceNumerics() {
 	return NativeSequenceNumericsProxy{
-		Region: native.region,
+		Region:   native.region,
 		Numerics: native.sequentialNumerics,
 	}
 }
 
 func (native *NativeRegionNumerics) MandelbrotPoints() {
 	r := native.Region
-	return []MandelbrotMember {
+	return []MandelbrotMember{
 		r.topLeft.membership,
 		r.topRight.membership,
 		r.bottomLeft.membership,
@@ -58,19 +63,22 @@ func (native *NativeRegionNumerics) MandelbrotPoints() {
 	}
 }
 
-func (native *NativeRegionNumerics) EvaluateAllPoints() {
+func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit int) {
 	r := native.Region
-    points := []NativeMandelbrotMember{
+	points := []nativeMandelbrotThunk{
 		r.topLeft,
 		r.topRight,
 		r.bottomLeft,
 		r.bottomRight,
 		r.midPoint,
 	}
-    // Ensure points are all evaluated
-    for _, p := range points {
-        EvalThunk(p)
-    }
+	// Ensure points are all evaluated
+	for _, p := range points {
+		if !p.evaluated {
+			p.Mandelbrot(iterateLimit)
+			p.evaluated = true
+		}
+	}
 }
 
 // A glitch is possible when points are uniform near the set
@@ -94,7 +102,7 @@ func (native *NativeRegionNumerics) OnGlitchCurve() bool {
 		for i := 0; i < sqrtChecks; i++ {
 			y := imag(tl)
 			for j := 0; j < sqrtChecks; j++ {
-				checkMember := NativeMandelbrotMember {
+				checkMember := NativeMandelbrotMember{
 					C: complex(x, y),
 				}
 				&checkMember.Mandelbrot(iLimit, dLimit)
@@ -130,7 +138,7 @@ func (native *NativeRegionNumerics) Split() {
 	rightSideMid := NativeMandelbrotMember{C: complex(right, midI)}
 
 	leftSectorMid := (midR + left) / 2.0
-	rightSectorMid :=  (right + midR) / 2.0
+	rightSectorMid := (right + midR) / 2.0
 	topSectorMid := (top + midI) / 2.0
 	bottomSectorMid := (midI + bottom) / 2.0
 
@@ -184,7 +192,7 @@ func (native *NativeRegionNumerics) RegionMember() MandelbrotMember {
 // Quickly create a new *NativeRegionNumerics context
 func (native *NativeRegionNumerics) proxyNumerics(region Region) RegionNumerics {
 	return NativeRegionNumericsProxy{
-		Region: region,
+		Region:   region,
 		Numerics: native,
 	}
 }

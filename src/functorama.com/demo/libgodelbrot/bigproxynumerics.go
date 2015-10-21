@@ -1,20 +1,19 @@
 package libgodelbrot
 
 type BigRegionNumericsProxy struct {
-    Region BigRegion
-    Numerics *BigRegionNumerics
+	Region   BigRegion
+	Numerics *BigRegionNumerics
 }
 
 func (proxy BigRegionNumericsProxy) ClaimExtrinsics() {
-    proxy.Numerics.region = Region
+	proxy.Numerics.region = Region
 }
 
 type BigSequenceNumericsProxy struct {
-    Region BigRegion
-    Numerics *BigSequentialNumerics
+	Region   BigRegion
+	Numerics *BigSequentialNumerics
 }
 
 func (proxy BigSequentialNumerics) ClaimExtrinsics() {
-    proxy.Numerics.SubImage(proxy.Region.Rect())
+	proxy.Numerics.SubImage(proxy.Region.Rect())
 }
-

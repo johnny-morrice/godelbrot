@@ -54,7 +54,7 @@ func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics)
 			// If the region is not too small, two things can happen
 			// B. The region needs subdivided because it covers distinct parts of the plane
 			if Subdivide(splitee) {
-				splittingRegions = append(splittingRegions, splitee.Children() ...)
+				splittingRegions = append(splittingRegions, splitee.Children()...)
 				// C. The region need not be divided
 			} else {
 				completeRegions = append(completeRegions, splitee)
