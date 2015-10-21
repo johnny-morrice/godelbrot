@@ -2,7 +2,7 @@ package libgodelbrot
 
 type RenderTracker struct {
     // nth element incremented when nth thread processing
-    processing []uint
+    processing []uint32
     // input channels to threads
     input []chan renderInput
     // output channels to threads
