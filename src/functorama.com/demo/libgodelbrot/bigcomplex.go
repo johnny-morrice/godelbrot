@@ -5,8 +5,8 @@ import (
 )
 
 type BigComplex struct {
-    R *big.Float
-    I *big.Float
+    R big.Float
+    I big.Float
 }
 
 func (c BigComplex) Real() FloatKind {
@@ -24,8 +24,8 @@ func (c BigComplex) Add(other BigComplex) {
 
 func NewBigComplex(r float64, i float64, prec uint) BigComplex {
     return BigComplex{
-        R: NewBigFloat(r, prec),
-        I: NewBigFloat(i, prec),
+        R: CreateBigFloat(r, prec),
+        I: CreateBigFloat(i, prec),
     }
 }
 
@@ -36,8 +36,9 @@ func (f *big.Float) Float() float64 {
 }
  
 // Create a new Float, supplying a precision
-func NewBigFloat(f float64, prec uint) *big.Float {
-    b := NewFloat(f)
+func CreateBigFloat(f float64, prec uint) *big.Float {
+    b := big.Float{}
+    b.Set(f)
     b.SetPrec(prec)
     return b
 }

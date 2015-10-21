@@ -55,3 +55,5 @@ const DefaultRegionGlitchSampleSize = 10
 const allocMedium uint = allocSmall * 64
 // A small number
 const allocSmall uint = 1024
+// A tiny allocation
+const allocTiny uint = 128

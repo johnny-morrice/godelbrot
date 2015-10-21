@@ -10,11 +10,15 @@ type RenderTracker struct {
     // round robin input scheduler
     nextThread int
     // Local buffer of unprocessed regions
-    buffer []RegionRenderContext
+    buffer []SharedRegionNumerics
     // Concurrent render config
     config ConcurrentRegionParameters
-    // Drawing context for drawing onto image
-    draw DrawingContext
+    // drawing context for drawing onto image
+    draw drawingContext
+    // Processed uniform regions
+    uniform []SharedRegionNumerics
+    // Processed Mandelbrot points
+    points []PixelMember
 }
 
 func NewRenderTracker(app GodelbrotApplication) *RenderTracker {
@@ -26,7 +30,9 @@ func NewRenderTracker(app GodelbrotApplication) *RenderTracker {
         buffer:     newBuffer(config.BufferSize),
         nextThread: 0,
         config:    config,
-        draw: app.DrawingContext(),
+        draw: app.drawingContext(),
+        uniform: make([]SharedRegionNumerics, allocMedium),
+        points: make([]SharedRegionNumerics, allocMedium),
     }
     for i := 0; i < int(config.Jobs); i++ {
         tracker.processing[i] = 0
@@ -39,7 +45,7 @@ func NewRenderTracker(app GodelbrotApplication) *RenderTracker {
 }
 
 // True if at least one thread is processing
-func (tracker *RenderTracker) Busy() bool {
+func (tracker *RenderTracker) busy() bool {
     for _, wait := range tracker.processing {
         if wait > 0 {
             return true
@@ -49,7 +55,7 @@ func (tracker *RenderTracker) Busy() bool {
 }
 
 // Render a set of regions using the next thread in the round robin scheme
-func (tracker *RenderTracker) RenderRegions(regions []RegionRenderContext) {
+func (tracker *RenderTracker) renderRegions(regions []SharedRegionNumerics) {
 
     tracker.buffer = append(tracker.buffer, regions...)
 
@@ -60,21 +66,21 @@ func (tracker *RenderTracker) RenderRegions(regions []RegionRenderContext) {
     input := renderInput{command: render}
 
     // If we're busy, wait for buffer to fill before sending
-    if tracker.Busy() {
+    if tracker.busy() {
         if len(tracker.buffer) >= int(tracker.config.BufferSize) {
             input.regions = tracker.buffer
             tracker.cleanBuffer()
-            tracker.SendInput(input)
+            tracker.sendInput(input)
         }
     } else {
         input.regions = tracker.buffer
         tracker.cleanBuffer()
-        tracker.SendInput(input)
+        tracker.sendInput(input)
     }
 }
 
 // Send input and mark as busy
-func (tracker *RenderTracker) SendInput(input renderInput) {
+func (tracker *RenderTracker) sendInput(input renderInput) {
     threadIndex := tracker.nextThread
     tracker.input[threadIndex] <- input
     tracker.processing[threadIndex]++
@@ -86,27 +92,39 @@ func (tracker *RenderTracker) SendInput(input renderInput) {
     }
 }
 
-// Draw if the output is complete, otherwise hand it back in
-func (tracker *RenderTracker) Draw(output renderOutput) {
+// A single step in render tracking
+func (tracker *RenderTracker) step(output renderOutput) {
 
-    tracker.RenderRegions(output.children)
+    // Give more work to the threads
+    tracker.renderRegions(output.children)
 
-    for _, uniform := range output.uniformRegions {
-        uniform.DrawUniform()
+    // Stash the completed areas
+    tracker.uniform = append(tracker.uniform, output.uniformRegions)
+    tracker.points = append(tracker.points, output.members)
+}
+
+// draw to the image
+func (tracker *RenderTracker) draw() {
+    // We must still ClaimExtrinsics to ensure we work with the local data in a cached object.
+
+    for _, uniform := range tracker.uniform {
+        uniform.ClaimExtrinsics()
+        uniform.drawUniform()
     }
 
-    for _, member := range output.members {
-        tracker.context.DrawPointAt(member.i, member.j, member.MandelbrotMember)
+    // We do not need to claim any extrinsics here, because we are merely drawing a render result
+    // that requires no extra context
+    for _, member := range tracker.points {
+        tracker.draw.drawPointAt(member.i, member.j, member.MandelbrotMember)
     }
-
 }
 
 func (tracker *RenderTracker) cleanBuffer() {
     tracker.buffer = newBuffer(tracker.context.Config.BufferSize)
 }
 
-func newBuffer(bufferSize uint) []RegionRenderContext {
-    return make([]RegionRenderContext, 0, bufferSize)
+func newBuffer(bufferSize uint) []SharedRegionNumerics {
+    return make([]SharedRegionNumerics, 0, bufferSize)
 }
 
 // Render the Mandelbrot set concurrently
@@ -118,14 +136,14 @@ func (tracker *RenderTracker) Render() {
         go RegionRenderProcess(uint(i), tracker.context.Config, inputChan, outputChan)
     }
 
-    tracker.RenderRegions([]RegionRenderContext{initialRegion})
+    tracker.renderRegions([]SharedRegionNumerics{initialRegion})
 
-    for tracker.Busy() {
+    for tracker.busy() {
         for i, outputChan := range tracker.output {
             select {
             case output := <-outputChan:
                 tracker.processing[i]--
-                tracker.Draw(output)
+                tracker.step(output)
             default:
                 // Wait till next input
             }
@@ -136,4 +154,6 @@ func (tracker *RenderTracker) Render() {
     for _, input := range tracker.input {
         input <- renderInput{command: stop}
     }
+
+    tracker.draw()
 }

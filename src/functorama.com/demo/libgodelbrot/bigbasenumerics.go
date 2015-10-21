@@ -2,6 +2,7 @@ package libgodelbrot
 
 import (
     "math/big"
+    "math"
 )
 
 // Basis for all big.Float numerics
@@ -22,10 +23,10 @@ type BigBaseNumerics struct {
     precision uint
 }
 
-func CreateBigBaseNumerics(render RenderApplication) BigBaseNumerics {
+func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
     prec := DefaultHighPrec
 
-    planeMin, planeMax := render.BigUserCoords()
+    planeMin, planeMax := app.BigUserCoords()
 
     left := NewBigFloat(0.0, prec)
     right := NewBigFloat(0.0, prec)
@@ -46,12 +47,12 @@ func CreateBigBaseNumerics(render RenderApplication) BigBaseNumerics {
     planeAspect := NewBigFloat(0.0, prec)
     planeAspect.Quo(planeWidth, planeHeight)
 
-    nativePictureAspect := render.PictureAspect()
+    nativePictureAspect := AppPictureAspectRatio(app)
     pictureAspect := NewBigFloat(nativePictureAspect, prec)
 
     thindicator := planeAspect.Cmp(pictureAspect)
 
-    if render.FixAspect() {
+    if app.FixAspect() {
         // If the plane aspect is greater than image aspect
         // Then the plane is too short, so must be made taller
         if thindicator == 1 {
@@ -69,9 +70,9 @@ func CreateBigBaseNumerics(render RenderApplication) BigBaseNumerics {
         }
     }
 
-    iLimit, dLimit := render.Limits()
+    iLimit, dLimit := app.Limits()
 
-    pictureWidthI, pictureHeightI := render.PictureDimensions()
+    pictureWidthI, pictureHeightI := app.PictureDimensions()
     pictureWidth := NewBigFloat(float64(pictureWidthI), prec)
     pictureHeight := NewBigFloat(float64(pictureHeightI), prec)
 
@@ -81,7 +82,7 @@ func CreateBigBaseNumerics(render RenderApplication) BigBaseNumerics {
     iSize.Quo(planeHeight, pictureHeight)
 
     base := BigBaseNumerics{
-        BaseNumerics: CreateBaseNumerics(render),
+        BaseNumerics: CreateBaseNumerics(app),
         realMin: real(planeMin),
         realMax: real(planeMax),
         imagMin: imag(planeMin),
@@ -147,11 +148,10 @@ func (base *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
     return
 }
 
-// Change the 
-
-// Reduce precision of the base, while maintaining adequate accuracy
-// To keep things speedy, we will only explore 2 paths through the image
-func (base *BigBaseNumerics) FastPixelPerfectPrecision() {
+// FastPixelPerfectPrecision reduces precision of the numeric system, while maintaining adequate 
+// accuracy.   Returns the new precison.
+func (base *BigBaseNumerics) FastPixelPerfectPrecision() uint {
+    // To keep things speedy, we will only explore 2 paths through the image
     xMin, yMin := base.PictureMin()
     xMax, yMax := base.PictureMax()
 
@@ -181,17 +181,21 @@ func (base *BigBaseNumerics) FastPixelPerfectPrecision() {
     }
 
     base.SetPrec(highPrec)
+
+    return highPrec
 }
 
 // Set the precision of the base
 func (base *BigBaseNumerics) SetPrec(prec uint) {
     base.precision = prec
     baseFloats := []big.Float {
-        realMin,
-        realMax,
-        imagMin,
-        imagMax,
-        divergeLimit,
+        base.realMin,
+        base.realMax,
+        base.imagMin,
+        base.imagMax,
+        base.divergeLimit,
+        base.rUnit,
+        base.iUnit,
     }
 
     for _, f := range(baseFloats) {

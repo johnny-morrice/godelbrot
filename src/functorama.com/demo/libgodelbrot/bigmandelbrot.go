@@ -7,6 +7,7 @@ import (
 type BigMandelbrotMember struct {
     BaseMandelbrot
     C BigComplex
+    SqrtDivergeLimit big.Float
 }
 
 func CreateBigMandelbrotMember(real, imag) {
@@ -15,16 +16,15 @@ func CreateBigMandelbrotMember(real, imag) {
     }
 }
 
-func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8, divergeLimit float64) {
+func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
     prec := member.C.Prec()
     z := NewBigComplex(0.0, 0.0, prec)
-    sqrtDl := math.Sqrt(divergeLimit)
     aa := NewBigFloat(0.0, prec)
     bb := NewBigFloat(0.0, prec)
     ab := NewBigFloat(0.0, prec)
     i := uint8(0)
     c := member.C
-    for ; i < iterateLimit && z.WithinMandLimit(sqrtDl); i++ {
+    for ; i < iterateLimit && withinMandLimit(member.SqrtDLimit); i++ {
         aa.Set(z.R)
         aa.Mul(aa, aa)
 
@@ -44,10 +44,18 @@ func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8, divergeLimit f
     member.InvDivergence = i
 }
 
-func (z BigComplex) WithinMandLimit(limit float64) bool {
+func withinBigMandLimit(z BigComplex, limit big.Float) bool {
     // Approximate cmplx.Abs
     negLimit := -limit
-    x := z.R
-    y := z.Y
-    return x.Lt(limit) && x.Gt(negLimit) && y.Lt(limit) && y.Gt(negLimit)
+    r := z.R
+    i := z.Y
+
+    rLimCmp := r.Cmp(limit)
+    rNegLimCmp := r.Cmp(negLimit)
+    iLimCmp := i.Cmp(limit)
+    iNegLimCmp := i.Cmp(negLimit)
+
+    within := rLimCmp == -1 && rNegLimCmp == 1
+    within = within && iLimCmp == -1 && iNegLimCmp == 1
+    return within
 }

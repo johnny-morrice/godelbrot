@@ -14,19 +14,12 @@ func (collapse BaseRegionNumerics) CollapseSize() int {
     return collapse.collapseSize
 }
 
-// Number of samples to take when computing rendering glitch
-func  (base BaseRegionNumerics) GlitchSamples() int {
-    return base.glitchSamples
-}
-
 // Numerics that are aware of a picture and of the Mandelbrot iteration limit
 type BaseNumerics struct {
     picXMin int
     picXMax int // exclusive maximum
     picYMin int
     picYMax int // exclusive maximum
-
-    iterLimit int
 }
 
 func CreateBaseNumerics(app RenderApplication) BaseNumerics {
@@ -36,7 +29,6 @@ func CreateBaseNumerics(app RenderApplication) BaseNumerics {
         picXMax: app.PictureWidth(),
         picYMin: 0,
         picYMax: app.PictureHeight(),
-        iterLimit: iLimit
     }
 }
 

@@ -1,18 +1,39 @@
-type RenderThread struct {
-    app RenderApplication
-    threadNum uint
+package libgodelbrot
+
+type renderCommand uint
+
+const (
+    render = renderCommand(iota)
+    stop
+)
+
+type renderInput struct {
+    command renderCommand
+    regions []SharedRegonNumerics
+}
+
+type renderOutput struct {
+    uniformRegions []SharedRegonNumerics
+    children       []SharedRegonNumerics
+    members        []PixelMember
+}
+
+type renderThread struct {
+    threadId uint
     inputChan <-chan renderInput
     outputChan chan<- renderOutput
     config ConcurrentRenderParameters
 }
 
+type renderThreadFactory func(inputChan <-chan renderInput, outputChan chan<- renderOutput) RenderThread
+
 // Easy method to create render threads
-func RenderThreadFactory(app RenderApplication) {
+func newRenderThreadFactory(app RenderApplication) renderThreadFactory {
     count := 0
     config := app.ConcurrentConfig()
     return func(inputChan <-chan renderInput, outputChan chan<- renderOutput) RenderThread {
         thread := RenderThread{
-            threadNum: count,
+            threadId: count,
             inputChan: inputChan,
             outputChan: outputChan,
             config: config,
@@ -23,7 +44,7 @@ func RenderThreadFactory(app RenderApplication) {
 }
 
 // Implements a single render thread
-func (thread RenderThread) Run() {
+func (thread RenderThread) run() {
     for {
         input := <-thread.inputChan
         switch input.command {
@@ -32,13 +53,14 @@ func (thread RenderThread) Run() {
         case stop:
             return
         default:
-            panic(fmt.Sprintf("Unknown render command in thread %v: %v", threadNum, input.command))
+            panic(fmt.Sprintf("Unknown render command in thread %v: %v", 
+                thread.threadId, input.command))
         }
     }
 }
 
 // A pass through the region rendering process, comprising many steps
-func (thread RenderThread) Pass(regions []RegionRenderContext) renderOutput {
+func (thread RenderThread) pass(regions []SharedRegionNumerics) renderOutput {
     output := thread.createRenderOutput()
     for _, region := range regions {
         thread.Step(region, &output)
@@ -47,8 +69,15 @@ func (thread RenderThread) Pass(regions []RegionRenderContext) renderOutput {
 }
 
 // A single render step
-func (thread RenderThread) Step(region RegionRenderContext, output *renderOutput) {
-    if Collapse(region) {
+func (thread RenderThread) step(region SharedRegionNumerics, output *renderOutput) {
+    // We are in a thread, so we must be sure that we have our own copy of the context
+    region.GrabThreadPrototype(thread.threadId)
+    // We use proxies to share objects, so we've got to ensure we're using the correct local data
+    region.ClaimExtrinsics()
+
+    collapse := thread.config.RegionCollapseSize
+
+    if Collapse(region, collapse) {
         points := SequenceCollapse(region)
         output.members = append(output.members, points...)
         return
@@ -68,9 +97,9 @@ func (thread RenderThread) createRenderOutput() renderOutput {
     memberSize := thread.config.RegionCollapse * thread.config.RegionCollapse * thread.config.BufferSize
     return renderOutput{
         // Q: How much memory should we allocate in advance?
-        uniformRegions: make([]RegionRenderContext, 0, buffSize),
+        uniformRegions: make([]SharedRegionNumerics, 0, buffSize),
         // What is the correct size for this?
         members: make([]pixelMember, 0, memberSize),
-        children: make([]RegionRenderContext, 0, buffSize),
+        children: make([]SharedRegionNumerics, 0, buffSize),
     }
 }

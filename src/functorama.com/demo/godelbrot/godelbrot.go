@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"flag"
 	"image/png"
 	"image"
@@ -124,11 +124,11 @@ func renderFractal(args commandLine) (image.NRGBA, error) {
 // Validate and extract a render description from the command line arguments
 func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, error) {
 	if args.iterateLimit > 255 {
-		return nil, errors.New("iterateLimit out of bounds (uint8)")
+		return nil, fmt.Errorf("iterateLimit out of bounds.  Valid values are: (0-255)")
 	}
 
 	if args.divergeLimit <= 0.0 {
-		return nil, errors.New("divergeLimit out of bounds (positive float64)")
+		return nil, fmt.Errorf("divergeLimit out of bounds.  Valid values are: (> 0)")
 	}
 
 	description := libgodelbrot.RenderDescription {

@@ -6,13 +6,12 @@ type NativeSequentialNumerics struct {
     members []PixelMember
 }
 
-func (native *NativeSequentialNumerics) MandelbrotSequence() {
+func (native *NativeSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
     topLeft := native.PlaneTopLeft()
 
     imageLeft, imageTop := native.PictureMin()
     imageRight, imageBottom := native.PictureMax()
     rUnit, iUnit := native.PixelSize()
-    iterLimit, divergeLimit := native.MandelbrotLimits()
 
     x := real(topLeft)
     for i := imageLeft; i < imageRight; i++ {
@@ -21,7 +20,7 @@ func (native *NativeSequentialNumerics) MandelbrotSequence() {
             member := NativeMandelbrotMember{
                 C: complex(x, y),
             }
-            &member.Mandelbrot(iterLimit, divergeLimit)
+            member.Mandelbrot(iterLimit)
             native.sequencer(i, j, *member)
             y -= iUnit
         }
@@ -29,8 +28,10 @@ func (native *NativeSequentialNumerics) MandelbrotSequence() {
     }
 }
 
-func (native *NativeSequentialNumerics) ImageDrawSequencer() {
-    native.sequencer = DrawPointAt
+func (native *NativeSequentialNumerics) ImageDrawSequencer(draw DrawingContext) {
+    native.sequencer = func (i, j int, member NativeMandelbrotMember) {
+        draw.DrawPointAt(i, j, member)
+    }
 }
 
 func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
@@ -38,7 +39,7 @@ func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
         native.members = append(native.members, PixelMember{
             I: i, 
             J: j,
-            MandelbrotMember: NativeMandelbrotMember.MandelbrotMember,
+            MandelbrotMember: member.MandelbrotMember,
         }
     }
 }

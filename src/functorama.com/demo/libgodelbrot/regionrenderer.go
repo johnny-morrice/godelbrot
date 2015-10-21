@@ -30,7 +30,7 @@ func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 		RenderSequentialRegion(region)
 	}
 
-	return numerics.Picture()
+	return renderer.app.Draw().Picture()
 }
 
 func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics) {

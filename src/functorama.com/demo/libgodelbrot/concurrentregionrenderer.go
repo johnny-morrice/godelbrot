@@ -5,7 +5,6 @@ import (
 	"image"
 )
 
-func NewConcurrentRegionRenderer(app *GodelbrotApplication) {
-	tracker := NewRenderTracker(app)
-	return tracker.Render()
+func NewConcurrentRegionRenderer(app *GodelbrotApplication) *RenderTracker {
+	return NewRenderTracker(app)
 }
