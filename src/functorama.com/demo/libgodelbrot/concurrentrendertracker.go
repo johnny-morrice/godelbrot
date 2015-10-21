@@ -30,7 +30,7 @@ func NewRenderTracker(app GodelbrotApplication) *RenderTracker {
         buffer:     newBuffer(config.BufferSize),
         nextThread: 0,
         config:    config,
-        draw: app.drawingContext(),
+        draw: app.DrawingContext(),
         uniform: make([]SharedRegionNumerics, allocMedium),
         points: make([]SharedRegionNumerics, allocMedium),
     }
