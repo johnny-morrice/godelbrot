@@ -30,7 +30,7 @@ func (native *NativeSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
 
 func (native *NativeSequentialNumerics) ImageDrawSequencer(draw DrawingContext) {
 	native.sequencer = func(i, j int, member NativeMandelbrotMember) {
-		draw.DrawPointAt(i, j, member)
+		draw.DrawPointAt(PixelMember{i, j, member.MandelbrotMember})
 	}
 }
 

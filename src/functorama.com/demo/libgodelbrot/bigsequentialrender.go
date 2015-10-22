@@ -38,7 +38,7 @@ func (bigFloat *BigSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
 
 func (big *BigSequentialNumerics) ImageDrawSequencer(draw DrawingContext) {
 	big.sequencer = func(i, j int, member BigMandelbrotMember) {
-		draw.DrawPointAt(i, j, member)
+		DrawPoint(draw, PixelMember{i, j, member.MandelbrotMember})
 	}
 }
 

@@ -19,10 +19,12 @@ func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 	initialRegion := renderer.app.RegionNumerics()
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
+	draw := renderer.app.Draw()
+
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
-		drawingNumerics.ClaimExtrinsics()
-		drawingNumerics.DrawUniform(region)
+		region.ClaimExtrinsics()
+		DrawUniform(draw, region)
 	}
 
 	// Add detail from the small regions next
@@ -30,7 +32,7 @@ func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 		RenderSequentialRegion(region)
 	}
 
-	return renderer.app.Draw().Picture()
+	return draw.Picture()
 }
 
 func SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics) {

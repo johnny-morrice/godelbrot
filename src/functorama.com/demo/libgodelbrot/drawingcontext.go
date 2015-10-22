@@ -10,21 +10,17 @@ type DrawingContext interface {
 	Colors() Palette
 }
 
-type RegionDrawingContext interface {
-	DrawingContext
-	RegionMember() MandelbrotMember
-	Rect() image.Rectangle
-}
-
-func (context RegionDrawingContext) DrawUniform() {
-	member := context.RegionMember()
+// DrawUniform draws a rectangle of uniform colour on to the image.
+func DrawUniform(context DrawingContext, region RegionNumerics) {
+	member := region.RegionMember()
 	color := context.Colors().Color(member)
 	uniform := image.NewUniform(color)
-	rect := context.Rect()
+	rect := region.Rect()
 	draw.Draw(context.Picture(), rect, uniform, image.ZP, draw.Src)
 }
 
-func (context DrawingContext) DrawPointAt(i int, j int, member MandelbrotMember) {
-	color := context.Colors().Color(member)
-	context.Picture().Set(i, j, color)
+// DrawPoint draws a single point on to the image.
+func DrawPoint(context DrawingContext, pixel PixelMember) {
+	color := context.Colors().Color(pixel.member)
+	context.Picture().Set(pixel.I, pixel.J, color)
 }

@@ -54,28 +54,6 @@ type SharedRegionNumerics interface {
 	OpaqueThreadPrototype
 }
 
-// DrawRegion combines a RegionNumerics and DrawingContext, implementing RegionDrawingContext
-type DrawRegion struct {
-	Numerics RegionNumerics
-	Draw     DrawingContext
-}
-
-func (draw DrawRegion) RegionMember() MandelbrotMember {
-	return draw.Numerics.RegionMember()
-}
-
-func (draw DrawRegion) Rect() image.Rectangle {
-	return draw.Numerics.Rect()
-}
-
-func (draw DrawRegion) Picture() *image.NRGBA {
-	return draw.Draw.Picture()
-}
-
-func (draw DrawRegion) Colors() Palette {
-	return draw.Draw.Colors()
-}
-
 // PixelMember is a MandelbrotMember associated with a pixel
 type PixelMember struct {
 	I      int

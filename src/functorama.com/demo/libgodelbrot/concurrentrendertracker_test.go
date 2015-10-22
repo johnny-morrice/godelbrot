@@ -93,9 +93,6 @@ func TestTrackerSendInput(t *testing.T) {
 }
 
 func TestTrackerRenderRegions(t *testing.T) {
-	// This function does not reference particular threads
-	const jobCount = 1
-
 	// Check trivial path
 	zeroRegions := []SharedRegionNumerics{}
 	zeroTracker := RenderTracker{
@@ -145,5 +142,42 @@ func TestTrackerRenderRegions(t *testing.T) {
 }
 
 func TestTrackerStep(t *testing.T) {
-	
+	child := mockSharedRegionNumerics{}
+	uniform := mockSharedRegionNumerics{}
+	member := PixelMember{1,2}
+	out := renderOutput{
+		children: []SharedRegionNumerics{child},
+		uniformRegions: []SharedRegionNumerics{uniform},
+		members: []PixelMember{member},
+	}
+
+	// The tracker is not busy
+	tracker := RenderTracker{
+		buffer:     []SharedRegionNumerics{},
+		processing: []uint32{0},
+		input:      []chan renderInput{make(chan renderInput)},
+		uniform:	[]SharedRegionNumerics{},
+		points:		[]PixelMember{},
+	}
+
+	tracker.step(out)
+
+	chanOut := <- tracker.input[0]
+	if len(chanOut.regions) != 1 {
+		t.Error("Expected 1 region in the input channel but received:", chanOut)
+	}
+
+	if len(tracker.uniform) != 1 {
+		t.Error("Expected 1 uniform region but tracker was:", tracker)
+	}
+
+	if len(tracker.points) != 1 {
+		t.Error("Expected 1 PixelMember but tracker was:", tracker)
+	}
+}
+
+func TestTrackerDraw(t *testing.T) {
+	uniform := mockSharedRegionNumerics{}
+	point := PixelMember{1, 2}
+	context := mockDrawingContext{}
 }

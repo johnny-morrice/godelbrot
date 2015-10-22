@@ -109,13 +109,13 @@ func (tracker *RenderTracker) draw() {
 
 	for _, uniform := range tracker.uniform {
 		uniform.ClaimExtrinsics()
-		uniform.drawUniform()
+		DrawUniform(tracker.draw, uniform)
 	}
 
 	// We do not need to claim any extrinsics here, because we are merely drawing a render result
 	// that requires no extra context
 	for _, member := range tracker.points {
-		tracker.draw.drawPointAt(member.i, member.j, member.MandelbrotMember)
+		DrawPoint(tracker.draw, member)
 	}
 }
 
