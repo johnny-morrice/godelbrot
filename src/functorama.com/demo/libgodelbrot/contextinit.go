@@ -4,10 +4,35 @@ import (
 	"image"
 )
 
+// Machine generated information about a render
+type RenderInfo struct {
+	UserDescription RenderDescription
+	// Describe the render strategy in use
+	DetectedRenderStrategy RenderMode
+	// Describe the numerics system in use
+	DetectedNumericsMode NumericsMode
+	// RealMin as a native float
+	NativeRealMin float64
+	// RealMax as a native float
+	NativeRealMax float64
+	// ImagMin as a native float
+	NativeImagMin float64
+	// ImagMax as a native float
+	NativeImagMax float64
+	// RealMin as a big float (very high precision)
+	BigRealMin big.Float
+	// RealMax as a big float (very high precision)
+	BigRealMax big.Float
+	// ImagMin as a big float (very high precision)
+	BigImagMin big.Float
+	// ImagMax as a big float (very high precision)
+	BigImagMax big.Float
+}
+
 // Object to initialize the godelbrot system
 type ContextInit struct {
 	info     RenderInfo
-	numerics NumericSystem
+	numerics AbstractNumericsFactory
 	renderer RenderContext
 	// The palette
 	palette Palette
@@ -15,9 +40,9 @@ type ContextInit struct {
 	picture *image.NRGBA
 }
 
-// Based on the description, choose a renderer, numerical system and palette
-// and combine them into a coherent render context
-func InitializeContext(desc RenderDescription) (context ContextInit, err error) {
+// InitializeContext examines the description, chooses a renderer, numerical system and palette.
+// Together these form a coherent render context.
+func InitializeContext(desc *RenderDescription) (context ContextInit, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch r := r.(type) {
@@ -31,7 +56,7 @@ func InitializeContext(desc RenderDescription) (context ContextInit, err error) 
 
 	context = &ContextInit{
 		info: RenderInfo{
-			UserDescription: desc,
+			UserDescription: *desc,
 		},
 	}
 
@@ -49,19 +74,13 @@ type GodelbrotUserFacade struct {
 }
 
 // The user facade will render an image
-func (facade *GodelbrotUserFacade) Render() (image.NRGBA, error) {
+func (facade *GodelbrotUserFacade) Render() (*image.NRGBA, error) {
 	return facade.config.RenderContext.Render()
 }
 
 // Create a simple facade for clients to interface with the Godelbrot system
 func (context *ContextInit) NewUserFacade() *GodelbrotUserFacade {
 	return &GodelbrotUserFacade{config: context}
-}
-
-// Create a simple facade for subsystems to interface with larger Godelbrot
-// system
-func (context *ContextInit) NewInnerFacade() GodelbrotApp {
-	return GodelbrotApp(context)
 }
 
 func (context *ContextInit) initPalette() {

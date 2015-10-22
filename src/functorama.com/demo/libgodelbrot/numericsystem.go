@@ -10,11 +10,11 @@ import (
 // This is because the render control algorithms are also strategies that vary
 // independently.
 
-// NumericsSystem represents a full numerics stack that can interface with any Godelbrot render
-// strategy
-type NumericSystem interface {
-	SharedRegionNumerics
-	SharedSequentialNumerics
+type AbstractNumericsFactory interface {
+	Sequence() SequentialNumerics
+	SharedSequence() SharedSequentialNumerics
+	Region() RegionNumerics
+	SharedRegion() SharedRegionNumerics
 }
 
 // SequentialNumerics provides sequential (column-wise) rendering calculations
@@ -58,7 +58,7 @@ type SharedRegionNumerics interface {
 type PixelMember struct {
 	I      int
 	J      int
-	member MandelbrotMember
+	Member MandelbrotMember
 }
 
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential (column-wise) manner

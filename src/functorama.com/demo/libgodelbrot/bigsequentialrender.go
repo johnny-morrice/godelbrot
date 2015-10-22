@@ -45,9 +45,9 @@ func (big *BigSequentialNumerics) ImageDrawSequencer(draw DrawingContext) {
 func (big *BigSequentialNumerics) MemberCaptureSequencer() {
 	big.sequencer = func(i, j int, member BigMandelbrotMember) {
 		big.members = append(big.members, PixelMember{
-			I:                i,
-			J:                j,
-			MandelbrotMember: member.MandelbrotMember,
+			I:      i,
+			J:      j,
+			Member: member,
 		})
 	}
 }

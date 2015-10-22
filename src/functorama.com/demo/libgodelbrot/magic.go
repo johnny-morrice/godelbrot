@@ -21,11 +21,11 @@ import (
 
 // MATHEMATICAL CONSTANTS
 
-// Normalized size of box containing Mandelbrot set
-const MagicSetSize complex128 = 2.60 + 2.24i
+// Minimum bounds of Mandelbrot set
+const MandelbrotMin complex128 = -2.01 - 1.11i
 
-// Default offset for top left of plane containing set
-const MagicOffset complex128 = -2.01 + 1.13i
+// Maximum bounds of Mandelbrot set
+const MandelbrotMax complex128 = 0.59 + 1.13i
 
 // Named bignums
 var bigZero big.Float = NewFloat(0)
@@ -38,7 +38,7 @@ const DefaultIterations uint8 = 255
 const DefaultDivergeLimit float64 = 4.0
 const DefaultImageWidth uint = 800
 const DefaultImageHeight uint = 600
-const DefaultCollapse uint = 2
+const DefaultCollapse uint = 8
 const DefaultBufferSize uint = 256
 
 // Default base for newly parsed numbers
@@ -54,7 +54,7 @@ const DefaultTinyImageArea uint = 40000
 const DefaultLowThreading uint = 2
 
 // Default sample size for region glitch-correction
-const DefaultRegionGlitchSampleSize = 10
+const DefaultGlitchSamples uint = 10
 
 // OPERATIONAL CONSTANTS
 

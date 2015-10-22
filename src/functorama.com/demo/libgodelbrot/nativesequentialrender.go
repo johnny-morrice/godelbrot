@@ -37,9 +37,9 @@ func (native *NativeSequentialNumerics) ImageDrawSequencer(draw DrawingContext) 
 func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
 	native.Sequencer = func(i, j int, member NativeMandelbrotMember) {
 		native.members = append(native.members, PixelMember{
-			I:                i,
-			J:                j,
-			MandelbrotMember: member.MandelbrotMember,
+			I:      i,
+			J:      j,
+			Member: member,
 		})
 	}
 }

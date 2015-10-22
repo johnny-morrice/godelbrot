@@ -28,11 +28,8 @@ type RenderApplication interface {
 	RegionConfig() RegionParameters
 	ConcurrentConfig() ConcurrentRegionParameters
 
-	// Views into the numerics system used by various render strategies
-	RegionNumerics() RegionNumerics
-	SequentialNumerics() SequentialNumerics
-	SharedRegionNumerics() SharedRegionNumerics
-	SharedSequentialNumerics() SharedSequentialNumerics
+	// Provide factory for creating numerics systems
+	NumericsFactory() AbstractNumericsFactory
 
 	// Image drawing facilities
 	Draw() DrawingContext

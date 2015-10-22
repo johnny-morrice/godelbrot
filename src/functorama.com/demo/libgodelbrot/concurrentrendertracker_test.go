@@ -104,7 +104,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	}
 
 	// When not busy, just send whatever we have to the next thread
-	startRegions := []SharedRegionNumerics{mockSharedRegionNumerics{}}
+	startRegions := []SharedRegionNumerics{&mockSharedRegionNumerics{}}
 	startTracker := RenderTracker{
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{0},
@@ -120,7 +120,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	}
 
 	// When busy, wait till the buffer fills
-	busyRegions := []SharedRegionNumerics{mockSharedRegionNumerics{}}
+	busyRegions := []SharedRegionNumerics{&mockSharedRegionNumerics{}}
 	busyTracker := RenderTracker{
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{1},
@@ -142,13 +142,13 @@ func TestTrackerRenderRegions(t *testing.T) {
 }
 
 func TestTrackerStep(t *testing.T) {
-	child := mockSharedRegionNumerics{}
-	uniform := mockSharedRegionNumerics{}
-	member := PixelMember{1,2}
+	child := &mockSharedRegionNumerics{}
+	uniform := &mockSharedRegionNumerics{}
+	member := PixelMember{1, 2}
 	out := renderOutput{
-		children: []SharedRegionNumerics{child},
+		children:       []SharedRegionNumerics{child},
 		uniformRegions: []SharedRegionNumerics{uniform},
-		members: []PixelMember{member},
+		members:        []PixelMember{member},
 	}
 
 	// The tracker is not busy
@@ -156,13 +156,13 @@ func TestTrackerStep(t *testing.T) {
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{0},
 		input:      []chan renderInput{make(chan renderInput)},
-		uniform:	[]SharedRegionNumerics{},
-		points:		[]PixelMember{},
+		uniform:    []SharedRegionNumerics{},
+		points:     []PixelMember{},
 	}
 
 	tracker.step(out)
 
-	chanOut := <- tracker.input[0]
+	chanOut := <-tracker.input[0]
 	if len(chanOut.regions) != 1 {
 		t.Error("Expected 1 region in the input channel but received:", chanOut)
 	}
@@ -177,7 +177,22 @@ func TestTrackerStep(t *testing.T) {
 }
 
 func TestTrackerDraw(t *testing.T) {
-	uniform := mockSharedRegionNumerics{}
+	uniform := &mockSharedRegionNumerics{}
 	point := PixelMember{1, 2}
-	context := mockDrawingContext{}
+	context := &mockDrawingContext{}
+	tracker := RenderTracker{
+		uniform: []SharedRegionNumerics{uniform},
+		points:  []PixelMember{point},
+		draw:    context,
+	}
+
+	tracker.draw()
+
+	if !(uniform.tClaimExtrinsics && uniform.tRect && uniform.tRegionMember) {
+		t.Error("Expected method not called on uniform region:", *uniform)
+	}
+
+	if !(context.tDrawPoint && context.tDrawUniform) {
+		t.Error("Expected method not called on drawing context")
+	}
 }

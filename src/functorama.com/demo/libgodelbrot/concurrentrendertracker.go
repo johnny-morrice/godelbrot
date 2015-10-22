@@ -127,6 +127,8 @@ func newBuffer(bufferSize uint) []SharedRegionNumerics {
 	return make([]SharedRegionNumerics, 0, bufferSize)
 }
 
+// How do we test Render?
+
 // Render the Mandelbrot set concurrently
 func (tracker *RenderTracker) Render() {
 	initialRegion := WholeRegion(tracker.context.Config)

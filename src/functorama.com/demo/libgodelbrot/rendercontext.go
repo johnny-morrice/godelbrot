@@ -64,34 +64,32 @@ type RenderDescription struct {
 	// Number of render threads
 	Jobs           uint
 	RegionCollapse uint
-	BufferSize     uint
 	// Numerical system
 	Numerics NumericsMode
 	// Number of samples taken when detecting region render glitches
 	GlitchSamples uint
 }
 
-// Machine generated information about a render
-type RenderInfo struct {
-	UserDescription RenderDescription
-	// Describe the render strategy in use
-	DetectedRenderStrategy RenderMode
-	// Describe the numerics system in use
-	DetectedNumericsMode NumericsMode
-	// RealMin as a native float
-	NativeRealMin float64
-	// RealMax as a native float
-	NativeRealMax float64
-	// ImagMin as a native float
-	NativeImagMin float64
-	// ImagMax as a native float
-	NativeImagMax float64
-	// RealMin as a big float (very high precision)
-	BigRealMin big.Float
-	// RealMax as a big float (very high precision)
-	BigRealMax big.Float
-	// ImagMin as a big float (very high precision)
-	BigImagMin big.Float
-	// ImagMax as a big float (very high precision)
-	BigImagMax big.Float
+func DefaultRenderDescription() *RenderDescription {
+	jobs := runtime.NumCPU() - 1
+	return &RenderDescription{
+		IterateLimit:   DefaultIterations,
+		DivergeLimit:   DefaultDivergeLimit,
+		RegionCollapse: DefaultCollapse,
+		BufferSize:     DefaultBufferSize,
+		GlitchSamples:  DefaultGlitchSamples,
+		Jobs:           uint(jobs),
+		RealMin:        float2str(real(MandelbrotMin)),
+		ImagMin:        float2str(imag(MandelbrotMin)),
+		RealMax:        float2str(real(MandelbrotMax)),
+		ImagMax:        float2str(imag(MandelbrotMax)),
+		ImageHeight:    DefaultImageHeight,
+		ImageWidth:     DefaultImageWidth,
+		PaletteType:    StoredPalette,
+		PaletteCode:    "pretty",
+	}
+}
+
+func float2str(num float64) string {
+	return strconv.FormatFloat(num, 'f', -1, 64)
 }
