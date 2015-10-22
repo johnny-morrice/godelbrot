@@ -143,3 +143,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 		t.Error("Tracker had unexpected buffer length")
 	}
 }
+
+func TestTrackerStep(t *testing.T) {
+	
+}
