@@ -6,7 +6,7 @@ type NativeRegionNumericsProxy struct {
 }
 
 func (proxy NativeRegionNumericsProxy) ClaimExtrinsics() {
-	proxy.Numerics.region = Region
+	proxy.Numerics.region = proxy.Region
 }
 
 type NativeSequenceNumericsProxy struct {

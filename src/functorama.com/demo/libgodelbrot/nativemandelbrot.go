@@ -9,6 +9,10 @@ type NativeMandelbrotMember struct {
 	C complex128
 }
 
+func CreateNativeMandelbrotMember(c complex128) {
+	return NativeMandelbrotMember{C: c}
+}
+
 func (member *NativeMandelbrotMember) Mandelbrot(iterateLimit uint8, divergeLimit float64) MandelbrotMember {
 	var z complex128 = 0
 	sqrtDl := math.Sqrt(divergeLimit)

@@ -10,26 +10,21 @@ func TestMandelbrotSanity(t *testing.T) {
 	const iterateLimit uint8 = 255
 	const divergeLimit float64 = 4.0
 
-	positiveMembership := Mandelbrot(originMember, iterateLimit, divergeLimit)
-	negativeMembership := Mandelbrot(nonMember, iterateLimit, divergeLimit)
+	originMember := CreateNativeMandelbrotMember(origin)
+	nonMember := CreateNativeMandelbrotMember(non)
 
-	if !positiveMembership.InSet {
+	originMember.Mandelbrot(iterateLimit)
+	nonMember.Mandelbrot(iterateLimit)
+
+	if !originMember.InSet() {
 		t.Error("Expected origin to be in Mandelbrot set")
 	}
 
-	if positiveMembership.C != originMember {
-		t.Error("Expected Mandelbrot return to contain origin co-ordinate, got ", positiveMembership.C)
-	}
-
-	if negativeMembership.InSet {
+	if non.InSet() {
 		t.Error("Expected ", nonMember, " to be outside Mandelbrot set")
 	}
 
-	if negativeMembership.C != nonMember {
-		t.Error("Expected Mandelbrot return to contain ", nonMember, " got ", negativeMembership.C)
-	}
-
-	if negativeMembership.InvDivergence >= iterateLimit {
+	if non.InverseDivergence() >= iterateLimit {
 		t.Error("Expected negativeMembership to have InvDivergence below IterateLimit")
 	}
 

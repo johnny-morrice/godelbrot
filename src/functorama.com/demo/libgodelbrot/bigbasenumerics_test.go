@@ -131,25 +131,25 @@ func TestPlaneToPixel(t *testing.T) {
 		CreateBigFloat(1.0, Prec64),
 	}
 
-	var expectPixAx uint = 55
-	var expectPixAY uint = 45
+	const expectPixAx uint = 55
+	const expectPixAY uint = 45
 
-	var expectPixBx uint = 55
-	var expectPixBy uint = 55
+	const expectPixBx uint = 55
+	const expectPixBy uint = 55
 
-	var expectPixCx uint = 45
-	var expectPixCy uint = 55
+	const expectPixCx uint = 45
+	const expectPixCy uint = 55
 
-	var expectPixDx uint = 45
-	var expectPixDy uint = 45
+	const expectPixDx uint = 45
+	const expectPixDy uint = 45
 
-	var expectOx uint = 50
-	var expectOy uint = 50
+	const expectOx uint = 50
+	const expectOy uint = 50
 
-	var expectOffsetX uint = 0
-	var expectOffsetY uint = 0
+	const expectOffsetX uint = 0
+	const expectOffsetY uint = 0
 
-	points := []complex128{qA, qB, qC, qD, origin, offset}
+	points := []BigComplex{qA, qB, qC, qD, origin, offset}
 	expectedXs := []uint{
 		expectPixAx,
 		expectPixBx,

@@ -3,27 +3,18 @@ package libgodelbrot
 // An interface to the Godelbrot system at large
 type GodelbrotApp *ContextInit
 
-// Provide the iteration and divergence limits
-func (app *GodelbrotApp) Limits() (uint, float64) {
-	desc := app.info.UserDescription
-	return desc.IterateLimit, desc.DivergeLimit
+func (app *GodelbrotApp) IterateLimit() uint8 {
+	return app.info.UserDescription.IterateLimit
 }
 
-// Provide the region collapse size
-func (app *GodelbrotApp) RegionCollapseSize() uint {
-	return app.info.UserDescription.RegionCollapse
+func (app *GodelbrotApp) DivergeLimit() float64 {
+	return app.info.UserDescription.DivergeLimit
 }
 
 // Provide the image dimensions
 func (app *GodelbrotApp) PictureDimensions() (uint, uint) {
 	desc := app.info.UserDescription
 	return desc.ImageWidth, desc.ImageHeight
-}
-
-// Provide the image aspect ratio
-func (app *GodelbrotApp) PictureAspect() float64 {
-	pictureWidth, pictureHeight := app.PictureDimensions()
-	return float64(pictureWidth) / float64(pictureHeight)
 }
 
 // Provide the min and max plane coordinates, respectively, as defined by the user
@@ -44,11 +35,7 @@ func (app *GodelbrotApp) FixAspect() bool {
 	return app.info.UserDescription.FixAspect
 }
 
-func (app *GodelbrotApp) SequentialNumerics() SequentialNumerics {
-	return app.numerics
-}
-
-func (app *GodelbrotApp) RegionNumerics() RegionNumerics {
+func (app *GodelbrotApp) NumericsFactory() AbstractNumericsFactory {
 	return app.numerics
 }
 

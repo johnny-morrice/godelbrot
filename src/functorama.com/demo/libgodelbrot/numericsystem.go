@@ -24,6 +24,7 @@ type SequentialNumerics interface {
 	ImageDrawSequencer(draw DrawingContext)
 	MemberCaptureSequencer()
 	CapturedMembers() []PixelMember
+	SubImage(rect image.Rectangle)
 }
 
 // SharedSequentialNumerics provides sequential (column-wise) rendering calculations for a threaded

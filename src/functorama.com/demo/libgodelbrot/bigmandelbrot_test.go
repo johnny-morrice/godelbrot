@@ -11,8 +11,8 @@ func TestBigMandelbrotSanity(t *testing.T) {
 	divergeLimit := CreateBigFloat(4.0, Prec64)
 	const iterateLimit uint8 = 255
 
-	originMember := bigMandelbrotHelper(origin)
-	nonMember := bigMandelbrotHelper(non)
+	originMember := CreateBigMandelbrotMember(origin)
+	nonMember := CreateBigMandelbrotMember(non)
 
 	originMember.Mandelbrot(iterateLimit)
 	nonMember.Mandelbrot(iterateLimit)
