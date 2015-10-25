@@ -25,6 +25,9 @@ const MandelbrotMax complex128 = 0.59 + 1.13i
 
 // OPERATIONAL CONSTANTS
 
+// A large number
+const AllocLarge uint = AllocMedium * 1024
+
 // A medium sized number
 const AllocMedium uint = AllocSmall * 64
 

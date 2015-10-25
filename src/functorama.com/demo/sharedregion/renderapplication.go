@@ -4,13 +4,18 @@ import (
     "functorama.com/demo/region"
 )
 
-type ConcurrentRegionParameters struct {
-    BufferSize uint
-    RenderJobs uint
+type SharedRegionNumericsFactory interface {
+	Build() SharedRegionNumerics
 }
 
-type SharedRegionRenderApplication interface {
-    RegionRenderApplication
-    ConcurrentConfig() ConcurrentRegionParameters
+type SharedRegionConfig struct {
+    BufferSize uint
+    RenderJobs uint
+    Jobs uint32
+}
+
+type RenderApplication interface {
+    region.RenderApplication
+    SharedRegionConfig() SharedRegionConfig
     SharedRegionNumericsFactory() SharedRegionNumericsFactory
 }

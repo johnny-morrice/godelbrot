@@ -8,5 +8,5 @@ import (
 type RenderApplication interface {
 	base.RenderApplication
 	draw.ContextProvider
-	Factory() SequenceNumericsFactory
+	SequenceNumericsFactory() SequenceNumericsFactory
 }

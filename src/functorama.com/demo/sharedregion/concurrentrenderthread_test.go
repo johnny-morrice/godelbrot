@@ -1,4 +1,4 @@
-package libgodelbrot
+package sharedregion
 
 import (
 	"testing"

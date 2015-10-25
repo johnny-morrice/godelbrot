@@ -1,14 +1,21 @@
-package libgodelbrot
+package sharedregion
+
+import (
+	"functorama.com/demo/sequence"
+	"functorama.com/demo/region"
+)
 
 // SharedSequentialNumerics provides sequential (column-wise) rendering calculations for a threaded
 // render strategy
-type SharedSequentialNumerics interface {
-    SequentialNumerics
+type SharedSequenceNumerics interface {
+    sequence.SequenceNumerics
     OpaqueThreadPrototype
 }
 
 // SharedRegionNumerics provides a RegionNumerics for threaded render stregies
 type SharedRegionNumerics interface {
-    RegionNumerics
+    region.RegionNumerics
     OpaqueThreadPrototype
+    SharedChildren() []SharedRegionNumerics
+    SharedRegionSequenceNumerics() SharedSequenceNumerics
 }

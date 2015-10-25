@@ -1,10 +1,6 @@
-package libgodelbrot
+package sharedregion
 
-import (
-	"fmt"
-	"image"
-)
 
-func NewConcurrentRegionRenderer(app *GodelbrotApplication) *RenderTracker {
+func NewSharedRegionRenderer(app RenderApplication) *RenderTracker {
 	return NewRenderTracker(app)
 }

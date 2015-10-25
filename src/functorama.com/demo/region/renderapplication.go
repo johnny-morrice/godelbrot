@@ -9,11 +9,11 @@ type RenderApplication interface {
     base.RenderApplication
     draw.ContextProvider
     // Configuration for particular render strategies
-    RegionConfig() RegionParameters
-    Factory() RegionNumericsFactory
+    RegionConfig() RegionConfig
+    RegionNumericsFactory() RegionNumericsFactory
 }
 
-type RegionParameters struct {
+type RegionConfig struct {
     GlitchSamples      uint
     CollapseSize 	   uint
 }

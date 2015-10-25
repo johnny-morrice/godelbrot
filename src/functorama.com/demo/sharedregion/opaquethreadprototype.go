@@ -1,6 +1,6 @@
-package libgodelbrot
+package sharedregion
 
 // Copy a prototypical object instance into the local thread
-type OpaqueThreadedPrototype interface {
+type OpaqueThreadPrototype interface {
 	GrabThreadPrototype(threadId uint)
 }

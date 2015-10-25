@@ -13,7 +13,7 @@ type SequenceRenderStrategy struct {
 
 func NewSequenceRenderer(app RenderApplication) SequenceRenderStrategy {
 	return SequenceRenderStrategy{
-		numerics: app.Factory().Build(),
+		numerics: app.SequenceNumericsFactory().Build(),
 		context: app.DrawingContext(),
 		iterateLimit: app.BaseConfig().IterateLimit,
 	}
