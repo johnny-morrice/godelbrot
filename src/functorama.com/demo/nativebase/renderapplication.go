@@ -4,7 +4,7 @@ import (
     "functorama.com/demo/base"
 )
 
-type NativeRenderApplication interface {
-    base.BaseRenderApplication
+type RenderApplication interface {
+    base.RenderApplication
     NativeUserCoords() (complex128, complex128)
 }
