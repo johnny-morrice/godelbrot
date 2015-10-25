@@ -10,7 +10,7 @@ import (
 
 type nativeSubregion struct {
 	populated bool
-	children  []nativeRegion
+	children  []NativeRegion
 }
 
 type nativeMandelbrotThunk struct {
@@ -18,7 +18,7 @@ type nativeMandelbrotThunk struct {
 	evaluated bool
 }
 
-type nativeRegion struct {
+type NativeRegion struct {
 	topLeft     nativeMandelbrotThunk
 	topRight    nativeMandelbrotThunk
 	bottomLeft  nativeMandelbrotThunk
@@ -26,7 +26,7 @@ type nativeRegion struct {
 	midPoint    nativeMandelbrotThunk
 }
 
-func (region *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
+func (region *NativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
 	l, t := base.PlaneToPixel(region.topLeft.C)
 	r, b := base.PlaneToPixel(region.bottomRight.C)
 	return image.Rect(int(l), int(t), int(r), int(b))
@@ -36,7 +36,7 @@ func (region *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rect
 type NativeRegionNumerics struct {
 	base.BaseRegionNumerics
 	nativebase.NativeBaseNumerics
-	region             nativeRegion
+	Region             NativeRegion
 	subregion          nativeSubregion
 	sequenceNumerics   *nativesequence.NativeSequenceNumerics
 }
@@ -59,15 +59,25 @@ func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
 	return nil
 }
 
+// Return the children of this region without hiding their types
+// This implementation does not create many new objects
+func (native *NativeRegionNumerics) NativeChildRegions() []NativeRegion {
+	if native.subregion.populated {
+		return native.subregion.children
+	}
+	panic("Region asked to provide non-existent children")
+	return nil
+}
+
 func (native *NativeRegionNumerics) RegionSequenceNumerics() region.RegionSequenceNumerics {
 	return NativeSequenceNumericsProxy{
-		region:   native.region,
+		Region:   native.Region,
 		NativeSequenceNumerics: native.sequenceNumerics,
 	}
 }
 
 func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
-	r := native.region
+	r := native.Region
 	return []base.MandelbrotMember{
 		r.topLeft,
 		r.topRight,
@@ -78,7 +88,7 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 }
 
 func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	r := native.region
+	r := native.Region
 	points := []nativeMandelbrotThunk{
 		r.topLeft,
 		r.topRight,
@@ -100,7 +110,7 @@ func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
 // An anologous glitch happens when the entire Nativeregion is much larger than the set
 // We handle both these cases here
 func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	r := native.region
+	r := native.Region
 	tlMember := r.topLeft
 	iDiv := tlMember.InvDivergence
 	if iDiv == 0 || iDiv == 1 || tlMember.InSet {
@@ -134,7 +144,7 @@ func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamp
 }
 
 func (native *NativeRegionNumerics) Split() {
-	r := native.region
+	r := native.Region
 
 	topLeftPos := r.topLeft.C
 	bottomRightPos := r.bottomRight.C
@@ -162,28 +172,28 @@ func (native *NativeRegionNumerics) Split() {
 	bottomLeftMid := createThunk(complex(leftSectorMid, bottomSectorMid))
 	bottomRightMid := createThunk(complex(rightSectorMid, bottomSectorMid))
 
-	tl := nativeRegion{
+	tl := NativeRegion{
 		topLeft:     r.topLeft,
 		topRight:    topSideMid,
 		bottomLeft:  leftSideMid,
 		bottomRight: r.midPoint,
 		midPoint:    topLeftMid,
 	}
-	tr := nativeRegion{
+	tr := NativeRegion{
 		topLeft:     topSideMid,
 		topRight:    r.topRight,
 		bottomLeft:  r.midPoint,
 		bottomRight: rightSideMid,
 		midPoint:    topRightMid,
 	}
-	bl := nativeRegion{
+	bl := NativeRegion{
 		topLeft:     leftSideMid,
 		topRight:    r.midPoint,
 		bottomLeft:  r.bottomLeft,
 		bottomRight: bottomSideMid,
 		midPoint:    bottomLeftMid,
 	}
-	br := nativeRegion{
+	br := NativeRegion{
 		topLeft:     r.midPoint,
 		topRight:    rightSideMid,
 		bottomLeft:  bottomSideMid,
@@ -193,25 +203,25 @@ func (native *NativeRegionNumerics) Split() {
 
 	native.subregion = nativeSubregion{
 		populated: true,
-		children:  []nativeRegion{tl, tr, bl, br},
+		children:  []NativeRegion{tl, tr, bl, br},
 	}
 }
 
 func (native *NativeRegionNumerics) Rect() image.Rectangle {
 	base := native.NativeBaseNumerics
-	return native.region.rect(&base)
+	return native.Region.rect(&base)
 }
 
 // Return MandelbrotMember
 // Does not check if the region's thunks have been evaluated
 func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
-	return native.region.topLeft
+	return native.Region.topLeft
 }
 
 // Quickly create a new *NativeRegionNumerics context
-func (native *NativeRegionNumerics) proxyNumerics(region nativeRegion) region.RegionNumerics {
+func (native *NativeRegionNumerics) proxyNumerics(region NativeRegion) region.RegionNumerics {
 	return NativeRegionNumericsProxy{
-		region:   region,
+		Region:   region,
 		NativeRegionNumerics: native,
 	}
 }

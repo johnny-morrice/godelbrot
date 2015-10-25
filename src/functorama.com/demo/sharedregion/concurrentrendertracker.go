@@ -117,8 +117,6 @@ func (tracker *RenderTracker) step(output RenderOutput) {
 
 // draw to the image
 func (tracker *RenderTracker) draw() {
-	// We must still ClaimExtrinsics to ensure we work with the local data in a cached object.
-
 	for _, uniform := range tracker.uniform {
 		uniform.ClaimExtrinsics()
 		region.DrawUniform(tracker.context, uniform)

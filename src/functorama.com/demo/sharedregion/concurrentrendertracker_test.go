@@ -188,7 +188,7 @@ func TestTrackerDraw(t *testing.T) {
 
 	tracker.draw()
 
-	if !(uniform.tClaimExtrinsics && uniform.tRect && uniform.tRegionMember) {
+	if !(uniform.tGrabThreadPrototype && uniform.tRect && uniform.tRegionMember) {
 		t.Error("Expected method not called on uniform region:", *uniform)
 	}
 
