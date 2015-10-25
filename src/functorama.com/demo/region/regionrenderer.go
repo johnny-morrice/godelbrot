@@ -1,4 +1,4 @@
-package libgodelbrot
+package region
 
 import (
 	"image"
@@ -16,7 +16,7 @@ func NewRegionRenderer(app RenderApplication) *RegionRenderStrategy {
 // draws the Mandelbrot set uses a "similar rectangles" optimization
 func (renderer RegionRenderStrategy) Render() (image.NRGBA, error) {
 	// The numerics system is by default a region covering the whole image
-	initialRegion := renderer.app.RegionNumerics()
+	initialRegion := renderer.app.Factory.Build()
 	uniformRegions, smallRegions := SubdivideRegions(initialRegion)
 
 	draw := renderer.app.Draw()

@@ -4,10 +4,11 @@ import (
     "functorama.com/demo/base"
 )
 
-type RegionRenderApplication interface {
-    base.BaseRenderApplication
+type RenderApplication interface {
+    base.RenderApplication
     // Configuration for particular render strategies
     RegionConfig() RegionParameters
+    Factory() RegionNumericsFactory
 }
 
 type RegionParameters struct {

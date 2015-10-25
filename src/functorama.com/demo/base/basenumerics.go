@@ -22,7 +22,7 @@ type BaseNumerics struct {
 	PicYMax int // exclusive maximum
 }
 
-func CreateBaseNumerics(app BaseRenderApplication) BaseNumerics {
+func CreateBaseNumerics(app RenderApplication) BaseNumerics {
 	width, height := app.PictureDimensions()
 	return BaseNumerics{
 		PicXMin: 0,

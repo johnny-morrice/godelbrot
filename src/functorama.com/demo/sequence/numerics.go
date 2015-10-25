@@ -1,15 +1,20 @@
-package libgodelbrot
+package sequence
 
-type SequentialNumericsFactory interface {
-    Sequence() SequentialNumerics
+import (
+	"image"
+	"functorama.com/demo/base"
+	"functorama.com/demo/draw"
+)
+
+type SequenceNumericsFactory interface {
+    Build() SequenceNumerics
 }
 
 // SequentialNumerics provides sequential (column-wise) rendering calculations
-type SequentialNumerics interface {
-    OpaqueFlyweightProxy
+type SequenceNumerics interface {
     MandelbrotSequence(iterateLimit uint8)
-    ImageDrawSequencer(draw DrawingContext)
+    ImageDrawSequencer(context draw.DrawingContext)
     MemberCaptureSequencer()
-    CapturedMembers() []PixelMember
+    CapturedMembers() []base.PixelMember
     SubImage(rect image.Rectangle)
 }

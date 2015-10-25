@@ -1,23 +1,28 @@
-package libgodelbrot
+package sequence
 
 import (
 	"image"
+	"functorama.com/demo/draw"
 )
 
-type SequentialRenderStrategy struct {
-	app *GodelbrotApp
+type SequenceRenderStrategy struct {
+	numerics SequenceNumerics	
+	context draw.DrawingContext
+	iterateLimit uint8
 }
 
-func NewSequentialRenderer(app *GodelbrotApp) *RegionRenderStrategy {
-	return &SequentialRenderStrategy{app: meditator}
+func NewSequenceRenderer(app RenderApplication) SequenceRenderStrategy {
+	return SequenceRenderStrategy{
+		numerics: app.Factory().Build(),
+		context: app.DrawingContext(),
+		iterateLimit: app.IterateLimit(),
+	}
 }
 
-// The SequentialRenderStrategy implements RenderContext as it draws the
+// The SequenceRenderStrategy implements RenderContext as it draws the
 // Mandelbrot set line by line
-func (renderer SequentialRenderStrategy) Render() (image.NRGBA, error) {
-	numerics := renderer.app.SequentialNumerics()
-	numerics.Initialize()
-	numerics.ImageDrawSequencer()
-	numerics.MandelbrotSequence()
-	return numerics.Picture(), nil
+func (renderer SequenceRenderStrategy) Render() (*image.NRGBA, error) {
+	renderer.numerics.ImageDrawSequencer(renderer.context)
+	renderer.numerics.MandelbrotSequence(renderer.iterateLimit)
+	return renderer.context.Picture(), nil
 }

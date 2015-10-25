@@ -1,7 +1,13 @@
-package libgodelbrot
+package region
+
+import (
+    "image"
+    "functorama.com/demo/base"
+    "functorama.com/demo/sequence"
+)
 
 type RegionNumericsFactory interface{
-    Region() RegionNumerics
+    Build() RegionNumerics
 }
 
 // RegionNumerics provides rendering calculations for the "region" render strategy.
@@ -11,11 +17,11 @@ type RegionNumerics interface {
     EvaluateAllPoints(iterateLimit int)
     Split()
     OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool
-    MandelbrotPoints() []MandelbrotMember
-    RegionMember()
+    MandelbrotPoints() []base.MandelbrotMember
+    RegionMember() base.MandelbrotMember
     Subdivide() bool
     Children() []RegionNumerics
-    RegionalSequenceNumerics() SequentialNumerics
+    RegionalSequenceNumerics() sequence.SequentialNumerics
 }
 
 
