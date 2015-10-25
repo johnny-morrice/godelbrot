@@ -6,5 +6,5 @@ package region
 // So create an extension of this object that acts like a proxy When needed, it will grab the
 // extrinsic, without exposing the details to the client.
 type OpaqueProxyFlyweight interface {
-	ClaimExtrinics()
+	ClaimExtrinsics()
 }

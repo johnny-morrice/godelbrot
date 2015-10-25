@@ -15,7 +15,7 @@ func NewSequenceRenderer(app RenderApplication) SequenceRenderStrategy {
 	return SequenceRenderStrategy{
 		numerics: app.Factory().Build(),
 		context: app.DrawingContext(),
-		iterateLimit: app.IterateLimit(),
+		iterateLimit: app.BaseConfig().IterateLimit,
 	}
 }
 

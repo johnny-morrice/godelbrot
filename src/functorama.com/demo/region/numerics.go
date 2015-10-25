@@ -4,9 +4,10 @@ import (
     "image"
     "functorama.com/demo/base"
     "functorama.com/demo/sequence"
+    "functorama.com/demo/draw"
 )
 
-type RegionNumericsFactory interface{
+type RegionNumericsFactory interface {
     Build() RegionNumerics
 }
 
@@ -14,42 +15,48 @@ type RegionNumericsFactory interface{
 type RegionNumerics interface {
     OpaqueProxyFlyweight
     Rect() image.Rectangle
-    EvaluateAllPoints(iterateLimit int)
+    EvaluateAllPoints(iterateLimit uint8)
     Split()
     OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool
     MandelbrotPoints() []base.MandelbrotMember
     RegionMember() base.MandelbrotMember
     Subdivide() bool
     Children() []RegionNumerics
-    RegionalSequenceNumerics() sequence.SequentialNumerics
+    RegionSequenceNumerics() RegionSequenceNumerics
+}
+
+type RegionSequenceNumerics struct {
+    OpaqueProxyFlyweight
+    sequence.SequenceNumerics
 }
 
 
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential
 // (column-wise) manner
-func RenderSequentialRegion(numerics RegionNumerics) {
-    smallNumerics := numerics.RegionalSequenceNumerics()
+func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, iterateLimit uint8) {
+    smallNumerics := numerics.RegionSequenceNumerics()
     smallNumerics.ClaimExtrinsics()
-    SequentialRenderImage(smallNumerics)
+    smallNumerics.ImageDrawSequencer(context)
+    smallNumerics.MandelbrotSequence(iterateLimit)
 }
 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render
 // results rather than drawing them to the image.
-func SequenceCollapse(numerics RegionNumerics) []PixelMember {
-    sequence := region.RegionalSequenceNumerics()
+func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelMember {
+    sequence := numerics.RegionSequenceNumerics()
     sequence.ClaimExtrinsics()
     sequence.MemberCaptureSequencer()
-    MandelbrotSequence(smallConfig)
+    sequence.MandelbrotSequence(iterateLimit)
     return sequence.CapturedMembers()
 }
 
 // Subdivide takes a RegionNumerics and tries to split the region into subregions.  It returns true
 // if the subdivision occurred.  The subdivision won't occur if the region is Uniform or in an area
 // where glitches are likely.
-func Subdivide(numerics RegionNumerics) bool {
-    numerics.EvaluateAllPoints()
+func Subdivide(numerics RegionNumerics, iterateLimit uint8, glitchSamples uint) bool {
+    numerics.EvaluateAllPoints(iterateLimit)
 
-    if !Uniform(numerics) || numerics.OnGlitchCurve() {
+    if !Uniform(numerics) || numerics.OnGlitchCurve(iterateLimit, glitchSamples) {
         numerics.Split()
         return true
     }

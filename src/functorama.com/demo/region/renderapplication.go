@@ -2,10 +2,12 @@ package region
 
 import (
     "functorama.com/demo/base"
+    "functorama.com/demo/draw"
 )
 
 type RenderApplication interface {
     base.RenderApplication
+    draw.ContextProvider
     // Configuration for particular render strategies
     RegionConfig() RegionParameters
     Factory() RegionNumericsFactory
@@ -13,5 +15,5 @@ type RenderApplication interface {
 
 type RegionParameters struct {
     GlitchSamples      uint
-    RegionCollapseSize uint
+    CollapseSize 	   uint
 }
