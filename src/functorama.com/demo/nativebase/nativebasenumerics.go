@@ -17,7 +17,7 @@ type NativeBaseNumerics struct {
 	Runit float64
 	Iunit float64
 
-	DivergeLimit float64
+	SqrtDivergeLimit float64
 }
 
 func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
@@ -52,23 +52,23 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 		ImagMin:      imag(planeMin),
 		ImagMax:      imag(planeMax),
 
-		DivergeLimit: config.DivergeLimit,
+		SqrtDivergeLimit: math.Sqrt(config.DivergeLimit),
 
 		Runit: planeWidth / float64(pictureWidth),
 		Iunit: planeHeight / float64(pictureHeight),
 	}
 }
 
-func (native NativeBaseNumerics) PlaneTopLeft() complex128 {
+func (native *NativeBaseNumerics) PlaneTopLeft() complex128 {
 	return complex(native.RealMin, native.ImagMax)
 }
 
 // Size on the plane of 1px
-func (native NativeBaseNumerics) PixelSize() (float64, float64) {
+func (native *NativeBaseNumerics) PixelSize() (float64, float64) {
 	return native.Runit, native.Iunit
 }
 
-func (native NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
+func (native *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	topLeft := native.PlaneTopLeft()
 	rUnit, iUnit := native.PixelSize()
 	// Translate x

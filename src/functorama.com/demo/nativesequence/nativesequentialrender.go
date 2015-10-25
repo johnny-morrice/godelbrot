@@ -1,33 +1,32 @@
 package nativesequence
 
 import (
-	"math"
 	"functorama.com/demo/base"
 	"functorama.com/demo/nativebase"
 	"functorama.com/demo/draw"
 )
 
-type NativeSequentialNumerics struct {
+type NativeSequenceNumerics struct {
 	nativebase.NativeBaseNumerics
-	sequencer func(i int, j int, member NativeMandelbrotMember)
+	sequencer func(i int, j int, member nativebase.NativeMandelbrotMember)
 	members   []base.PixelMember
 }
 
-func (native *NativeSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
+func (native *NativeSequenceNumerics) MandelbrotSequence(iterLimit uint8) {
 	topLeft := native.PlaneTopLeft()
 
 	imageLeft, imageTop := native.PictureMin()
 	imageRight, imageBottom := native.PictureMax()
 	rUnit, iUnit := native.PixelSize()
-	sqrtDl := math.Sqrt(native.DivergeLimit)
+	sqrtDl := native.SqrtDivergeLimit
 
 	x := real(topLeft)
 	for i := imageLeft; i < imageRight; i++ {
 		y := imag(topLeft)
 		for j := imageTop; j < imageBottom; j++ {
-			member := NativeMandelbrotMember{
+			member := nativebase.NativeMandelbrotMember{
 				C: complex(x, y),
-				SrqtDivergeLimit: sqrtDl,
+				SqrtDivergeLimit: sqrtDl,
 			}
 			member.Mandelbrot(iterLimit)
 			native.sequencer(i, j, member)
@@ -37,14 +36,14 @@ func (native *NativeSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
 	}
 }
 
-func (native *NativeSequentialNumerics) ImageDrawSequencer(context draw.DrawingContext) {
-	native.sequencer = func(i, j int, member NativeMandelbrotMember) {
+func (native *NativeSequenceNumerics) ImageDrawSequencer(context draw.DrawingContext) {
+	native.sequencer = func(i, j int, member nativebase.NativeMandelbrotMember) {
 		draw.DrawPoint(context, base.PixelMember{i, j, &member})
 	}
 }
 
-func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
-	native.sequencer = func(i, j int, member NativeMandelbrotMember) {
+func (native *NativeSequenceNumerics) MemberCaptureSequencer() {
+	native.sequencer = func(i, j int, member nativebase.NativeMandelbrotMember) {
 		native.members = append(native.members, base.PixelMember{
 			I:      i,
 			J:      j,
@@ -53,6 +52,6 @@ func (native *NativeSequentialNumerics) MemberCaptureSequencer() {
 	}
 }
 
-func (native *NativeSequentialNumerics) CapturedMembers() []base.PixelMember {
+func (native *NativeSequenceNumerics) CapturedMembers() []base.PixelMember {
 	return native.members
-}
+} 

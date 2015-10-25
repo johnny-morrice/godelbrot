@@ -3,7 +3,6 @@ package base
 type MandelbrotMember interface {
 	InverseDivergence() uint8
 	SetMember() bool
-	Mandelbrot(iterateLimit uint8)
 }
 
 type BaseMandelbrot struct {

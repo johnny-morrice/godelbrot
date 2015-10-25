@@ -1,4 +1,4 @@
-package nativesequence
+package nativebase
 
 import (
 	"functorama.com/demo/base"
@@ -7,12 +7,12 @@ import (
 type NativeMandelbrotMember struct {
 	base.BaseMandelbrot
 	C complex128
-	SrqtDivergeLimit float64
+	SqrtDivergeLimit float64
 }
 
 func (member *NativeMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	var z complex128 = 0
-	sqrtDl := member.SrqtDivergeLimit
+	sqrtDl := member.SqrtDivergeLimit
 	c := member.C
 	i := uint8(0)
 	for ; i < iterateLimit && withinMandLimit(z, sqrtDl); i++ {

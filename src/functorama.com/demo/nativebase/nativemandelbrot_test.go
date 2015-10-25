@@ -1,4 +1,4 @@
-package nativesequence
+package nativebase
 
 import (
 	"testing"

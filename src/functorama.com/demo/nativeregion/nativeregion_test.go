@@ -1,4 +1,4 @@
-package region
+package nativeregion
 
 import (
 	"math/big"

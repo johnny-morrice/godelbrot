@@ -20,12 +20,11 @@ type RegionNumerics interface {
     OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool
     MandelbrotPoints() []base.MandelbrotMember
     RegionMember() base.MandelbrotMember
-    Subdivide() bool
     Children() []RegionNumerics
     RegionSequenceNumerics() RegionSequenceNumerics
 }
 
-type RegionSequenceNumerics struct {
+type RegionSequenceNumerics interface {
     OpaqueProxyFlyweight
     sequence.SequenceNumerics
 }
