@@ -3,27 +3,27 @@ package draw
 import (
 	"image/color"
 	"testing"
+	"functorama.com/demo/base"
 )
 
 func TestColor(t *testing.T) {
-	iterLimit := 10
-	cacher := func(iterLimit, index uint8) color.RGBA {
-		gray := color.Gray(index)
-		return color.RGBA{gray.RGBA}
+	const iterLimit uint8 = 10
+	cacher := func(iterLimit, index uint8) color.NRGBA {
+		return color.NRGBA{index, index, index, 255}
 	}
-	white := color.RGBA{255, 255, 255, 255}
+	white := color.NRGBA{255, 255, 255, 255}
 	palette := NewCachePalette(iterLimit, white, cacher)
 
-	inSet := BaseMandelbrot{InSet: true}
+	inSet := base.BaseMandelbrot{InSet: true}
 
 	actualInSet := palette.Color(inSet)
 	if white != actualInSet {
 		t.Error("Expected white, but set member was assigned color:", actualInSet)
 	}
 
-	for i := 0; i < iterLimit; i++ {
-		expect := color.RGBA{i, i, i, i}
-		member := BaseMandelbrot{InvDivergence: i}
+	for i := uint8(0); i < iterLimit; i++ {
+		expect := color.NRGBA{i, i, i, 255}
+		member := base.BaseMandelbrot{InvDivergence: i}
 		actual := palette.Color(member)
 
 		if expect != actual {
