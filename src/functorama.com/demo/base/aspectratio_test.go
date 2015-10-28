@@ -2,7 +2,6 @@ package base
 
 import (
 	"testing"
-	_ "functorama.com/demo/test"
 )
 
 func TestPictureAspectRatio(t *testing.T) {
@@ -16,14 +15,18 @@ func TestPictureAspectRatio(t *testing.T) {
 
 func TestAppPictureAspectRatio(t *testing.T) {
 	expect := 16.0 / 9.0
-	mock := mockRenderApplication{
-		imageWidth:  1920,
-		imageHeight: 1080,
+	mock := MockRenderApplication{
+		PictureWidth:  1920,
+		PictureHeight: 1080,
 	}
-	actual := AppPictureAspectRatio(mock)
+	actual := AppPictureAspectRatio(&mock)
 
 	if actual != expect {
 		t.Error("Expected app aspect ratio", expect,
 			"but was", actual)
+	}
+
+	if !mock.TPictureDimensions {
+		t.Error("Expected aspect ratio to be based on mock picture dimensions")
 	}
 }

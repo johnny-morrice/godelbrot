@@ -5,23 +5,22 @@ import (
 )
 
 func TestCreateBaseNumerics(t *testing.T) {
-	mock := mockRenderApplication{}
-	mock.pictureWidth = 10
-	mock.pictureHeight = 20
-	mock.iterLimit = 200
+	mock := &MockRenderApplication{}
+	mock.PictureWidth = 10
+	mock.PictureHeight = 20
+	mock.IterLimit = 200
 
 	numerics := CreateBaseNumerics(mock)
 
-	mockOkay := mock.tLimits && mock.tPictureWidth && mock.tPictureHeight
+	mockOkay := mock.TPictureDimensions
 	if !mockOkay {
 		t.Error("Expected method not called on mock", mock)
 	}
 
-	okay := numerics.picXMin == 0
-	okay = okay && numerics.picXMax == 10
-	okay = okay && numerics.picYMin == 0
-	okay = okay && numerics.picYMax == 20
-	okay = okay && numerics.iterLimit == 200
+	okay := numerics.PicXMin == 0
+	okay = okay && numerics.PicXMax == 10
+	okay = okay && numerics.PicYMin == 0
+	okay = okay && numerics.PicYMax == 20
 
 	if !okay {
 		t.Error("numerics had unexpected value", numerics)

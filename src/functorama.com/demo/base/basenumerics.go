@@ -4,16 +4,6 @@ import (
 	"image"
 )
 
-// A reusable notion of collapsable regions
-type BaseRegionNumerics struct {
-	GlitchSamples int
-	Collapse      int
-}
-
-func (collapse BaseRegionNumerics) CollapseSize() int {
-	return collapse.Collapse
-}
-
 // Numerics that are aware of a picture and of the Mandelbrot iteration limit
 type BaseNumerics struct {
 	PicXMin int

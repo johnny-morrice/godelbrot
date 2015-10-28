@@ -34,7 +34,7 @@ func (region *NativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rect
 
 // Extend NativeBaseNumerics and add support for regions
 type NativeRegionNumerics struct {
-	base.BaseRegionNumerics
+	region.BaseRegionNumerics
 	nativebase.NativeBaseNumerics
 	Region             NativeRegion
 	SequenceNumerics   *nativesequence.NativeSequenceNumerics

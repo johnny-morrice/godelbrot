@@ -1,4 +1,8 @@
-package test
+package region
+
+import (
+	"image"
+)
 
 type regionType uint
 
