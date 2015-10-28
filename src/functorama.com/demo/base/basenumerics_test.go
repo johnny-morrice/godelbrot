@@ -8,7 +8,6 @@ func TestCreateBaseNumerics(t *testing.T) {
 	mock := &MockRenderApplication{}
 	mock.PictureWidth = 10
 	mock.PictureHeight = 20
-	mock.IterLimit = 200
 
 	numerics := CreateBaseNumerics(mock)
 

@@ -6,7 +6,7 @@ import (
 )
 
 type SequenceRenderStrategy struct {
-	numerics SequenceNumerics	
+	numerics SequenceNumerics
 	context draw.DrawingContext
 	iterateLimit uint8
 }

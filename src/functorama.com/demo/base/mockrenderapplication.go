@@ -4,7 +4,7 @@ type MockRenderApplication struct {
 	TBaseConfig bool
 	TPictureDimensions bool
 
-	IterLimit          uint8
+	IterateLimit          uint8
 	DivergeLimit       float64
 	FixAspect          bool
 
@@ -15,7 +15,7 @@ type MockRenderApplication struct {
 func (mock *MockRenderApplication) BaseConfig() BaseConfig {
 	mock.TBaseConfig = true
 	return BaseConfig{
-		mock.IterLimit,
+		mock.IterateLimit,
 		mock.DivergeLimit,
 		mock.FixAspect,
 	}

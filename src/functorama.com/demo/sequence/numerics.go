@@ -6,10 +6,6 @@ import (
 	"functorama.com/demo/draw"
 )
 
-type SequenceNumericsFactory interface {
-    Build() SequenceNumerics
-}
-
 // SequentialNumerics provides sequential (column-wise) rendering calculations
 type SequenceNumerics interface {
     MandelbrotSequence(iterateLimit uint8)
