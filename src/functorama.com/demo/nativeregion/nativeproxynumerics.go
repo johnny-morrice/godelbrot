@@ -4,21 +4,21 @@ import (
 	"functorama.com/demo/nativesequence"
 )
 
-type NativeRegionNumericsProxy struct {
+type NativeRegionProxy struct {
 	*NativeRegionNumerics
 	Region   NativeRegion
 }
 
-func (proxy NativeRegionNumericsProxy) ClaimExtrinsics() {
+func (proxy NativeRegionProxy) ClaimExtrinsics() {
 	proxy.NativeRegionNumerics.Region = proxy.Region
 }
 
-type NativeSequenceNumericsProxy struct {
+type NativeSequenceProxy struct {
 	*nativesequence.NativeSequenceNumerics
 	Region   NativeRegion
 }
 
-func (proxy NativeSequenceNumericsProxy) ClaimExtrinsics() {
+func (proxy NativeSequenceProxy) ClaimExtrinsics() {
 	base := proxy.NativeSequenceNumerics.NativeBaseNumerics
 	rectangle := proxy.Region.rect(&base)
 	proxy.NativeSequenceNumerics.SubImage(rectangle)

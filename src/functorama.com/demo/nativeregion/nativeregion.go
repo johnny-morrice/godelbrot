@@ -37,8 +37,8 @@ type NativeRegionNumerics struct {
 	base.BaseRegionNumerics
 	nativebase.NativeBaseNumerics
 	Region             NativeRegion
+	SequenceNumerics   *nativesequence.NativeSequenceNumerics
 	subregion          nativeSubregion
-	sequenceNumerics   *nativesequence.NativeSequenceNumerics
 }
 
 func (native *NativeRegionNumerics) ClaimExtrinsics() {
@@ -51,7 +51,7 @@ func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
 	if native.subregion.populated {
 		nextContexts := make([]region.RegionNumerics, 0, 4)
 		for i, child := range native.subregion.children {
-			nextContexts[i] = native.proxyNumerics(child)
+			nextContexts[i] = native.Proxy(child)
 		}
 		return nextContexts
 	}
@@ -69,10 +69,21 @@ func (native *NativeRegionNumerics) NativeChildRegions() []NativeRegion {
 	return nil
 }
 
-func (native *NativeRegionNumerics) RegionSequenceNumerics() region.RegionSequenceNumerics {
-	return NativeSequenceNumericsProxy{
+func (native *NativeRegionNumerics) RegionSequence() region.ProxySequence {
+	return native.NativeSequence()
+}
+
+func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
+	return NativeSequenceProxy{
 		Region:   native.Region,
-		NativeSequenceNumerics: native.sequenceNumerics,
+		NativeSequenceNumerics: native.SequenceNumerics,
+	}
+}
+
+func (native *NativeRegionNumerics) Proxy(region NativeRegion) NativeRegionProxy {
+	return NativeRegionProxy{
+		Region:   region,
+		NativeRegionNumerics: native,
 	}
 }
 
@@ -218,18 +229,10 @@ func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
 	return native.Region.topLeft
 }
 
-// Quickly create a new *NativeRegionNumerics context
-func (native *NativeRegionNumerics) proxyNumerics(region NativeRegion) region.RegionNumerics {
-	return NativeRegionNumericsProxy{
-		Region:   region,
-		NativeRegionNumerics: native,
-	}
-}
-
 func createThunk(c complex128) nativeMandelbrotThunk {
 	return nativeMandelbrotThunk{
 		NativeMandelbrotMember: nativebase.NativeMandelbrotMember{
-			C: c,	
+			C: c,
 		},
 	}
 }

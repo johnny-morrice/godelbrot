@@ -1,4 +1,4 @@
-package region
+package base
 
 // OpaqueProxyFlyweight enables implementation of its eponymous design pattern. You need lots of
 // objects, but creating them is expensive. You want to externalize state, but your object is opaque

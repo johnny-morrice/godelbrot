@@ -13,7 +13,7 @@ type RegionNumericsFactory interface {
 
 // RegionNumerics provides rendering calculations for the "region" render strategy.
 type RegionNumerics interface {
-    OpaqueProxyFlyweight
+    base.OpaqueProxyFlyweight
     Rect() image.Rectangle
     EvaluateAllPoints(iterateLimit uint8)
     Split()
@@ -21,19 +21,18 @@ type RegionNumerics interface {
     MandelbrotPoints() []base.MandelbrotMember
     RegionMember() base.MandelbrotMember
     Children() []RegionNumerics
-    RegionSequenceNumerics() RegionSequenceNumerics
+    RegionSequence() ProxySequence
 }
 
-type RegionSequenceNumerics interface {
-    OpaqueProxyFlyweight
+type ProxySequence interface {
+    base.OpaqueProxyFlyweight
     sequence.SequenceNumerics
 }
-
 
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential
 // (column-wise) manner
 func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, iterateLimit uint8) {
-    smallNumerics := numerics.RegionSequenceNumerics()
+    smallNumerics := numerics.RegionSequence()
     smallNumerics.ClaimExtrinsics()
     smallNumerics.ImageDrawSequencer(context)
     smallNumerics.MandelbrotSequence(iterateLimit)
@@ -42,7 +41,7 @@ func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render
 // results rather than drawing them to the image.
 func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelMember {
-    sequence := numerics.RegionSequenceNumerics()
+    sequence := numerics.RegionSequence()
     sequence.ClaimExtrinsics()
     sequence.MemberCaptureSequencer()
     sequence.MandelbrotSequence(iterateLimit)

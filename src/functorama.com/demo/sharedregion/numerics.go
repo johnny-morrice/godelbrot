@@ -17,5 +17,5 @@ type SharedRegionNumerics interface {
     region.RegionNumerics
     OpaqueThreadPrototype
     SharedChildren() []SharedRegionNumerics
-    SharedRegionSequenceNumerics() SharedSequenceNumerics
+    SharedRegionSequence() SharedSequenceNumerics
 }
