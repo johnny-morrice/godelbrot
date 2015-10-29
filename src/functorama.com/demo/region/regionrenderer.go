@@ -3,38 +3,45 @@ package region
 import (
 	"image"
 	"functorama.com/demo/base"
+	"functorama.com/demo/draw"
 )
 
 type RegionRenderStrategy struct {
-	app RenderApplication
+	factory RegionNumericsFactory
+	context draw.DrawingContext
+	baseConfig base.BaseConfig
+	regionConfig RegionConfig
 }
 
 func NewRegionRenderer(app RenderApplication) *RegionRenderStrategy {
-	return &RegionRenderStrategy{app: app}
+	return &RegionRenderStrategy{
+		factory: app.RegionNumericsFactory(),
+		context: app.DrawingContext(),
+		baseConfig: app.BaseConfig(),
+		regionConfig: app.RegionConfig(),
+	}
 }
 
 // The RegionRenderStrategy implements RenderNumerics with this method that
 // draws the Mandelbrot set uses a "similar rectangles" optimization
 func (renderer RegionRenderStrategy) Render() (*image.NRGBA, error) {
 	// The numerics system is by default a region covering the whole image
-	initialRegion := renderer.app.RegionNumericsFactory().Build()
+	initialRegion := renderer.factory.Build()
 	uniformRegions, smallRegions := renderer.SubdivideRegions(initialRegion)
-
-	draw := renderer.app.DrawingContext()
 
 	// Draw uniform regions first
 	for _, region := range uniformRegions {
 		region.ClaimExtrinsics()
-		DrawUniform(draw, region)
+		DrawUniform(renderer.context, region)
 	}
 
-	iterateLimit := renderer.app.BaseConfig().IterateLimit
+	iterateLimit := renderer.baseConfig.IterateLimit
 	// Add detail from the small regions next
 	for _, region := range smallRegions {
-		RenderSequenceRegion(region, draw, iterateLimit)
+		RenderSequenceRegion(region, renderer.context, iterateLimit)
 	}
 
-	return draw.Picture(), nil
+	return renderer.context.Picture(), nil
 }
 
 func (renderer RegionRenderStrategy) SubdivideRegions(whole RegionNumerics) ([]RegionNumerics, []RegionNumerics) {
@@ -42,9 +49,7 @@ func (renderer RegionRenderStrategy) SubdivideRegions(whole RegionNumerics) ([]R
 	completeRegions := make([]RegionNumerics, 0, base.AllocMedium)
 	smallRegions := make([]RegionNumerics, 0, base.AllocMedium)
 	splittingRegions := make([]RegionNumerics, 1, base.AllocMedium)
-	baseConfig := renderer.app.BaseConfig()
-	regionConfig := renderer.app.RegionConfig()
-	collapseBound := int(regionConfig.CollapseSize)
+	collapseBound := int(renderer.regionConfig.CollapseSize)
 
 	// Split regions
 	splittingRegions[0] = whole
@@ -61,7 +66,9 @@ func (renderer RegionRenderStrategy) SubdivideRegions(whole RegionNumerics) ([]R
 		} else {
 			// If the region is not too small, two things can happen
 			// B. The region needs subdivided because it covers distinct parts of the plane
-			if Subdivide(splitee, baseConfig.IterateLimit, regionConfig.GlitchSamples) {
+			divided := Subdivide(splitee, renderer.baseConfig.IterateLimit,
+				renderer.regionConfig.GlitchSamples)
+			if divided {
 				splittingRegions = append(splittingRegions, splitee.Children()...)
 				// C. The region need not be divided
 			} else {

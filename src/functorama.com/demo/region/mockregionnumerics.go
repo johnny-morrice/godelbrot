@@ -1,109 +1,127 @@
 package region
 
 import (
+	"fmt"
 	"image"
+	"functorama.com/demo/base"
+	"functorama.com/demo/sequence"
 )
 
-type regionType uint
+type RegionType uint
 
 const (
-	uniform = regionType(iota)
-	collapse
-	subdivide
-	glitch
+	UniformPath = RegionType(iota)
+	CollapsePath
+	SubdividePath
+	GlitchPath
 )
 
-type mockRegionNumerics struct {
-	path                      regionType
-	tClaimExtrinsics          bool
-	tRect                     bool
-	tEvaluateAllPoints        bool
-	tSplit                    bool
-	tOnGlitchCurve            bool
-	tMandelbrotPoints         bool
-	tRegionMember             bool
-	tSubdivide                bool
-	tChildren                 bool
-	tRegionalSequenceNumerics bool
+type MockNumerics struct {
+	Path                      RegionType
+	TClaimExtrinsics          bool
+	TRect                     bool
+	TEvaluateAllPoints        bool
+	TSplit                    bool
+	TOnGlitchCurve            bool
+	TMandelbrotPoints         bool
+	TRegionMember             bool
+	TSubdivide                bool
+	TChildren                 bool
+	TRegionSequence bool
+
+	MockChildren			  []*MockNumerics
+	MockSequence			  *MockProxySequence
 }
 
 const collapseSize = 20
 const collapseMembers = collapseSize * collapseSize // C.M.
-const children = 4                                  // C
 
-func (mock mockRegionNumerics) ClaimExtrinsics() {
-	mock.tClaimExtrinsics = true
+func (mock *MockNumerics) ClaimExtrinsics() {
+	mock.TClaimExtrinsics = true
 }
 
-func (mock mockRegionNumerics) Rect() image.Rectangle {
-	mock.tRect = true
-	if mock.path == collapse {
+func (mock *MockNumerics) Rect() image.Rectangle {
+	mock.TRect = true
+	if mock.Path == CollapsePath {
 		return makeRect(collapseSize)
 	} else {
 		return makeRect(collapseMembers)
 	}
 }
 
-func (mock mockRegionNumerics) EvaluateAllPoints(iterateLimit int) {
-	mock.tEvaluateAllPoints = true
+func makeRect(size int) image.Rectangle {
+	return image.Rect(0, 0, size, size)
 }
 
-func (mock mockRegionNumerics) Split() {
-	mock.tSplit = true
+func (mock *MockNumerics) EvaluateAllPoints(iterateLimit uint8) {
+	mock.TEvaluateAllPoints = true
 }
 
-func (mock mockRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	mock.tOnGlitchCurve = true
-	return mock.path == glitch
+func (mock *MockNumerics) Split() {
+	mock.TSplit = true
 }
 
-type pointFunc func(mockRegionNumerics) MandelbrotMember
+func (mock *MockNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
+	mock.TOnGlitchCurve = true
+	return mock.Path == GlitchPath
+}
 
-func (mock mockRegionNumerics) MandelbrotPoints() []MandelbrotMember {
-	mock.tMandelbrotPoints = true
-	fs := []pointFunc{
-		mockTopLeft,
-		mockTopRight,
-		mockBottomLeft,
-		mockBottomRight,
-		mockMidPoint,
+func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
+	mock.TMandelbrotPoints = true
+
+	const pointCount = 5
+	points := make([]base.MandelbrotMember, pointCount)
+	switch mock.Path {
+	case SubdividePath:
+		fallthrough
+	case CollapsePath:
+		const change = pointCount - 1
+		for i := 0; i < change; i++ {
+			points[i] = base.BaseMandelbrot{InSet: true, InvDivergence: 0}
+		}
+		points[change] = base.BaseMandelbrot{InSet: false, InvDivergence: 20}
+	case UniformPath:
+		fallthrough
+	case GlitchPath:
+		for i := 0; i < pointCount; i++ {
+			points[i] = base.BaseMandelbrot{InSet: true, InvDivergence: 0}
+		}
+	default:
+		panic(fmt.Sprintf("Unknown mock path:", mock.Path))
 	}
-
-	points := make([]MandelbrotMember, len(fs))
-
-	for i, f := range fs {
-		points[i] = f(mock)
-	}
-
 	return points
 }
 
-func (mock mockRegionNumerics) RegionMember() {
-	mock.tRegionMember = true
-	return mockMidPoint(mock)
+func (mock *MockNumerics) RegionMember() base.MandelbrotMember {
+	mock.TRegionMember = true
+	return base.BaseMandelbrot{InSet: true, InvDivergence: 0}
 }
 
-func (mock mockRegionNumerics) Subdivide() bool {
-	mock.tSubdivide = true
-	return mock.path == subdivide
+func (mock *MockNumerics) Subdivide() bool {
+	mock.TSubdivide = true
+	return mock.Path == SubdividePath
 }
 
-func (mock mockRegionNumerics) Children() []RegionNumerics {
-	mock.tChildren = true
-	recurse := make([]RegionNumerics, children)
-	for i := 0; i < children; i++ {
-		recurse[i] = mock
+func (mock *MockNumerics) Children() []RegionNumerics {
+	mock.TChildren = true
+	recurse := make([]RegionNumerics, len(mock.MockChildren))
+	for i, child := range mock.MockChildren {
+		recurse[i] = child
 	}
 	return recurse
 }
 
-func (mock mockRegionNumerics) RegionalSequenceNumerics() SequentialNumerics {
-	mock.tRegionalSequenceNumerics = true
-	mockSequence := mockSequenceNumerics{
-		minR: 0,
-		maxR: collapseSize,
-		minI: 0,
-		maxI: collapseSize,
-	}
-	return mockSequence
+func (mock *MockNumerics) RegionSequence() ProxySequence {
+	mock.TRegionSequence = true
+	return mock.MockSequence
+}
+
+type MockProxySequence struct {
+	sequence.MockNumerics
+
+	TClaimExtrinsics bool
+}
+
+func (mock *MockProxySequence) ClaimExtrinsics() {
+	mock.TClaimExtrinsics = true
 }

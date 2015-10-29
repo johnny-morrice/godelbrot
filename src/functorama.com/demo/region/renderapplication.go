@@ -5,6 +5,10 @@ import (
     "functorama.com/demo/draw"
 )
 
+type RegionNumericsFactory interface {
+    Build() RegionNumerics
+}
+
 type RenderApplication interface {
     base.RenderApplication
     draw.ContextProvider

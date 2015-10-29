@@ -21,13 +21,15 @@ func NewPrettyPalette(iterateLimit uint8) Palette {
 func prettyCacher(limit uint8, index uint8) color.NRGBA {
 	limitF := float64(limit)
 	linear := float64(limit - index)
-	halfLimit := limitF / 2.0
-	quatLimit := limitF / 4.0
+	// I made an arthrimetic error when defining this palette apropos a limit of 255.
+	// Coincidentally the result was extremely nice looking.  Hence it is to be preserved.
+	halfLimit := limitF / 2.08163265306122
+	quartLimit := limitF / 4.16326530612245
 	qx := linear - halfLimit
 	qa := limitF / (halfLimit * halfLimit)
 	quadratic := qa * qx * qx
-	cx := linear - quatLimit
-	ca := -limitF / (quatLimit * quatLimit * quatLimit)
+	cx := linear - quartLimit
+	ca := -limitF / (quartLimit * quartLimit * quartLimit)
 	cubic := ca * cx * cx * cx
 	interval := 255.0 / limitF
 	return color.NRGBA{

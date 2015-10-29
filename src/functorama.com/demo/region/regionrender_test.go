@@ -2,114 +2,155 @@ package region
 
 import (
 	"testing"
+	"image"
+	"functorama.com/demo/base"
+	"functorama.com/demo/draw"
 )
 
-type regionType uint
+func TestNewRegionRenderer(t *testing.T) {
+	const iterateLimit uint8 = 200
+	const collapse uint = 40
+    expectedPic := image.NewNRGBA(image.ZR)
+    context := &draw.MockDrawingContext{
+        Pic: expectedPic,
+    }
+    factory := &MockFactory{}
+    baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
+    regionConfig := RegionConfig{CollapseSize: collapse}
+    expectedRenderer := RegionRenderStrategy{
+    	factory: factory,
+        context: context,
+        baseConfig: baseConfig,
+        regionConfig: regionConfig,
+    }
+    mock := &MockRenderApplication{
+        RegionFactory: factory,
+        RegConfig: regionConfig,
+    }
+    mock.Context = context
+    mock.Base = baseConfig
+	actualRenderer := NewRegionRenderer(mock)
 
-const (
-	uniform = regionType(iota)
-	collapse
-	subdivide
-	glitch
-)
+	if *actualRenderer != expectedRenderer {
+		t.Error("Expected renderer", expectedRenderer,
+			"not equal to actual renderer", actualRenderer)
+	}
 
-type mockRegionNumerics struct {
-	path                      regionType
-	tClaimExtrinsics          bool
-	tRect                     bool
-	tEvaluateAllPoints        bool
-	tSplit                    bool
-	tUniform                  bool
-	tOnGlitchCurve            bool
-	tMandelbrotPoints         bool
-	tRegionMember             bool
-	tSubdivide                bool
-	tChildren                 bool
-	tRegionalSequenceNumerics bool
-}
+	mockOkay := mock.TRegionNumericsFactory && mock.TDrawingContext
+	mockOkay = mockOkay && mock.TBaseConfig && mock.TRegionConfig
 
-const collapseSize = 20
-const collapseMembers = collapseSize * collapseSize // C.M.
-const children = 4                                  // C
-
-func (mock mockRegionNumerics) ClaimExtrinsics() {
-	mock.tClaimExtrinsics = true
-}
-
-func (mock mockRegionNumerics) Rect() image.Rectangle {
-	mock.tRect = true
-	if mock.path == collapse {
-		return makeRect(collapseSize)
-	} else {
-		return makeRect(collapseMembers)
+	if !mockOkay {
+		t.Error("Expected methods not called on mock")
 	}
 }
 
-func (mock mockRegionNumerics) EvaluateAllPoints(iterateLimit int) {
-	mock.tEvaluateAllPoints = true
+func TestRender(t *testing.T) {
+	const iterateLimit uint8 = 200
+	const collapseSize uint = 40
+    expectedPic := image.NewNRGBA(image.ZR)
+    mockPalette := &draw.MockPalette{}
+    context := &draw.MockDrawingContext{
+        Pic: expectedPic,
+        Col: mockPalette,
+    }
+    collapseSequence := &MockProxySequence{}
+    uniform := &MockNumerics{Path: UniformPath}
+    collapse := &MockNumerics{
+    	Path: CollapsePath,
+    	MockSequence: collapseSequence,
+    }
+    mockNumerics := &MockNumerics{
+    	Path: SubdividePath,
+    	MockChildren: []*MockNumerics{uniform, collapse},
+    }
+    factory := &MockFactory{Numerics: mockNumerics}
+    baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
+    regionConfig := RegionConfig{CollapseSize: collapseSize}
+    renderer := RegionRenderStrategy{
+    	factory: factory,
+        context: context,
+        baseConfig: baseConfig,
+        regionConfig: regionConfig,
+    }
+
+    actualPic, err := renderer.Render()
+
+    if actualPic != expectedPic {
+    	t.Error("Expected pic differed from actual:", actualPic)
+    }
+
+    if err != nil {
+    	t.Error("Unexpeced error in render:", err)
+    }
+
+    if !factory.TBuild {
+    	t.Error("Expected methods not called on factory:", factory)
+    }
+
+    if !(uniform.TClaimExtrinsics && uniform.TRect) {
+    	t.Error("Expected methods not called on uniform region:", uniform)
+    }
+
+    if !(collapse.TClaimExtrinsics && collapse.TRegionSequence) {
+    	t.Error("Expected methods not called on collapse region:", collapse)
+    }
+
+    if !mockPalette.TColor {
+    	t.Error("Expected methods not called on paleete:", mockPalette)
+    }
+
+    sequenceOkay := collapseSequence.TClaimExtrinsics && collapseSequence.TImageDrawSequencer
+    sequenceOkay = sequenceOkay && collapseSequence.TMandelbrotSequence
+    if !sequenceOkay {
+    	t.Error("Expected methods not called on collapsed sequence numerics:", collapseSequence)
+    }
 }
 
-func (mock mockRegionNumerics) Split() {
-	mock.tSplit = true
-}
+func TestSubdivideRegions(t *testing.T) {
+	const iterateLimit uint8 = 200
+	const collapseSize uint = 40
+    uniform := &MockNumerics{Path: UniformPath}
+    collapse := &MockNumerics{Path: CollapsePath}
+    mock := &MockNumerics{
+    	Path: SubdividePath,
+    	MockChildren: []*MockNumerics{uniform, collapse},
+    }
+    baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
+    regionConfig := RegionConfig{CollapseSize: collapseSize}
+    renderer := RegionRenderStrategy{
+        baseConfig: baseConfig,
+        regionConfig: regionConfig,
+    }
 
-func (mock mockRegionNumerics) Uniform() bool {
-	mock.tUniform = true
-	return mock.path == uniform || mock.path == glitch
-}
+    actualUniform, actualCollapse := renderer.SubdivideRegions(mock)
 
-func (mock mockRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	mock.tOnGlitchCurve = true
-	return mock.path == glitch
-}
+    actualUniCount := len(actualUniform)
+    const expectUniCount = 1
+    if actualUniCount != expectUniCount {
+    	t.Error("Expected ", expectUniCount, "uniform regions but received", actualUniCount)
+    }
 
-type pointFunc func(mockRegionNumerics) MandelbrotMember
+    actualCollCount := len(actualCollapse)
+    const expectCollCount = 1
+    if actualUniCount != expectCollCount {
+    	t.Error("Expected ", expectUniCount, "collapsed regions but received", actualCollCount)
+    }
 
-func (mock mockRegionNumerics) MandelbrotPoints() []MandelbrotMember {
-	mock.tMandelbrotPoints = true
-	fs := []pointFunc{
-		mockTopLeft,
-		mockTopRight,
-		mockBottomLeft,
-		mockBottomRight,
-		mockMidPoint,
-	}
+    mockOkay := mock.TClaimExtrinsics && mock.TRect
+    mockOkay = mockOkay && mock.TMandelbrotPoints && mock.TSplit
+    mockOkay = mockOkay && mock.TEvaluateAllPoints && mock.TChildren
+    if !mockOkay {
+    	t.Error("Expected methods not called on inital region:", mock)
+    }
 
-	points := make([]MandelbrotMember, len(fs))
+    uniformOkay := uniform.TClaimExtrinsics && uniform.TRect
+    uniformOkay = uniformOkay && uniform.TMandelbrotPoints
+    if !uniformOkay {
+    	t.Error("Expected methods not called on uniform region:", uniform)
+    }
 
-	for i, f := range fs {
-		points[i] = f(mock)
-	}
-
-	return points
-}
-
-func (mock mockRegionNumerics) RegionMember() {
-	mock.tRegionMember = true
-	return mockMidPoint(mock)
-}
-
-func (mock mockRegionNumerics) Subdivide() bool {
-	mock.tSubdivide = true
-	return mock.path == subdivide
-}
-
-func (mock mockRegionNumerics) Children() []RegionNumerics {
-	mock.tChildren = true
-	recurse := make([]RegionNumerics, children)
-	for i := 0; i < children; i++ {
-		recurse[i] = mock
-	}
-	return recurse
-}
-
-func (mock mockRegionNumerics) RegionalSequenceNumerics() SequentialNumerics {
-	mock.tRegionalSequenceNumerics
-	mockSequence := RegionalSequenceNumerics{
-		minR: 0,
-		maxR: collapseSize,
-		minI: 0,
-		maxI: collapseSize,
-	}
-	return mockSequence
+    collapseOkay := collapse.TClaimExtrinsics && collapse.TRect
+    if !collapseOkay {
+    	t.Error("Expected methods not called on collapsed region:", collapse)
+    }
 }

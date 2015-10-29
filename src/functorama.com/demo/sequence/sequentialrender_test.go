@@ -22,7 +22,7 @@ func TestNewSequenceRenderer(t *testing.T) {
         SequenceFactory: factory,
     }
     mock.Context = context
-    mock.IterateLimit = 200
+    mock.Base.IterateLimit = 200
     actualRenderer := NewSequenceRenderer(mock)
 
     if !(mock.TSequenceNumericsFactory && mock.TDrawingContext && mock.TBaseConfig) {

@@ -17,10 +17,6 @@ func (collapse BaseRegionNumerics) CollapseSize() int {
     return collapse.Collapse
 }
 
-type RegionNumericsFactory interface {
-    Build() RegionNumerics
-}
-
 // RegionNumerics provides rendering calculations for the "region" render strategy.
 type RegionNumerics interface {
     base.OpaqueProxyFlyweight
