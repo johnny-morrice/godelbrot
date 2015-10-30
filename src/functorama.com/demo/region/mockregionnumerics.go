@@ -17,7 +17,6 @@ const (
 )
 
 type MockNumerics struct {
-	Path                      RegionType
 	TClaimExtrinsics          bool
 	TRect                     bool
 	TEvaluateAllPoints        bool
@@ -29,12 +28,14 @@ type MockNumerics struct {
 	TChildren                 bool
 	TRegionSequence bool
 
+	Path                      RegionType
+
 	MockChildren			  []*MockNumerics
 	MockSequence			  *MockProxySequence
 }
 
 const collapseSize = 20
-const collapseMembers = collapseSize * collapseSize // C.M.
+const notCollapse = collapseSize + 1
 
 func (mock *MockNumerics) ClaimExtrinsics() {
 	mock.TClaimExtrinsics = true
@@ -45,7 +46,7 @@ func (mock *MockNumerics) Rect() image.Rectangle {
 	if mock.Path == CollapsePath {
 		return makeRect(collapseSize)
 	} else {
-		return makeRect(collapseMembers)
+		return makeRect(notCollapse)
 	}
 }
 

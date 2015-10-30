@@ -4,7 +4,7 @@ import (
     "functorama.com/demo/region"
 )
 
-type SharedRegionNumericsFactory interface {
+type SharedRegionFactory interface {
 	Build() SharedRegionNumerics
 }
 
@@ -17,5 +17,5 @@ type SharedRegionConfig struct {
 type RenderApplication interface {
     region.RenderApplication
     SharedRegionConfig() SharedRegionConfig
-    SharedRegionNumericsFactory() SharedRegionNumericsFactory
+    SharedRegionFactory() SharedRegionFactory
 }

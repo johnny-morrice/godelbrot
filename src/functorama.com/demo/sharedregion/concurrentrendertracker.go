@@ -44,7 +44,7 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 		uniform:    make([]SharedRegionNumerics, base.AllocMedium),
 		points:     make([]base.PixelMember, base.AllocLarge),
 		factory:	NewRenderThreadFactory(app),
-		initialRegion: app.SharedRegionNumericsFactory().Build(),
+		initialRegion: app.SharedRegionFactory().Build(),
 	}
 	for i := 0; i < int(config.Jobs); i++ {
 		tracker.processing[i] = 0
@@ -75,7 +75,7 @@ func (tracker *RenderTracker) renderRegions(regions []SharedRegionNumerics) {
 		return
 	}
 
-	input := RenderInput{Command: Render}
+	input := RenderInput{Command: ThreadRender}
 
 	// If we're busy, wait for buffer to fill before sending
 	if tracker.busy() {
@@ -164,7 +164,7 @@ func (tracker *RenderTracker) Render() {
 
 	// Shut down threads
 	for _, input := range tracker.input {
-		input <- RenderInput{Command: Stop}
+		input <- RenderInput{Command: ThreadStop}
 	}
 
 	tracker.draw()

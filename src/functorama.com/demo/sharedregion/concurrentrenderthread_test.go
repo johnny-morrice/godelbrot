@@ -2,54 +2,53 @@ package sharedregion
 
 import (
 	"testing"
+	"functorama.com/demo/base"
+	"functorama.com/demo/region"
 )
 
-type mockSharedRegionNumerics struct {
-	mockRegionNumerics
-
-	tGrabThreadPrototype bool
-}
-
-func (mock mockSharedRegionNumerics) GrabThreadPrototype(threadId uint) {
-	mock.tGrabThreadPrototype = true
-}
+const children = 4
+const collapseCount = 20
 
 type threadOutputExpect struct {
-	members  int
-	children int
-	uniform  int
+    members  int
+    children int
+    uniform  int
 }
 
 func TestRenderThreadFactory(t *testing.T) {
-	mock := mockRenderApplication{}
-	factory := newRenderThreadFactory(mock)
+	mock := &MockRenderApplication{}
+	factory := NewRenderThreadFactory(mock)
 
-	threads := []renderThreadfactory{factory(nil, nil), factory(nil, nil)}
+	threads := []RenderThread{factory.Build(nil, nil), factory.Build(nil, nil)}
 
-	if !mock.tConcurrentConfig {
+	if !mock.TSharedRegionConfig {
 		t.Error("Mock did not receive expected method call")
 	}
 
 	for i, th := range threads {
-		if th.threadId != i {
-			t.Error("Thread", i, "had incorrect threadId: ", th)
+		if th.ThreadId != uint(i) {
+			t.Error("Thread", i, "had incorrect ThreadId: ", th)
 		}
 	}
 }
 
 func TestThreadRun(t *testing.T) {
 	th := createThread()
-	commandCount := 2
-	th.inputChan = make(chan renderInput, commandCount)
-	th.outputChan = make(chan renderOutput)
-	th.inputChan <- renderInput{
-		command: render,
-		regions: uniformer(),
-	}
-	th.inputChan <- renderInput{command: stop}
+	const commandCount = 2
+	const uniformLength = 1
+	iChan := make(chan RenderInput, commandCount)
+	oChan := make(chan RenderOutput)
+	th.InputChan = iChan
+	th.OutputChan = oChan
 
-	th.run()
-	out := th.outputChan
+	iChan <- RenderInput{
+		Command: ThreadRender,
+		Regions: []SharedRegionNumerics{uniformer()},
+	}
+	iChan <- RenderInput{Command: ThreadStop}
+
+	th.Run()
+	out := <- oChan
 
 	const context = "TestThreadRun"
 	threadOutputCheck(t, out, threadOutputExpect{1, 0, 0}, context)
@@ -59,32 +58,32 @@ func TestThreadPass(t *testing.T) {
 	// Key: Uniformer Count, Subdivider Count, Member Count
 
 	// 0 0 0
-	zero := threadPassOutput([]mockSharedRegionNumerics{})
+	zero := threadPassOutput([]SharedRegionNumerics{})
 
 	// 1 0 0
-	oneUniform := threadPassOutput([]mockSharedRegionNumerics{uniformer()})
+	oneUniform := threadPassOutput([]SharedRegionNumerics{uniformer()})
 	// 2 0 0
-	twoUniform := threadPassOutput([]mockSharedRegionNumerics{uniformer(), uniformer()})
+	twoUniform := threadPassOutput([]SharedRegionNumerics{uniformer(), uniformer()})
 
 	// 0 1C 0
-	oneChild := threadPassOutput([]mockSharedRegionNumerics{subdivider()})
+	oneChild := threadPassOutput([]SharedRegionNumerics{subdivider()})
 	// 0 2C 0
-	twoChild := threadPassOutput([]mockSharedRegionNumerics{subdivider(), subdivider()})
+	twoChild := threadPassOutput([]SharedRegionNumerics{subdivider(), subdivider()})
 
 	// 0 0 1C.M
-	oneMember := threadPassOutput([]mockSharedRegionNumerics{collapser()})
+	oneMember := threadPassOutput([]SharedRegionNumerics{collapser()})
 	// 0 0 2C.M.
-	twoMember := threadPassOutput([]mockSharedRegionNumerics{collapser(), collapser()})
+	twoMember := threadPassOutput([]SharedRegionNumerics{collapser(), collapser()})
 
 	// 1 1C 0
-	oneUniOneChild := threadPassOutput([]mockSharedRegionNumerics{uniformer(), subdivider()})
+	oneUniOneChild := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider()})
 	// 1 0 1C.M.
-	oneUniOneMember := threadPassOutput([]mockSharedRegionNumerics{uniformer(), subdivider()})
+	oneUniOneMember := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider()})
 	// 0 1C 1C.M
-	oneChildOneMember := threadPassOutput([]mockSharedRegionNumerics{subdivider(), collapser()})
+	oneChildOneMember := threadPassOutput([]SharedRegionNumerics{subdivider(), collapser()})
 
 	// 1 1C 1C.M
-	all := threadPassOutput([]mockSharedRegionNumerics{uniformer(), subdivider(), collapser()})
+	all := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider(), collapser()})
 
 	const context = "TestThreadPass"
 
@@ -96,14 +95,14 @@ func TestThreadPass(t *testing.T) {
 	threadOutputCheck(t, oneChild, threadOutputExpect{0, children, 0}, context)
 	threadOutputCheck(t, twoChild, threadOutputExpect{0, 2 * children, 0}, context)
 
-	threadOutputCheck(t, oneMember, threadOutputExpect{collapseMembers, 0, 0}, context)
-	threadOutputCheck(t, twoMember, threadOutputExpect{2 * collapseMembers, 0, 0}, context)
+	threadOutputCheck(t, oneMember, threadOutputExpect{collapseCount, 0, 0}, context)
+	threadOutputCheck(t, twoMember, threadOutputExpect{2 * collapseCount, 0, 0}, context)
 
 	threadOutputCheck(t, oneUniOneChild, threadOutputExpect{1, children, 0}, context)
-	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseMembers}, context)
-	threadOutputCheck(t, oneChildOneMember, threadOutputExpect{0, children, collapseMembers}, context)
+	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseCount}, context)
+	threadOutputCheck(t, oneChildOneMember, threadOutputExpect{0, children, collapseCount}, context)
 
-	threadOutputCheck(t, all, threadOutputExpect{1, children, collapseMembers}, context)
+	threadOutputCheck(t, all, threadOutputExpect{1, children, collapseCount}, context)
 }
 
 func TestThreadStep(t *testing.T) {
@@ -114,99 +113,100 @@ func TestThreadStep(t *testing.T) {
 	subdivided := threadStepOutput(subd)
 	uniformed := threadStepOutput(uni)
 
-	for _, mock := range []mockSharedRegionNumerics{coll, subd, uni} {
-		if !mockStepOkay(mock) {
+	for _, mock := range []*MockNumerics{coll, subd, uni} {
+		if !stepOkayGeneral(mock) {
 			t.Error("General case methods not called on region:", mock)
 		}
 	}
 
-	if !(collapsed.tRegionalSequenceNumerics && collapsed.tMandelbrotMembers) {
-		t.Error("Expected methods not called on collapse region:", collapsed)
+	if !(coll.TRegionSequence && coll.TMandelbrotPoints) {
+		t.Error("Expected methods not called on collapse region:", coll)
 	}
 
-	if !(subdivided.tSplit && subdivided.tChildren && subdivided.tEvaluateAllPoints) {
-		t.Error("Expected methods not called on subdivided region:", subdivided)
+	if !(subd.TSplit && subd.TChildren && subd.TEvaluateAllPoints) {
+		t.Error("Expected methods not called on subdivided region:", subd)
 	}
 
-	if !uniformed.tEvaluateAllPoints {
-		t.Error("Expected methods not called on uniform region:", uniformed)
+	if !(uni.TEvaluateAllPoints && uni.TOnGlitchCurve)  {
+		t.Error("Expected methods not called on uniform region:", uni)
 	}
 
 	const context = "TestThreadStep"
-	threadOutputCheck(t, collapsed, threadOutputExpect{0, 0, collapseMembers}, context)
+	threadOutputCheck(t, collapsed, threadOutputExpect{0, 0, collapseCount}, context)
 	threadOutputCheck(t, subdivided, threadOutputExpect{0, children, 0}, context)
 	threadOutputCheck(t, uniformed, threadOutputExpect{1, 0, 0}, context)
 }
 
-func collapser(length int) mockSharedRegionNumerics {
-	return mockSharedRegionNumerics{
-		path:   collapse,
-		length: length,
-	}
-}
-
-func mockStepOkayGeneral(mock mockSharedRegionNumerics) bool {
-	okay := mock.tCollapseSize
-	okay := okay && mock.Rect
-	okay := okay && mock.tGrabThreadPrototype
-	okay := okay && mock.tClaimExtrinsics
-	okay := okay && mock.tUniform
+func stepOkayGeneral(mock *MockNumerics) bool {
+	okay := mock.TRect && mock.TGrabThreadPrototype
+	okay = okay && mock.TClaimExtrinsics
 	return okay
 }
 
-func subdivider(length int) mockSharedRegionNumerics {
-	return mockSharedRegionNumerics{
-		path:   subdivide,
-		length: length,
-	}
+func collapser() *MockNumerics {
+	mock := mocker(region.CollapsePath)
+	captured := make([]base.PixelMember, collapseCount)
+	mockSequence := &region.MockProxySequence{}
+	mockSequence.Captured = captured
+	mock.MockSequence = mockSequence
+	return mock
 }
 
-func uniformer(length int) mockSharedRegionNumerics {
-	return mockSharedRegionNumerics{
-		path:   uniform,
-		length: length,
+func subdivider() *MockNumerics {
+	mock := mocker(region.SubdividePath)
+	children := make([]SharedRegionNumerics, children)
+
+	for i := 0; i < len(children); i++ {
+		children[i] = uniformer()
 	}
+
+	mock.ShareNext = children
+	return mock
 }
 
-func threadOutputCheck(t *testing.T, expect threadOutputExpect, context string) {
-	actualUniformCount := len(out.uniform)
-	actualChildCount := len(out.children)
-	actualMemberCount := len(out.members)
+func uniformer() *MockNumerics {
+	return mocker(region.UniformPath)
+}
 
-	if actualMemberCount != expect.members || actualChildCount != expect.children || actualUniformCount != expect.uniform {
+func mocker(path region.RegionType) *MockNumerics {
+	mock := &MockNumerics{}
+	mock.Path = path
+	return mock
+}
+
+func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExpect, context string) {
+	actualUniformCount := len(actual.UniformRegions)
+	actualChildCount := len(actual.Children)
+	actualMemberCount := len(actual.Members)
+
+	okay := actualMemberCount != expect.members
+	okay = okay || actualChildCount != expect.children
+	okay = okay || actualUniformCount != expect.uniform
+	if okay {
 		t.Error("In context ", context,
 			", expected output counts ", expect, " but received (",
 			actualUniformCount, actualChildCount, actualMemberCount, ")")
 	}
 }
 
-func threadPassOutput(helpers []mockSharedRegionNumerics) renderOutput {
-	numerics := make([]SharedRegionNumerics, len(helpers))
-	for i, h := range helpers {
-		numerics[i] = mockSharedRegionNumerics
-	}
-
+func threadPassOutput(numerics []SharedRegionNumerics) RenderOutput {
 	th := createThread()
-	return th.pass(numerics)
+	return th.Pass(numerics)
 }
 
-func threadStepOutput(helper mockSharedRegionNumerics) renderOutput {
-	output := renderOutput{}
-	input := renderInput{
-		command: render,
-	}
-
-	input.regions = []SharedRegionNumerics{mockSharedRegionNumerics}
+func threadStepOutput(numerics SharedRegionNumerics) RenderOutput {
+	output := RenderOutput{}
 	th := createThread()
-	th.Step(input, &output)
+	th.Step(numerics, &output)
 
 	return output
 }
 
-func createThread() renderThread {
-	return renderThread{
-		config: renderParameters{
-			RegionCollapseSize: collapseSize,
+func createThread() RenderThread {
+	const collapseSize = 10
+	return RenderThread{
+		RegionConfig: region.RegionConfig{
+			CollapseSize: collapseSize,
 		},
 	}
 }

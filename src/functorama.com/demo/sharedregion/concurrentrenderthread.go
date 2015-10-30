@@ -9,8 +9,8 @@ import (
 type RenderCommand uint
 
 const (
-	Render = RenderCommand(iota)
-	Stop
+	ThreadRender = RenderCommand(iota)
+	ThreadStop
 )
 
 type RenderInput struct {
@@ -71,9 +71,9 @@ func (thread *RenderThread) Run() {
 	for {
 		input := <-thread.InputChan
 		switch input.Command {
-		case Render:
+		case ThreadRender:
 			thread.OutputChan <- thread.Pass(input.Regions)
-		case Stop:
+		case ThreadStop:
 			return
 		default:
 			panic(fmt.Sprintf("Unknown Render Command in thread %v: %v",
