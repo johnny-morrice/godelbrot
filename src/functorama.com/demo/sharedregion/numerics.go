@@ -1,6 +1,7 @@
 package sharedregion
 
 import (
+    "functorama.com/demo/base"
 	"functorama.com/demo/sequence"
 	"functorama.com/demo/region"
 )
@@ -8,7 +9,7 @@ import (
 // SharedSequentialNumerics provides sequential (column-wise) rendering calculations for a threaded
 // render strategy
 type SharedSequenceNumerics interface {
-    sequence.SequenceNumerics
+    region.ProxySequence
     OpaqueThreadPrototype
 }
 
@@ -18,4 +19,11 @@ type SharedRegionNumerics interface {
     OpaqueThreadPrototype
     SharedChildren() []SharedRegionNumerics
     SharedRegionSequence() SharedSequenceNumerics
+}
+
+func SharedSequenceCollapse(numerics SharedRegionNumerics, threadId uint, iterateLimit uint8) []base.PixelMember {
+    collapse := numerics.SharedRegionSequence()
+    collapse.GrabThreadPrototype(threadId)
+    collapse.ClaimExtrinsics()
+    return sequence.Capture(collapse, iterateLimit)
 }

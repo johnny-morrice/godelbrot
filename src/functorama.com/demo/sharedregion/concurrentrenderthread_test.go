@@ -8,11 +8,12 @@ import (
 
 const children = 4
 const collapseCount = 20
+const collapseSize = 10
 
 type threadOutputExpect struct {
-    members  int
-    children int
     uniform  int
+    children int
+    members  int
 }
 
 func TestRenderThreadFactory(t *testing.T) {
@@ -47,7 +48,7 @@ func TestThreadRun(t *testing.T) {
 	}
 	iChan <- RenderInput{Command: ThreadStop}
 
-	th.Run()
+	go th.Run()
 	out := <- oChan
 
 	const context = "TestThreadRun"
@@ -78,7 +79,7 @@ func TestThreadPass(t *testing.T) {
 	// 1 1C 0
 	oneUniOneChild := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider()})
 	// 1 0 1C.M.
-	oneUniOneMember := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider()})
+	oneUniOneMember := threadPassOutput([]SharedRegionNumerics{uniformer(), collapser()})
 	// 0 1C 1C.M
 	oneChildOneMember := threadPassOutput([]SharedRegionNumerics{subdivider(), collapser()})
 
@@ -95,8 +96,8 @@ func TestThreadPass(t *testing.T) {
 	threadOutputCheck(t, oneChild, threadOutputExpect{0, children, 0}, context)
 	threadOutputCheck(t, twoChild, threadOutputExpect{0, 2 * children, 0}, context)
 
-	threadOutputCheck(t, oneMember, threadOutputExpect{collapseCount, 0, 0}, context)
-	threadOutputCheck(t, twoMember, threadOutputExpect{2 * collapseCount, 0, 0}, context)
+	threadOutputCheck(t, oneMember, threadOutputExpect{0, 0, collapseCount}, context)
+	threadOutputCheck(t, twoMember, threadOutputExpect{0, 0, 2 * collapseCount}, context)
 
 	threadOutputCheck(t, oneUniOneChild, threadOutputExpect{1, children, 0}, context)
 	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseCount}, context)
@@ -113,21 +114,21 @@ func TestThreadStep(t *testing.T) {
 	subdivided := threadStepOutput(subd)
 	uniformed := threadStepOutput(uni)
 
-	for _, mock := range []*MockNumerics{coll, subd, uni} {
+	for i, mock := range []*MockNumerics{coll, subd, uni} {
 		if !stepOkayGeneral(mock) {
-			t.Error("General case methods not called on region:", mock)
+			t.Error("General case methods not called on region", i, mock)
 		}
 	}
 
-	if !(coll.TRegionSequence && coll.TMandelbrotPoints) {
+	if !(coll.TSharedRegionSequence) {
 		t.Error("Expected methods not called on collapse region:", coll)
 	}
 
-	if !(subd.TSplit && subd.TChildren && subd.TEvaluateAllPoints) {
+	if !(subd.TSplit && subd.TSharedChildren && subd.TEvaluateAllPoints) {
 		t.Error("Expected methods not called on subdivided region:", subd)
 	}
 
-	if !(uni.TEvaluateAllPoints && uni.TOnGlitchCurve)  {
+	if !(uni.TOnGlitchCurve && uni.TEvaluateAllPoints)  {
 		t.Error("Expected methods not called on uniform region:", uni)
 	}
 
@@ -145,22 +146,19 @@ func stepOkayGeneral(mock *MockNumerics) bool {
 
 func collapser() *MockNumerics {
 	mock := mocker(region.CollapsePath)
-	captured := make([]base.PixelMember, collapseCount)
-	mockSequence := &region.MockProxySequence{}
-	mockSequence.Captured = captured
-	mock.MockSequence = mockSequence
+	mock.SharedMockSequence.Captured = make([]base.PixelMember, collapseCount)
 	return mock
 }
 
 func subdivider() *MockNumerics {
 	mock := mocker(region.SubdividePath)
-	children := make([]SharedRegionNumerics, children)
+	children := make([]*MockNumerics, children)
 
 	for i := 0; i < len(children); i++ {
 		children[i] = uniformer()
 	}
 
-	mock.ShareNext = children
+	mock.SharedMockChildren = children
 	return mock
 }
 
@@ -171,6 +169,9 @@ func uniformer() *MockNumerics {
 func mocker(path region.RegionType) *MockNumerics {
 	mock := &MockNumerics{}
 	mock.Path = path
+	mockSequence := &MockSequence{}
+	mock.SharedMockSequence = mockSequence
+	mock.AppCollapseSize = collapseSize
 	return mock
 }
 
@@ -179,12 +180,12 @@ func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExp
 	actualChildCount := len(actual.Children)
 	actualMemberCount := len(actual.Members)
 
-	okay := actualMemberCount != expect.members
-	okay = okay || actualChildCount != expect.children
-	okay = okay || actualUniformCount != expect.uniform
-	if okay {
-		t.Error("In context ", context,
-			", expected output counts ", expect, " but received (",
+	okay := actualMemberCount == expect.members
+	okay = okay && actualChildCount == expect.children
+	okay = okay && actualUniformCount == expect.uniform
+	if !okay {
+		t.Error("In context", context,
+			"expected output counts", expect, "but received (",
 			actualUniformCount, actualChildCount, actualMemberCount, ")")
 	}
 }
@@ -203,7 +204,6 @@ func threadStepOutput(numerics SharedRegionNumerics) RenderOutput {
 }
 
 func createThread() RenderThread {
-	const collapseSize = 10
 	return RenderThread{
 		RegionConfig: region.RegionConfig{
 			CollapseSize: collapseSize,

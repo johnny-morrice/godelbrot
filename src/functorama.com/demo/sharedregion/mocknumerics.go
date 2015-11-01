@@ -2,7 +2,6 @@ package sharedregion
 
 import (
     "functorama.com/demo/region"
-    "functorama.com/demo/sequence"
 )
 
 type MockThreadPrototype struct {
@@ -14,7 +13,7 @@ func (mock *MockThreadPrototype) GrabThreadPrototype(threadId uint) {
 }
 
 type MockSequence struct {
-    sequence.MockNumerics
+    region.MockProxySequence
     MockThreadPrototype
 }
 
@@ -24,16 +23,22 @@ type MockNumerics struct {
     TSharedChildren  bool
     TSharedRegionSequence bool
 
-    ShareNext []SharedRegionNumerics
-    SharedSequence SharedSequenceNumerics
+    SharedMockChildren []*MockNumerics
+    SharedMockSequence *MockSequence
 }
 
 func (mock *MockNumerics) SharedChildren() []SharedRegionNumerics {
     mock.TSharedChildren = true
-    return mock.ShareNext
+    abstract := make([]SharedRegionNumerics, len(mock.SharedMockChildren))
+
+    for i, child := range mock.SharedMockChildren {
+        abstract[i] = child
+    }
+
+    return abstract
 }
 
 func (mock *MockNumerics) SharedRegionSequence() SharedSequenceNumerics {
     mock.TSharedRegionSequence = true
-    return mock.SharedSequence
+    return mock.SharedMockSequence
 }

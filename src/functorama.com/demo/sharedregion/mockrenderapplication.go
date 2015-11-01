@@ -4,6 +4,17 @@ import (
     "functorama.com/demo/region"
 )
 
+type MockFactory struct {
+    TBuild bool
+
+    Numerics *MockNumerics
+}
+
+func (factory *MockFactory) Build() SharedRegionNumerics {
+    factory.TBuild = true
+    return factory.Numerics
+}
+
 type MockRenderApplication struct {
     region.MockRenderApplication
     TSharedRegionConfig bool

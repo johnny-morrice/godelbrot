@@ -105,7 +105,7 @@ func (thread *RenderThread) Step(shared SharedRegionNumerics, output *RenderOutp
 	collapseBound := int(regionConfig.CollapseSize)
 
 	if region.Collapse(shared, collapseBound) {
-		points := region.SequenceCollapse(shared, iterateLimit)
+		points := SharedSequenceCollapse(shared, thread.ThreadId, iterateLimit)
 		output.Members = append(output.Members, points...)
 		return
 	}

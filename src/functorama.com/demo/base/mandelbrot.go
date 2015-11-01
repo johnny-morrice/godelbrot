@@ -17,3 +17,10 @@ func (base BaseMandelbrot) InverseDivergence() uint8 {
 func (base BaseMandelbrot) SetMember() bool {
 	return base.InSet
 }
+
+// PixelMember is a MandelbrotMember associated with a pixel
+type PixelMember struct {
+    I      int
+    J      int
+    Member MandelbrotMember
+}

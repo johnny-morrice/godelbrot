@@ -14,3 +14,9 @@ type SequenceNumerics interface {
     CapturedMembers() []base.PixelMember
     SubImage(rect image.Rectangle)
 }
+
+func Capture(sequence SequenceNumerics, iterateLimit uint8) []base.PixelMember {
+    sequence.MemberCaptureSequencer()
+    sequence.MandelbrotSequence(iterateLimit)
+    return sequence.CapturedMembers()
+}

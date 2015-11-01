@@ -32,21 +32,21 @@ type MockNumerics struct {
 
 	MockChildren			  []*MockNumerics
 	MockSequence			  *MockProxySequence
-}
 
-const collapseSize = 20
-const notCollapse = collapseSize + 1
+	AppCollapseSize int
+}
 
 func (mock *MockNumerics) ClaimExtrinsics() {
 	mock.TClaimExtrinsics = true
 }
 
 func (mock *MockNumerics) Rect() image.Rectangle {
+	sz := mock.AppCollapseSize
 	mock.TRect = true
 	if mock.Path == CollapsePath {
-		return makeRect(collapseSize)
+		return makeRect(sz)
 	} else {
-		return makeRect(notCollapse)
+		return makeRect(sz * 10)
 	}
 }
 

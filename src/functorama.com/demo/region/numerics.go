@@ -47,11 +47,9 @@ func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render
 // results rather than drawing them to the image.
 func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelMember {
-    sequence := numerics.RegionSequence()
-    sequence.ClaimExtrinsics()
-    sequence.MemberCaptureSequencer()
-    sequence.MandelbrotSequence(iterateLimit)
-    return sequence.CapturedMembers()
+    collapse := numerics.RegionSequence()
+    collapse.ClaimExtrinsics()
+    return sequence.Capture(collapse, iterateLimit)
 }
 
 // Subdivide takes a RegionNumerics and tries to split the region into subregions.  It returns true
