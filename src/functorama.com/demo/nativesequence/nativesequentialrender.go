@@ -2,14 +2,18 @@ package nativesequence
 
 import (
 	"functorama.com/demo/base"
-	"functorama.com/demo/nativebase"
 	"functorama.com/demo/draw"
+	"functorama.com/demo/nativebase"
 )
 
 type NativeSequenceNumerics struct {
 	nativebase.NativeBaseNumerics
 	sequencer func(i int, j int, member nativebase.NativeMandelbrotMember)
 	members   []base.PixelMember
+}
+
+func CreateNativeSequenceNumerics(base nativebase.NativeBaseNumerics) NativeSequenceNumerics {
+	return NativeSequenceNumerics{NativeBaseNumerics: base}
 }
 
 func (native *NativeSequenceNumerics) MandelbrotSequence(iterLimit uint8) {
@@ -54,4 +58,4 @@ func (native *NativeSequenceNumerics) MemberCaptureSequencer() {
 
 func (native *NativeSequenceNumerics) CapturedMembers() []base.PixelMember {
 	return native.members
-} 
+}

@@ -14,6 +14,13 @@ type MockDrawingContext struct {
     Col  Palette
 }
 
+func NewMockDrawingContext(iterateLimit uint8) *MockDrawingContext {
+    return &MockDrawingContext{
+        Pic: image.NewNRGBA(image.ZR),
+        Col: NewRedscalePalette(iterateLimit),
+    }
+}
+
 func (mock *MockDrawingContext) Picture() *image.NRGBA {
     mock.TPicture = true
     return mock.Pic
