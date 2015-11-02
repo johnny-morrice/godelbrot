@@ -45,6 +45,8 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 		}
 	}
 
+	rUnit, iUnit := pixelUnits(pictureWidth, pictureHeight, planeWidth, planeHeight)
+
 	return NativeBaseNumerics{
 		BaseNumerics: base.CreateBaseNumerics(app),
 		RealMin:      real(planeMin),
@@ -54,8 +56,8 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 
 		SqrtDivergeLimit: math.Sqrt(config.DivergeLimit),
 
-		Runit: planeWidth / float64(pictureWidth),
-		Iunit: planeHeight / float64(pictureHeight),
+		Runit: rUnit,
+		Iunit: iUnit,
 	}
 }
 
@@ -69,21 +71,31 @@ func (native *NativeBaseNumerics) PixelSize() (float64, float64) {
 }
 
 func (native *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
+	const debug = true
 	topLeft := native.PlaneTopLeft()
 	rUnit, iUnit := native.PixelSize()
 	// Translate x
 	tx := real(c) - real(topLeft)
-	// Scale x
-	sx := tx / rUnit
 
 	// Translate y
-	ty := imag(c) - imag(topLeft)
+	ty := imag(topLeft) - imag(c)
+
+	// Scale x
+	sx := tx / rUnit
 	// Scale y
 	sy := ty / iUnit
 
 	rx = int(math.Floor(sx))
 	// Remember that we draw downwards
-	ry = int(math.Ceil(-sy))
+	ry = int(math.Ceil(sy))
+
+	_ = "breakpoint"
 
 	return
+}
+
+func pixelUnits(pictureW uint, pictureH uint, planeW float64, planeH float64) (float64, float64) {
+	rUnit := planeW / float64(pictureW)
+	iUnit := planeH / float64(pictureH)
+	return rUnit, iUnit
 }

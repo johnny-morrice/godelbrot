@@ -14,12 +14,10 @@ type BaseNumerics struct {
 
 func CreateBaseNumerics(app RenderApplication) BaseNumerics {
 	width, height := app.PictureDimensions()
-	return BaseNumerics{
-		PicXMin: 0,
-		PicXMax: int(width),
-		PicYMin: 0,
-		PicYMax: int(height),
-	}
+	base := BaseNumerics{}
+	base.ImageWidth(width)
+	base.ImageHeight(height)
+	return base
 }
 
 func (base *BaseNumerics) PictureMin() (int, int) {
@@ -30,10 +28,20 @@ func (base *BaseNumerics) PictureMax() (int, int) {
 	return base.PicXMax, base.PicYMax
 }
 
+func (base *BaseNumerics) ImageWidth(width uint) {
+	base.PicXMax = int(width)
+	base.PicXMin = 0
+}
+
+func (base *BaseNumerics) ImageHeight(height uint) {
+	base.PicYMax = int(height)
+	base.PicYMin = 0
+}
+
 // Change the drawing context to a sub-part of the image
-func (native *BaseNumerics) SubImage(rect image.Rectangle) {
-	native.PicXMin = rect.Min.X
-	native.PicYMin = rect.Min.Y
-	native.PicXMax = rect.Max.X
-	native.PicYMax = rect.Max.Y
+func (base *BaseNumerics) SubImage(rect image.Rectangle) {
+	base.PicXMin = rect.Min.X
+	base.PicYMin = rect.Min.Y
+	base.PicXMax = rect.Max.X
+	base.PicYMax = rect.Max.Y
 }

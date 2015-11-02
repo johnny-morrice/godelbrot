@@ -5,26 +5,26 @@ import (
 )
 
 func TestMandelbrotSanity(t *testing.T) {
-	const originMember complex128 = 0
-	const nonMember complex128 = 2 + 4i
+	const origin complex128 = 0
+	const non complex128 = 2 + 4i
 	const iterateLimit uint8 = 255
-	const divergeLimit float64 = 4.0
+	const sqrtDivergeLimit float64 = 2
 
-	originMember := CreateNativeMandelbrotMember(origin)
-	nonMember := CreateNativeMandelbrotMember(non)
+	originMember := NativeMandelbrotMember{C: origin, SqrtDivergeLimit: sqrtDivergeLimit}
+	nonMember := NativeMandelbrotMember{C: non, SqrtDivergeLimit: sqrtDivergeLimit}
 
 	originMember.Mandelbrot(iterateLimit)
 	nonMember.Mandelbrot(iterateLimit)
 
-	if !originMember.InSet() {
+	if !originMember.SetMember() {
 		t.Error("Expected origin to be in Mandelbrot set")
 	}
 
-	if non.InSet() {
+	if nonMember.SetMember() {
 		t.Error("Expected ", nonMember, " to be outside Mandelbrot set")
 	}
 
-	if non.InverseDivergence() >= iterateLimit {
+	if nonMember.InverseDivergence() >= iterateLimit {
 		t.Error("Expected negativeMembership to have InvDivergence below IterateLimit")
 	}
 

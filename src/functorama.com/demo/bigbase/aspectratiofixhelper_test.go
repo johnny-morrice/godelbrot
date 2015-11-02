@@ -8,15 +8,15 @@ type aspectRatioFixHelper struct {
 	pictureW uint
 	pictureH uint
 
-	rMin float64
-	rMax float64
-	iMin float64
-	iMax float64
+	rMin big.Float
+	rMax big.Float
+	iMin big.Float
+	iMax big.Float
 
-	expectRMin float64
-	expectRMax float64
-	expectIMin float64
-	expectIMax float64
+	expectRMin big.Float
+	expectRMax big.Float
+	expectIMin big.Float
+	expectIMax big.Float
 }
 
 func (helper aspectRatioFixHelper) bigPlaneCoords() (BigComplex, BigComplex) {

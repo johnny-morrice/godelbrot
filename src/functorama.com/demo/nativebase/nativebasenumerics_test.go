@@ -1,8 +1,8 @@
 package nativebase
 
 import (
-	"math/big"
 	"testing"
+	"functorama.com/demo/base"
 )
 
 // Three paths through CreateNativeBaseNumerics
@@ -12,8 +12,8 @@ import (
 
 func TestCreateNativeBaseNumerics(t *testing.T) {
 	noChange := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -1.0,
 		rMax: 1.0,
@@ -26,8 +26,8 @@ func TestCreateNativeBaseNumerics(t *testing.T) {
 		expectIMax: 0.5,
 	}
 	fatter := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -0.5,
 		rMax: 0.5,
@@ -35,13 +35,13 @@ func TestCreateNativeBaseNumerics(t *testing.T) {
 		iMax: 0.5,
 
 		expectRMin: -0.5,
-		expectRMax: 1.5,
+		expectRMax: 2.5,
 		expectIMin: -0.5,
 		expectIMax: 0.5,
 	}
 	taller := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -1.0,
 		rMax: 1.0,
@@ -50,43 +50,47 @@ func TestCreateNativeBaseNumerics(t *testing.T) {
 
 		expectRMin: -1.0,
 		expectRMax: 1.0,
-		expectIMin: -0.1,
-		expectIMax: 0.9,
+		expectIMin: -0.9,
+		expectIMax: 0.1,
 	}
 
 	tests := []aspectRatioFixHelper{noChange, fatter, taller}
 	for _, test := range tests {
-		testCreateNativeBaseNumerics(test)
+		testCreateNativeBaseNumerics(t, test)
 	}
 }
 
-func testCreateNativeBaseNumerics(helper aspectRatioFixHelper) {
+func testCreateNativeBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 	userMin, userMax := helper.planeCoords()
-	expectMin, expectMan := helper.planeCoords()
+	expectMin, expectMax := helper.expectCoords()
 
-	mock := mockRenderApplication{
-		pictureW:   helper.pictureW,
-		pictureH:   helper.pictureH,
-		bigUserMin: userMin,
-		bigUserMax: userMax,
-		fixAspect:  true,
+	mock := &MockRenderApplication{
+		MockRenderApplication: base.MockRenderApplication{
+			Base: base.BaseConfig{
+				FixAspect:  true,
+			},
+			PictureWidth:   helper.pictureW,
+			PictureHeight:   helper.pictureH,
+		},
+		PlaneMin: userMin,
+		PlaneMax: userMax,
 	}
 
 	numerics := CreateNativeBaseNumerics(mock)
 
-	fixOkay := numerics.realMin == real(userMin)
-	fixOkay = fixOkay && numerics.imagMin == imag(userMin)
-	fixOkay = fixOkay && numerics.realMax == real(userMax)
-	fixOkay = fixOkay && numerics.imagMax == imag(userMax)
 
-	if !fixOkay {
-		t.Error("Aspect ratio fix broken for helper:, ", helper,
-			" received: ", numerics)
+	actualMin := complex(numerics.RealMin, numerics.ImagMin)
+	actualMax := complex(numerics.RealMax, numerics.ImagMax)
+
+	if !(expectMin == actualMin && expectMax == actualMax) {
+		t.Error("Aspect ratio fix broken.",
+			"Expected", expectMin, expectMax,
+			"but received", actualMin, actualMax,
+			"(user input was", userMin, userMax, ")")
 	}
 
-	mockOkay := mock.tNativeUserCoords && tPictureDimensions
-	mockOkay = mockOkay && tLimits && tNativeUserCoords
-	mockOkay = mockOkay && tFixAspect
+	mockOkay := mock.TNativeUserCoords && mock.TPictureDimensions
+	mockOkay = mockOkay && mock.TBaseConfig
 
 	if !mockOkay {
 		t.Error("Expected method not called on mock", mock)
@@ -94,12 +98,19 @@ func testCreateNativeBaseNumerics(helper aspectRatioFixHelper) {
 }
 
 func TestPlaneToPixel(t *testing.T) {
+	const side = 100
+	const width = side
+	const height = side
+	const planeSide = 2.0
 	numerics := NativeBaseNumerics{
-		realMin:     -1.0,
-		imagMax:     1.0,
-		imageWidth:  100,
-		imageHeight: 100,
+		RealMin:     -1.0,
+		ImagMin:	 -1.0,
+		ImagMax:     1.0,
+		RealMax:     1.0,
 	}
+	numerics.ImageWidth(width)
+	numerics.ImageHeight(height)
+	numerics.Runit, numerics.Iunit = pixelUnits(width, height, planeSide, planeSide)
 
 	const qA = 0.1 + 0.1i
 
@@ -113,26 +124,26 @@ func TestPlaneToPixel(t *testing.T) {
 
 	const offset = complex(-1.0, 1.0)
 
-	const expectPixAx uint = 55
-	const expectPixAY uint = 45
+	const expectPixAx int = 55
+	const expectPixAY int = 45
 
-	const expectPixBx uint = 55
-	const expectPixBy uint = 55
+	const expectPixBx int = 55
+	const expectPixBy int = 55
 
-	const expectPixCx uint = 45
-	const expectPixCy uint = 55
+	const expectPixCx int = 45
+	const expectPixCy int = 55
 
-	const expectPixDx uint = 45
-	const expectPixDy uint = 45
+	const expectPixDx int = 45
+	const expectPixDy int = 45
 
-	const expectOx uint = 50
-	const expectOy uint = 50
+	const expectOx int = 50
+	const expectOy int = 50
 
-	const expectOffsetX uint = 0
-	const expectOffsetY uint = 0
+	const expectOffsetX int = 0
+	const expectOffsetY int = 0
 
 	points := []complex128{qA, qB, qC, qD, origin, offset}
-	expectedXs := []uint{
+	expectedXs := []int{
 		expectPixAx,
 		expectPixBx,
 		expectPixCx,
@@ -140,7 +151,7 @@ func TestPlaneToPixel(t *testing.T) {
 		expectOx,
 		expectOffsetX,
 	}
-	expectedYs := []uint{
+	expectedYs := []int{
 		expectPixAY,
 		expectPixBy,
 		expectPixCy,
