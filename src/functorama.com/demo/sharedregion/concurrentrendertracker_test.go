@@ -62,6 +62,7 @@ func TestTrackerSendInput(t *testing.T) {
 	const jobCount = 3
 	const chanBuff = 1
 	tracker := RenderTracker{
+		jobs: jobCount,
 		processing: make([]uint32, jobCount),
 		input:      make([]chan RenderInput, jobCount),
 	}
@@ -98,6 +99,7 @@ func TestTrackerSendInput(t *testing.T) {
 }
 
 func TestTrackerRenderRegions(t *testing.T) {
+	const jobCount = 1
 	const chanBuff = 1
 	const threadBuff = 2
 	// Check trivial path
@@ -114,6 +116,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	startInputChan := make(chan RenderInput, chanBuff)
 	startRegions := []SharedRegionNumerics{&MockNumerics{}}
 	startTracker := RenderTracker{
+		jobs: jobCount,
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{0},
 		input:      []chan RenderInput{startInputChan},
@@ -131,6 +134,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	busyInputChan := make(chan RenderInput, chanBuff)
 	busyRegions := []SharedRegionNumerics{&MockNumerics{}}
 	busyTracker := RenderTracker{
+		jobs: jobCount,
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{1},
 		input:      []chan RenderInput{busyInputChan},
@@ -152,6 +156,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 
 func TestTrackerStep(t *testing.T) {
 	const chanBuff = 1
+	const jobCount = 1
 	child := &MockNumerics{}
 	uniform := &MockNumerics{}
 	member := base.PixelMember{I: 1, J: 2}
@@ -164,6 +169,7 @@ func TestTrackerStep(t *testing.T) {
 	// The tracker is not busy
 	inputChan := make(chan RenderInput, chanBuff)
 	tracker := RenderTracker{
+		jobs: jobCount,
 		buffer:     []SharedRegionNumerics{},
 		processing: []uint32{0},
 		input:      []chan RenderInput{inputChan},

@@ -7,14 +7,16 @@ import (
 )
 
 type RenderTracker struct {
+	// Number of jobs
+	jobs int
+	// round robin input scheduler
+	nextThread int
 	// nth element incremented when nth thread processing
 	processing []uint32
 	// input channels to threads
 	input []chan RenderInput
 	// output channels to threads
 	output []chan RenderOutput
-	// round robin input scheduler
-	nextThread int
 	// Local buffer of unprocessed regions
 	buffer []SharedRegionNumerics
 	// Concurrent render config
@@ -34,6 +36,7 @@ type RenderTracker struct {
 func NewRenderTracker(app RenderApplication) *RenderTracker {
 	config := app.SharedRegionConfig()
 	tracker := RenderTracker{
+		jobs: int(config.Jobs),
 		processing: make([]uint32, config.Jobs),
 		input:      make([]chan RenderInput, config.Jobs),
 		output:     make([]chan RenderOutput, config.Jobs),
@@ -99,9 +102,7 @@ func (tracker *RenderTracker) sendInput(input RenderInput) {
 
 	// Rount robin
 	tracker.nextThread++
-	if tracker.nextThread >= len(tracker.processing) {
-		tracker.nextThread = 0
-	}
+	tracker.nextThread = tracker.nextThread % tracker.jobs
 }
 
 // A single step in render tracking
