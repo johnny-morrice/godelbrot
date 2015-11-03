@@ -2,59 +2,72 @@ package nativeregion
 
 import (
 	"testing"
+	"functorama.com/demo/base"
+	"functorama.com/demo/nativebase"
+	"functorama.com/demo/nativesequence"
 )
 
 func TestNativeProxyRegionClaimExtrinsics(t *testing.T) {
-	native := NativeRegionNumericsProxy{
-		Region: NativeRegion{
+	native := NativeRegionProxy{
+		LocalRegion: NativeRegion{
 			topLeft: nativeMandelbrotThunk{
 				evaluated: true,
 			},
 		},
-		Numerics: &NativeRegionNumerics{},
+		NativeRegionNumerics: &NativeRegionNumerics{},
 	}
 
-	native.ClaimExtrinsincs()
+	native.ClaimExtrinsics()
 
-	if native.Region != native.Numerics.region {
+	if native.LocalRegion != native.NativeRegionNumerics.Region {
 		t.Error("Expected extrinsics were not claimed")
 	}
 }
 
 func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
-	const prec uint = 53
 	regMin := complex(-1, -1)
 	regMax := complex(1, 1)
 
 	planeMin := complex(-2, -2)
 	planeMax := complex(2, 2)
 
-	numerics := NativeSequenceNumerics{
-		RealMin: real(planeMin),
-		RealMax: real(planeMax),
-		ImagMin: imag(planeMin),
-		ImagMax: imag(planeMax),
-		NativeBaseNumerics: NativeBaseNumerics{
-			BaseNumerics: BaseNumerics{
+	const picWidth uint = 100
+	const picHeight uint = 100
+
+	planeDim := planeMax - planeMin
+	planeWidth := real(planeDim)
+	planeHeight := imag(planeDim)
+
+	rUnit, iUnit := nativebase.PixelUnits(picWidth, picHeight, planeWidth, planeHeight)
+
+	numerics := nativesequence.NativeSequenceNumerics{
+		NativeBaseNumerics: nativebase.NativeBaseNumerics{
+			BaseNumerics: base.BaseNumerics{
 				PicXMin: 0,
 				PicYMin: 0,
-				PicXMax: 100,
-				PicYMax: 100,
+				PicXMax: int(picWidth),
+				PicYMax: int(picHeight),
 			},
+			RealMin: real(planeMin),
+			RealMax: real(planeMax),
+			ImagMin: imag(planeMin),
+			ImagMax: imag(planeMax),
+			Runit: rUnit,
+			Iunit: iUnit,
 		},
 	}
-	native := NativeSequenceNumericsProxy{
-		Region:   createNativeRegion(regMin, regMax),
-		Numerics: &numerics,
+	native := NativeSequenceProxy{
+		LocalRegion:   createNativeRegion(regMin, regMax),
+		NativeSequenceNumerics: &numerics,
 	}
 
-	native.ClaimExtrinsincs()
+	native.ClaimExtrinsics()
 
-	expect := BaseNumerics{
+	expect := base.BaseNumerics{
 		PicXMin: 25,
 		PicXMax: 75,
 		PicYMin: 25,
-		PicYMax: 25,
+		PicYMax: 75,
 	}
 
 	actual := native.NativeBaseNumerics.BaseNumerics

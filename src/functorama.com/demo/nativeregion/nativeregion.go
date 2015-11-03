@@ -48,8 +48,9 @@ func (native *NativeRegionNumerics) ClaimExtrinsics() {
 // Return the children of this region
 // This implementation does not create many new objects
 func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
+	const childCount = 4
 	if native.subregion.populated {
-		nextContexts := make([]region.RegionNumerics, 0, 4)
+		nextContexts := make([]region.RegionNumerics, childCount)
 		for i, child := range native.subregion.children {
 			nextContexts[i] = native.Proxy(child)
 		}
@@ -75,14 +76,14 @@ func (native *NativeRegionNumerics) RegionSequence() region.ProxySequence {
 
 func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
 	return NativeSequenceProxy{
-		Region:   native.Region,
+		LocalRegion:   native.Region,
 		NativeSequenceNumerics: native.SequenceNumerics,
 	}
 }
 
 func (native *NativeRegionNumerics) Proxy(region NativeRegion) NativeRegionProxy {
 	return NativeRegionProxy{
-		Region:   region,
+		LocalRegion:   region,
 		NativeRegionNumerics: native,
 	}
 }
@@ -99,13 +100,12 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 }
 
 func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	r := native.Region
-	points := []nativeMandelbrotThunk{
-		r.topLeft,
-		r.topRight,
-		r.bottomLeft,
-		r.bottomRight,
-		r.midPoint,
+	points := []*nativeMandelbrotThunk{
+		&native.Region.topLeft,
+		&native.Region.topRight,
+		&native.Region.bottomLeft,
+		&native.Region.bottomRight,
+		&native.Region.midPoint,
 	}
 	// Ensure points are all evaluated
 	for _, p := range points {
@@ -150,7 +150,6 @@ func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamp
 			x += hUnit
 		}
 	}
-
 	return false
 }
 
@@ -173,15 +172,15 @@ func (native *NativeRegionNumerics) Split() {
 	topSectorMid := (top + midI) / 2.0
 	bottomSectorMid := (midI + bottom) / 2.0
 
-	topSideMid := createThunk(complex(midR, top))
-	bottomSideMid := createThunk(complex(midR, bottom))
-	leftSideMid := createThunk(complex(left, midI))
-	rightSideMid := createThunk(complex(right, midI))
+	topSideMid := native.createThunk(complex(midR, top))
+	bottomSideMid := native.createThunk(complex(midR, bottom))
+	leftSideMid := native.createThunk(complex(left, midI))
+	rightSideMid := native.createThunk(complex(right, midI))
 
-	topLeftMid := createThunk(complex(leftSectorMid, topSectorMid))
-	topRightMid := createThunk(complex(rightSectorMid, topSectorMid))
-	bottomLeftMid := createThunk(complex(leftSectorMid, bottomSectorMid))
-	bottomRightMid := createThunk(complex(rightSectorMid, bottomSectorMid))
+	topLeftMid := native.createThunk(complex(leftSectorMid, topSectorMid))
+	topRightMid := native.createThunk(complex(rightSectorMid, topSectorMid))
+	bottomLeftMid := native.createThunk(complex(leftSectorMid, bottomSectorMid))
+	bottomRightMid := native.createThunk(complex(rightSectorMid, bottomSectorMid))
 
 	tl := NativeRegion{
 		topLeft:     r.topLeft,
@@ -229,10 +228,19 @@ func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
 	return native.Region.topLeft
 }
 
-func createThunk(c complex128) nativeMandelbrotThunk {
+func (native *NativeRegionNumerics) createThunk(c complex128) nativeMandelbrotThunk {
 	return nativeMandelbrotThunk{
-		NativeMandelbrotMember: nativebase.NativeMandelbrotMember{
-			C: c,
-		},
+		NativeMandelbrotMember: native.CreateMandelbrot(c),
+	}
+}
+
+func (native *NativeRegionNumerics) thunks() []nativeMandelbrotThunk {
+	region := native.Region
+	return []nativeMandelbrotThunk{
+		region.topLeft,
+		region.topRight,
+		region.bottomLeft,
+		region.bottomRight,
+		region.midPoint,
 	}
 }

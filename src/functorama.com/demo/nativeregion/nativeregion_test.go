@@ -1,12 +1,13 @@
 package nativeregion
 
 import (
-	"math/big"
 	"testing"
+	"functorama.com/demo/base"
+	"functorama.com/demo/nativebase"
 )
 
 func TestRegionSplitPos(t *testing.T) {
-	helper := nativeRegionSplitHelper{
+	helper := NativeRegionSplitHelper{
 		left:   1.0,
 		right:  3.0,
 		top:    3.0,
@@ -19,7 +20,7 @@ func TestRegionSplitPos(t *testing.T) {
 }
 
 func TestRegionSplitNeg(t *testing.T) {
-	helper := nativeRegionSplitHelper{
+	helper := NativeRegionSplitHelper{
 		left:   -100.0,
 		right:  -24.0,
 		top:    -10.0,
@@ -32,7 +33,7 @@ func TestRegionSplitNeg(t *testing.T) {
 }
 
 func TestRegionSplitNegPos(t *testing.T) {
-	helper := nativeRegionSplitHelper{
+	helper := NativeRegionSplitHelper{
 		left:   -100.0,
 		right:  24.0,
 		top:    10.0,
@@ -45,11 +46,12 @@ func TestRegionSplitNegPos(t *testing.T) {
 }
 
 func TestChildrenPopulated(t *testing.T) {
+	const inputChildCount = 4
 	numerics := NativeRegionNumerics{
-		subRegion: nativeSubregion{
+		subregion: nativeSubregion{
 			populated: true,
 			// We are not inspecting the children here
-			children: []nativeRegion{nil, nil, nil, nil},
+			children: make([]NativeRegion, inputChildCount),
 		},
 	}
 	children := numerics.Children()
@@ -73,6 +75,8 @@ func TestChildrenEmpty(t *testing.T) {
 		numerics.Children()
 	}
 
+	triggerPanic()
+
 	if !recovered {
 		t.Error("Expected panic e.g. \"Error when raising error\"")
 	}
@@ -94,13 +98,15 @@ func TestMandelbrotPoints(t *testing.T) {
 func TestEvaluateAllPoints(t *testing.T) {
 	numerics := NativeRegionNumerics{}
 	numerics.EvaluateAllPoints(1)
-	region := numerics.region
+	region := numerics.Region
 
-	okay := region.topLeft.evaluated
-	okay = okay && region.topRight.evaluated
-	okay = okay && region.bottomLeft.evaluated
-	okay = okay && region.bottomRight.evaluated
-	okay = okay && region.midPoint.evaluated
+	okay := true
+	for _, thunk := range numerics.thunks() {
+		if !thunk.evaluated {
+			okay = false
+		}
+		break
+	}
 
 	if !okay {
 		t.Error("Expected all points to be evaluated, but region was:", region)
@@ -108,24 +114,33 @@ func TestEvaluateAllPoints(t *testing.T) {
 }
 
 func TestRect(t *testing.T) {
-	left := -1.0
-	bottom := -1.0
-	right := 1.0
-	top := 1.0
+	const picSide = 2
+	const planeSide = 2.0
+
+	const left = -1
+	const bottom = -1
+	const right = left + planeSide
+	const top = bottom + planeSide
 
 	min := complex(left, bottom)
 	max := complex(right, top)
-	numerics := NativeRegionNumerics{
-		region:  createNativeRegion(min, max),
-		picXMin: 0,
-		picXMax: 2,
-		picYMin: 0,
-		picYMax: 2,
-		realMin: left,
-		realMax: right,
-		imagMin: bottom,
-		imagMax: top,
+	numerics := &NativeRegionNumerics{
+		NativeBaseNumerics: nativebase.NativeBaseNumerics{
+			BaseNumerics: base.BaseNumerics{
+				PicXMin: 0,
+				PicXMax: picSide,
+				PicYMin: 0,
+				PicYMax: picSide,
+			},
+			RealMin: left,
+			RealMax: right,
+			ImagMin: bottom,
+			ImagMax: top,
+		},
+		Region:  createNativeRegion(min, max),
 	}
+
+	numerics.Runit, numerics.Iunit = nativebase.PixelUnits(picSide, picSide, planeSide, planeSide)
 
 	expectMinX := 0
 	expectMaxX := 2
@@ -144,76 +159,107 @@ func TestRect(t *testing.T) {
 
 }
 
-func testRegionSplit(helper nativeRegionSplitHelper, t *testing.T) {
+func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 	initMin := complex(helper.left, helper.bottom)
 	initMax := complex(helper.right, helper.top)
 
-	topLeftMin := complex(helper.left, midI)
-	topLeftMax := complex(midR, helper.top)
+	topLeftMin := complex(helper.left, helper.midI)
+	topLeftMax := complex(helper.midR, helper.top)
 
-	topRightMin := complex(midR, midI)
+	topRightMin := complex(helper.midR, helper.midI)
 	topRightMax := complex(helper.right, helper.top)
 
 	bottomLeftMin := complex(helper.left, helper.bottom)
-	bottomLeftMax := complex(midR, midI)
+	bottomLeftMax := complex(helper.midR, helper.midI)
 
-	bottomRightMin := complex(midR, helper.bottom)
-	bottomRightMax := complex(helper.right, midI)
+	bottomRightMin := complex(helper.midR, helper.bottom)
+	bottomRightMax := complex(helper.right, helper.midI)
 
 	subjectRegion := createNativeRegion(initMin, initMax)
 
-	expected := []Region{
+	expected := []NativeRegion{
 		createNativeRegion(topLeftMin, topLeftMax),
 		createNativeRegion(topRightMin, topRightMax),
 		createNativeRegion(bottomLeftMin, bottomLeftMax),
 		createNativeRegion(bottomRightMin, bottomRightMax),
 	}
 
-	actual := subjectRegion.Split()
+	numerics := NativeRegionNumerics{
+		Region: subjectRegion,
+	}
+	numerics.SqrtDivergeLimit = 2.0
+	numerics.Split()
+	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {
-		similarity := sameRegion(ex, actual.children[i])
-		if !similarity.same {
-			t.Error(
-				"Unexpected child region ", i,
-				", expected point ", similarity.n,
-				"to be ", similarity.a,
-				" but was ", similarity.b,
-			)
+		actual := actualChildren[i]
+		exPoints := thunks(ex)
+		acPoints := thunks(actual)
+		fail := false
+		for j, expectThunk := range exPoints {
+			actThunk := acPoints[j]
+			if expectThunk != actThunk {
+				fail = true
+				t.Log("Region", i, "error at thunk", j,
+					"expected", expectThunk,
+					"but received", actThunk)
+			}
+		}
+		if fail {
+			t.Fail()
 		}
 	}
 }
 
-type nativeRegionSplitHelper struct {
+func thunks(region NativeRegion) []nativeMandelbrotThunk {
+	return []nativeMandelbrotThunk{
+		region.topLeft,
+		region.topRight,
+		region.bottomLeft,
+		region.bottomRight,
+		region.midPoint,
+	}
+}
+
+func createNativeRegion(min complex128, max complex128) NativeRegion {
+	left := real(min)
+	right := real(max)
+	top := imag(max)
+	bottom := imag(min)
+	mid := ((max - min) / 2) + min
+
+	points := []complex128{
+		complex(left, top),
+		complex(right, top),
+		complex(left, bottom),
+		complex(right, bottom),
+		mid,
+	}
+
+	thunks := make([]nativeMandelbrotThunk, len(points))
+	for i, c := range points {
+		thunks[i] = nativeMandelbrotThunk{
+			NativeMandelbrotMember: nativebase.NativeMandelbrotMember{C: c, SqrtDivergeLimit: 2.0},
+		}
+	}
+
+	region := NativeRegion{
+		topLeft: thunks[0],
+		topRight: thunks[1],
+		bottomLeft: thunks[2],
+		bottomRight: thunks[3],
+		midPoint: thunks[4],
+	}
+
+	return region
+}
+
+
+type NativeRegionSplitHelper struct {
 	left   float64
 	right  float64
 	bottom float64
 	top    float64
 	midR   float64
 	midI   float64
-}
-
-type nativeRegonSameness struct {
-	a            float64
-	b            complex128
-	regionNumber int
-	same         bool
-}
-
-func sameRegion(a Region, b Region) nativeRegionSameness {
-	aPoints := nativePoints(b)
-	bPoints := nativePoints(a)
-
-	for i, ap := range aPoints {
-		bp := bPoints[i]
-		if ap.C.Cmp(bp.C) {
-			return nativeRegionSameness{
-				a:            ap.c,
-				b:            bp.c,
-				regionNumber: i,
-				same:         false,
-			}
-		}
-	}
-	return nativeRegionSameness{same: true}
 }

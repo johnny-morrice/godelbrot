@@ -45,7 +45,7 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 		}
 	}
 
-	rUnit, iUnit := pixelUnits(pictureWidth, pictureHeight, planeWidth, planeHeight)
+	rUnit, iUnit := PixelUnits(pictureWidth, pictureHeight, planeWidth, planeHeight)
 
 	return NativeBaseNumerics{
 		BaseNumerics: base.CreateBaseNumerics(app),
@@ -58,6 +58,13 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 
 		Runit: rUnit,
 		Iunit: iUnit,
+	}
+}
+
+func (native *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeMandelbrotMember {
+	return NativeMandelbrotMember{
+		C: c,
+		SqrtDivergeLimit: native.SqrtDivergeLimit,
 	}
 }
 
@@ -89,12 +96,10 @@ func (native *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	// Remember that we draw downwards
 	ry = int(math.Ceil(sy))
 
-	_ = "breakpoint"
-
 	return
 }
 
-func pixelUnits(pictureW uint, pictureH uint, planeW float64, planeH float64) (float64, float64) {
+func PixelUnits(pictureW uint, pictureH uint, planeW float64, planeH float64) (float64, float64) {
 	rUnit := planeW / float64(pictureW)
 	iUnit := planeH / float64(pictureH)
 	return rUnit, iUnit

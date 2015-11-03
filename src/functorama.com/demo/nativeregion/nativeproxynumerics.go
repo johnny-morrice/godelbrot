@@ -6,20 +6,20 @@ import (
 
 type NativeRegionProxy struct {
 	*NativeRegionNumerics
-	Region   NativeRegion
+	LocalRegion   NativeRegion
 }
 
 func (proxy NativeRegionProxy) ClaimExtrinsics() {
-	proxy.NativeRegionNumerics.Region = proxy.Region
+	proxy.NativeRegionNumerics.Region = proxy.LocalRegion
 }
 
 type NativeSequenceProxy struct {
 	*nativesequence.NativeSequenceNumerics
-	Region   NativeRegion
+	LocalRegion   NativeRegion
 }
 
 func (proxy NativeSequenceProxy) ClaimExtrinsics() {
 	base := proxy.NativeSequenceNumerics.NativeBaseNumerics
-	rectangle := proxy.Region.rect(&base)
+	rectangle := proxy.LocalRegion.rect(&base)
 	proxy.NativeSequenceNumerics.SubImage(rectangle)
 }
