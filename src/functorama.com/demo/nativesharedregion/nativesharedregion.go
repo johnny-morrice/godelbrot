@@ -25,25 +25,25 @@ func CreateNativeSharedRegion(numerics *nativeregion.NativeRegionNumerics, jobs 
     initLocal := &shared.prototypes[0]
     shared.NativeRegionProxy = nativeregion.NativeRegionProxy{
         NativeRegionNumerics: initLocal,
-        Region: initLocal.Region,
+        LocalRegion: initLocal.Region,
     }
 
     return shared
 }
 
 func (shared NativeSharedRegion) GrabThreadPrototype(threadId uint) {
-    shared.NativeRegionProxy.NativeRegionNumerics = &shared.prototypes[threadId]
+    shared.NativeRegionNumerics = &shared.prototypes[threadId]
     shared.threadId = threadId
 }
 
 func (shared NativeSharedRegion) SharedChildren() []sharedregion.SharedRegionNumerics {
     localRegions := shared.NativeChildRegions()
     sharedChildren := make([]sharedregion.SharedRegionNumerics, len(localRegions))
-    myCore := shared.NativeRegionProxy.NativeRegionNumerics
+    myCore := shared.NativeRegionNumerics
     for i, child := range localRegions {
         sharedChildren[i] = NativeSharedRegion{
             NativeRegionProxy: nativeregion.NativeRegionProxy{
-                Region: child,
+                LocalRegion: child,
                 NativeRegionNumerics: myCore,
             },
             prototypes: shared.prototypes,
@@ -53,20 +53,26 @@ func (shared NativeSharedRegion) SharedChildren() []sharedregion.SharedRegionNum
 }
 
 func (shared NativeSharedRegion) SharedRegionSequence() sharedregion.SharedSequenceNumerics {
+    return shared.NativeSharedSequence()
+}
+
+func (shared NativeSharedRegion) NativeSharedSequence() NativeSharedSequence {
     return NativeSharedSequence{
-        nativeregion.NativeSequenceProxy{
-            Region: shared.NativeRegionProxy.Region,
+        NativeSequenceProxy: nativeregion.NativeSequenceProxy{
             NativeSequenceNumerics: &shared.sequencePrototypes[shared.threadId],
+            LocalRegion: shared.Region,
         },
-        shared.sequencePrototypes,
+        prototypes: shared.sequencePrototypes,
     }
 }
 
 type NativeSharedSequence struct {
     nativeregion.NativeSequenceProxy
     prototypes []nativesequence.NativeSequenceNumerics
+    threadId uint
 }
 
 func (shared NativeSharedSequence) GrabThreadPrototype(threadId uint) {
-    shared.NativeSequenceProxy.NativeSequenceNumerics = &shared.prototypes[threadId]
+    shared.NativeSequenceNumerics = &shared.prototypes[threadId]
+    shared.threadId = threadId
 }
