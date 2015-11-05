@@ -51,8 +51,8 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 	}
 	for i := 0; i < int(config.Jobs); i++ {
 		tracker.processing[i] = 0
-		inputChan := make(chan RenderInput, base.AllocSmall)
-		outputChan := make(chan RenderOutput, base.AllocSmall)
+		inputChan := make(chan RenderInput)
+		outputChan := make(chan RenderOutput)
 		tracker.input[i] = inputChan
 		tracker.output[i] = outputChan
 	}
@@ -97,7 +97,8 @@ func (tracker *RenderTracker) renderRegions(regions []SharedRegionNumerics) {
 // Send input and mark as busy
 func (tracker *RenderTracker) sendInput(input RenderInput) {
 	threadIndex := tracker.nextThread
-	tracker.input[threadIndex] <- input
+	// We want to proceed straight back to reading in order to avoid deadlock
+	go func() { tracker.input[threadIndex] <- input }()
 	tracker.processing[threadIndex]++
 
 	// Rount robin

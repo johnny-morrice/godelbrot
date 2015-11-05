@@ -72,7 +72,8 @@ func (thread *RenderThread) Run() {
 		input := <-thread.InputChan
 		switch input.Command {
 		case ThreadRender:
-			thread.OutputChan <- thread.Pass(input.Regions)
+			result := thread.Pass(input.Regions)
+			go func() { thread.OutputChan <- result }()
 		case ThreadStop:
 			return
 		default:

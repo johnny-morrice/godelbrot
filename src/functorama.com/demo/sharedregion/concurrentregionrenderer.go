@@ -1,6 +1,9 @@
 package sharedregion
 
 
-func NewSharedRegionRenderer(app RenderApplication) *RenderTracker {
-	return NewRenderTracker(app)
+type SharedRegionRenderStrategy RenderTracker
+
+func NewSharedRegionRenderer(app RenderApplication) *SharedRegionRenderStrategy {
+	tracker := NewRenderTracker(app)
+    return (*SharedRegionRenderStrategy)(tracker)
 }

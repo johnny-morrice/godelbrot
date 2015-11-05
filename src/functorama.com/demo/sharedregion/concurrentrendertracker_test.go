@@ -60,7 +60,6 @@ func TestTrackerBusy(t *testing.T) {
 
 func TestTrackerSendInput(t *testing.T) {
 	const jobCount = 3
-	const chanBuff = 1
 	tracker := RenderTracker{
 		jobs: jobCount,
 		processing: make([]uint32, jobCount),
@@ -69,7 +68,7 @@ func TestTrackerSendInput(t *testing.T) {
 
 	// Create input channels
 	for i := 0; i < jobCount; i++ {
-		tracker.input[i] = make(chan RenderInput, chanBuff)
+		tracker.input[i] = make(chan RenderInput)
 	}
 
 	// Not zero-value input struct
@@ -100,7 +99,6 @@ func TestTrackerSendInput(t *testing.T) {
 
 func TestTrackerRenderRegions(t *testing.T) {
 	const jobCount = 1
-	const chanBuff = 1
 	const threadBuff = 2
 	// Check trivial path
 	zeroRegions := []SharedRegionNumerics{}
@@ -113,7 +111,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	}
 
 	// When not busy, just send whatever we have to the next thread
-	startInputChan := make(chan RenderInput, chanBuff)
+	startInputChan := make(chan RenderInput)
 	startRegions := []SharedRegionNumerics{&MockNumerics{}}
 	startTracker := RenderTracker{
 		jobs: jobCount,
@@ -131,7 +129,7 @@ func TestTrackerRenderRegions(t *testing.T) {
 	}
 
 	// When busy, wait till the buffer fills
-	busyInputChan := make(chan RenderInput, chanBuff)
+	busyInputChan := make(chan RenderInput)
 	busyRegions := []SharedRegionNumerics{&MockNumerics{}}
 	busyTracker := RenderTracker{
 		jobs: jobCount,
@@ -155,7 +153,6 @@ func TestTrackerRenderRegions(t *testing.T) {
 }
 
 func TestTrackerStep(t *testing.T) {
-	const chanBuff = 1
 	const jobCount = 1
 	child := &MockNumerics{}
 	uniform := &MockNumerics{}
@@ -167,7 +164,7 @@ func TestTrackerStep(t *testing.T) {
 	}
 
 	// The tracker is not busy
-	inputChan := make(chan RenderInput, chanBuff)
+	inputChan := make(chan RenderInput)
 	tracker := RenderTracker{
 		jobs: jobCount,
 		buffer:     []SharedRegionNumerics{},

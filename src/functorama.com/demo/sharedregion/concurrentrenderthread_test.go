@@ -35,18 +35,19 @@ func TestRenderThreadFactory(t *testing.T) {
 
 func TestThreadRun(t *testing.T) {
 	th := createThread()
-	const commandCount = 2
 	const uniformLength = 1
-	iChan := make(chan RenderInput, commandCount)
+	iChan := make(chan RenderInput)
 	oChan := make(chan RenderOutput)
 	th.InputChan = iChan
 	th.OutputChan = oChan
 
-	iChan <- RenderInput{
-		Command: ThreadRender,
-		Regions: []SharedRegionNumerics{uniformer()},
-	}
-	iChan <- RenderInput{Command: ThreadStop}
+	go func() {
+		iChan <- RenderInput{
+			Command: ThreadRender,
+			Regions: []SharedRegionNumerics{uniformer()},
+		}
+		iChan <- RenderInput{Command: ThreadStop}
+	}()
 
 	go th.Run()
 	out := <- oChan
