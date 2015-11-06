@@ -7,16 +7,6 @@ import (
     "functorama.com/demo/draw"
 )
 
-// A reusable notion of collapsable regions
-type BaseRegionNumerics struct {
-    GlitchSamples int
-    Collapse      int
-}
-
-func (collapse BaseRegionNumerics) CollapseSize() int {
-    return collapse.Collapse
-}
-
 // RegionNumerics provides rendering calculations for the "region" render strategy.
 type RegionNumerics interface {
     base.OpaqueProxyFlyweight

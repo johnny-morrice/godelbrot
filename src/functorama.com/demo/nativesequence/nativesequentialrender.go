@@ -12,8 +12,8 @@ type NativeSequenceNumerics struct {
 	members   []base.PixelMember
 }
 
-func CreateNativeSequenceNumerics(base nativebase.NativeBaseNumerics) NativeSequenceNumerics {
-	return NativeSequenceNumerics{NativeBaseNumerics: base}
+func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequenceNumerics {
+	return NativeSequenceNumerics{NativeBaseNumerics: base.CreateNativeBaseNumerics(app)}
 }
 
 func (native *NativeSequenceNumerics) MandelbrotSequence(iterLimit uint8) {

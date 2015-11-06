@@ -34,11 +34,22 @@ func (region *NativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rect
 
 // Extend NativeBaseNumerics and add support for regions
 type NativeRegionNumerics struct {
-	region.BaseRegionNumerics
+	region.RegionConfig
 	nativebase.NativeBaseNumerics
 	Region             NativeRegion
 	SequenceNumerics   *nativesequence.NativeSequenceNumerics
 	subregion          nativeSubregion
+}
+
+func NewRegionNumerics(specialized nativebase.NativeBaseNumerics, config region.RegionConfig, sequence SequenceNumerics) &NativeRegionNumerics {
+	planeMin := complex(specialized.RealMin, specialized.ImagMin)
+	planeMax := complex(specialized.RealMax, specialized.ImagMax)
+	return &NativeRegionNumerics{
+		RegionConfig: config,
+		NativeBaseNumerics: specialized,
+		SequenceNumerics: sequence
+		Region: createNativeRegion(planeMin, planeMax),
+	}
 }
 
 func (native *NativeRegionNumerics) ClaimExtrinsics() {
@@ -243,4 +254,37 @@ func (native *NativeRegionNumerics) thunks() []nativeMandelbrotThunk {
 		region.bottomRight,
 		region.midPoint,
 	}
+}
+
+func createNativeRegion(min complex128, max complex128) NativeRegion {
+	left := real(min)
+	right := real(max)
+	top := imag(max)
+	bottom := imag(min)
+	mid := ((max - min) / 2) + min
+
+	points := []complex128{
+		complex(left, top),
+		complex(right, top),
+		complex(left, bottom),
+		complex(right, bottom),
+		mid,
+	}
+
+	thunks := make([]nativeMandelbrotThunk, len(points))
+	for i, c := range points {
+		thunks[i] = nativeMandelbrotThunk{
+			NativeMandelbrotMember: nativebase.NativeMandelbrotMember{C: c, SqrtDivergeLimit: 2.0},
+		}
+	}
+
+	region := NativeRegion{
+		topLeft: thunks[0],
+		topRight: thunks[1],
+		bottomLeft: thunks[2],
+		bottomRight: thunks[3],
+		midPoint: thunks[4],
+	}
+
+	return region
 }

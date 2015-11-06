@@ -4,181 +4,148 @@ import (
 	"image"
 )
 
-// Machine generated information about a render
-type RenderInfo struct {
-	UserDescription RenderDescription
-	// Describe the render strategy in use
-	DetectedRenderStrategy RenderMode
-	// Describe the numerics system in use
-	DetectedNumericsMode NumericsMode
-	// RealMin as a native float
-	NativeRealMin float64
-	// RealMax as a native float
-	NativeRealMax float64
-	// ImagMin as a native float
-	NativeImagMin float64
-	// ImagMax as a native float
-	NativeImagMax float64
-	// RealMin as a big float (very high precision)
-	BigRealMin big.Float
-	// RealMax as a big float (very high precision)
-	BigRealMax big.Float
-	// ImagMin as a big float (very high precision)
-	BigImagMin big.Float
-	// ImagMax as a big float (very high precision)
-	BigImagMax big.Float
-}
-
-// Object to initialize the godelbrot system
-type ContextInit struct {
-	info     RenderInfo
-	numerics AbstractNumericsFactory
-	renderer RenderContext
-	// The palette
-	palette Palette
-	// The image upon which to draw image
-	picture *image.NRGBA
-}
-
-// InitializeContext examines the description, chooses a renderer, numerical system and palette.
-// Together these form a coherent render context.
-func InitializeContext(desc *RenderDescription) (context ContextInit, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r := r.(type) {
-			case runtime.Error:
-				panic(r)
-			default:
-				err = r.(error)
-			}
-		}
-	}()
-
-	context = &ContextInit{
-		info: RenderInfo{
-			UserDescription: *desc,
-		},
-	}
-
-	context.initNumerics()
-	context.initRenderStrategy()
-	context.initPalette()
-	context.initImage()
-
-	return
-}
-
 // A facade for users to interact with the configured system
 type GodelbrotUserFacade struct {
-	config *ContextInit
+	Info RenderInfo
+	context RenderContext
 }
 
 // The user facade will render an image
 func (facade *GodelbrotUserFacade) Render() (*image.NRGBA, error) {
-	return facade.config.RenderContext.Render()
+	return context.Render()
 }
 
 // Create a simple facade for clients to interface with the Godelbrot system
-func (context *ContextInit) NewUserFacade() *GodelbrotUserFacade {
-	return &GodelbrotUserFacade{config: context}
-}
-
-func (context *ContextInit) initPalette() {
-	desc := context.info.UserDescription
-	// We are planning more types of palettes soon
-	switch desc.PaletteType {
-	case StoredPalette:
-		context.createStoredPalette(desc.PaletteCode)
-	default:
-		panic(fmt.Sprintf("Unknown palette kind: %v", desc.PaletteType))
+func NewUserFacade(factory *RenderContextFactory) *GodelbrotUserFacade {
+	return &GodelbrotUserFacade{
+		context: factory.Build(),
+		Info: factory.Info,
 	}
 }
 
+// Object to initialize the godelbrot system
+type RenderContextFactory struct {
+	info     RenderInfo
+}
+
+// InitializeContext examines the description, chooses a renderer, numerical system and palette.
+// Together these form a coherent render factory.
+func NewRenderContextFactory(desc *RenderDescription) (*RenderContextFactory, error) {
+	anything, err := panic2err(func() interface{} {
+		factory := &RenderContextFactory{}
+		factory.info.UserDescription = *desc
+
+		factory.chooseNumerics()
+		factory.chooseRenderStrategy()
+
+		return factory
+	})
+
+	factory, ok := anything.(*RenderContext)
+	// Explicitly note this is a bug when it fails
+	if !ok {
+		log.Fatal("BUG on type conversion:", anything)
+	}
+
+	return factory
+}
+
+func (factory *RenderContextFactory) Build() (RenderContext, error) {
+	anything, err := panic2err(func() interface{} {
+		switch factory.info.DetectedRenderStrategy {
+		case SequentialRenderMode:
+			return sequence.NewSequentialRenderer(NewSequenceFacade(factory.info))
+		case RegionRenderMode:
+			return region.NewRegionRenderer(NewRegionFacade(factory.info))
+		case ConcurrentRegionRenderMode:
+			return sharedregion.NewSharedRegionRenderer(NewSharedRegionFacade(factory.info))
+		default:
+			// panic2err?  case in point
+			log.Panic("Unsupported render mode:", factory.info.DetectedRenderStrategy)
+		}
+	})
+
+	context, ok := anything.(RenderContext)
+	if !ok {
+		log.Fatal("BUG in type conversion:", anything)
+	}
+
+	return context, err
+}
+
 // Initialize the render system
-func (context *ContextInit) initRenderStrategy() {
-	desc := context.info.UserDescription
+func (factory *RenderContextFactory) chooseRenderStrategy() {
+	desc := factory.info.UserDescription
 	switch desc.RenderMode {
 	case AutoDetectRenderMode:
-		context.chooseFastRenderStrategy()
+		factory.chooseFastRenderStrategy()
 	case SequentialRenderMode:
-		context.useSequentialRenderer()
+		factory.useSequentialRenderer()
 	case RegionRenderMode:
-		context.useRegionRenderer()
+		factory.useRegionRenderer()
 	case ConcurrentRegionRenderMode:
-		context.useConcurrentRegionRenderer()
+		factory.useConcurrentRegionRenderer()
 	default:
-		panic(fmt.Sprintf("Unknown render mode: %v", desc.RenderMode))
+		log.Panic("Unknown render mode:", desc.RenderMode)
 	}
 }
 
 // Initialize the numerics system
-func (context *ContextInit) initNumerics() {
-	desc := context.info.UserDescription
-	context.parseUserCoords()
+func (factory *RenderContextFactory) chooseNumerics() {
+	desc := factory.info.UserDescription
+	factory.parseUserCoords()
 	switch desc.Numerics {
 	case AutoDetectNumericsMode:
-		context.chooseAccurateNumerics()
+		factory.chooseAccurateNumerics()
 	case NativeNumericsMode:
-		context.useNativeNumerics()
+		factory.useNativeNumerics()
 	case BigFloatNumericsMode:
-		context.useBigFloatNumerics()
+		factory.useBigFloatNumerics()
 	default:
-		panic(fmt.Sprintf("Unknown numerics mode: %v", desc.Numerics))
+		log.Panic("Unknown numerics mode:", desc.Numerics)
 	}
 }
 
-func (context *ContextInit) createStoredPalette() {
-	palettes := map[string]PaletteFactory{
-		"redscale": NewRedscalePalette,
-		"pretty":   NewPrettyPalette,
-	}
-	code := context.info.UserDescription.PaletteCode
-	found := palettes[code]
-	if found == nil {
-		log.Fatal("Unknown palette: ", code)
-	}
-	context.palette = found
-}
 
-func (context *ContextInit) chooseAccurateNumerics() {
-	desc := context.info.UserDescription
+func (factory *RenderContextFactory) chooseAccurateNumerics() {
+	desc := factory.info.UserDescription
 
 	realAccurate := isPixelPerfect(desc.RealMin, desc.RealMax, desc.Width)
 	imagAccurate := isPixelPerfect(desc.ImagMin, desc.ImagMax, desc.Height)
 
 	if realAccurate && imagAccurate {
-		context.useNativeNumerics()
+		factory.useNativeNumerics()
 	} else {
-		context.useBigFloatNumerics()
+		factory.useBigFloatNumerics()
 	}
 }
 
-func (context *ContextInit) useNativeNumerics() {
-	context.numerics = NewNativeNumerics(context)
-	context.info.DetectedNumericsMode = NativeNumericsMode
+func (factory *RenderContextFactory) useNativeNumerics() {
+	factory.numerics = NewNativeNumerics(factory)
+	factory.info.DetectedNumericsMode = NativeNumericsMode
 }
 
-func (context *ContextInit) useBigFloatNumerics() {
-	context.info.DetectedNumericsMode = BigFloatNumericsMode
-	context.numerics = NewBigFloatNumerics(context)
+func (factory *RenderContextFactory) useBigFloatNumerics() {
+	factory.info.DetectedNumericsMode = BigFloatNumericsMode
+	factory.numerics = NewBigFloatNumerics(factory)
 }
 
-func (context *ContextInit) parseUserCoords() {
+func (factory *RenderContextFactory) parseUserCoords() {
 	nativeActions := []func(float64){
-		func(realMin float64) { context.info.NativeRealMin = realMin },
-		func(realMax float64) { context.info.NativeRealMax = realMax },
-		func(imagMin float64) { context.info.NativeImagMin = imagMin },
-		func(imagMax float64) { context.info.NativeImagMax = imagMax },
+		func(realMin float64) { factory.info.NativeRealMin = realMin },
+		func(realMax float64) { factory.info.NativeRealMax = realMax },
+		func(imagMin float64) { factory.info.NativeImagMin = imagMin },
+		func(imagMax float64) { factory.info.NativeImagMax = imagMax },
 	}
 
 	bigActions := []func(big.Float){
-		func(realMin big.Float) { context.info.BigRealMin = realMin },
-		func(realMax big.Float) { context.info.BigRealMax = realMax },
-		func(imagMin big.Float) { context.info.BigImagMin = imagMin },
-		func(imagMax big.Float) { context.info.BigImagMax = imagMax },
+		func(realMin big.Float) { factory.info.BigRealMin = realMin },
+		func(realMax big.Float) { factory.info.BigRealMax = realMax },
+		func(imagMin big.Float) { factory.info.BigImagMin = imagMin },
+		func(imagMax big.Float) { factory.info.BigImagMax = imagMax },
 	}
 
-	desc := context.info.UserDescription
+	desc := factory.info.UserDescription
 	userInput := []string{
 		desc.RealMin,
 		desc.RealMax,
@@ -190,7 +157,7 @@ func (context *ContextInit) parseUserCoords() {
 
 	for i, num := range userInput {
 		// Parse a float64 from `num' into `native'
-		bits := 64
+		const bits uint = 64
 		native, nativeErr := strconv.ParseFloat(num, bits)
 		bigFloat, bigErr := parseBig(num)
 
@@ -211,55 +178,40 @@ func (context *ContextInit) parseUserCoords() {
 }
 
 // Choose an optimal strategy for rendering the image
-func (context *ContextInit) chooseFastRenderStrategy() {
-	desc := context.info.UserDescription
+func (factory *RenderContextFactory) chooseFastRenderStrategy() {
+	desc := factory.info.UserDescription
 
 	area := desc.ImageWidth * desc.ImageHeight
-	numerics := context.info.DetectedNumericsMode
+	numerics := factory.info.DetectedNumericsMode
 
 	if numerics == AutoDetectNumericsMode {
-		panic("Must choose render strategy after numerics system")
+		log.Panic("Must choose render strategy after numerics system")
 	}
 
 	if area < DefaultTinyImageArea && numerics == NativeNumericsMode {
 		// Use `SequenceRenderStrategy' when
 		// We have native arithmetic and the image is tiny
-		context.useSequentialRenderer()
+		factory.useSequentialRenderer()
 	} else if desc.Jobs <= DefaultLowThreading {
 		// Use `RegionRenderStrategy' when
 		// the number of jobs is small
-		context.useRegionRenderer()
+		factory.useRegionRenderer()
 	} else {
 		// Use `ConcurrentRegionRenderStrategy' otherwise
-		context.useConcurrentRegionRenderer()
+		factory.useConcurrentRegionRenderer()
 	}
 }
 
-func (context *ContextInit) useSequentialRenderer() {
-	context.renderer = NewSequentialRenderer(context.NewInnerFacade())
-	context.info.DetectedRenderStrategy = SequenceRenderMode
+func (factory *RenderContextFactory) useSequentialRenderer() {
+	factory.info.DetectedRenderStrategy = SequenceRenderMode
 }
 
-func (context *ContextInit) useRegionRenderer() {
-	context.renderer = NewRegionRenderer(context.NewInnerFacade())
-	context.info.DetectedRenderStrategy = RegionRenderMode
+func (factory *RenderContextFactory) useRegionRenderer() {
+	factory.info.DetectedRenderStrategy = RegionRenderMode
 }
 
-func (context *ContextInit) useConcurrentRegionRenderer() {
-	context.renderer = NewConcurrentRegionRenderer(context.NewInnerFacade())
-	context.info.DetectedRenderStrategy = ConcurrentRegionRenderMode
-}
-
-func (context *ContextInit) initPicture() {
-	desc := context.info.Desc
-	bounds := image.Rectangle{
-		Min: image.ZP,
-		Max: image.Point{
-			X: desc.ImageWidth,
-			Y: desc.ImageHeight,
-		},
-	}
-	context.picture = image.NewNRGBA(bounds)
+func (factory *RenderContextFactory) useConcurrentRegionRenderer() {
+	factory.info.DetectedRenderStrategy = ConcurrentRegionRenderMode
 }
 
 // True if we can reperesent the required number of divisions between min and max
@@ -268,16 +220,4 @@ func isPixelPerfect(bottom float64, top float64, divisions uint) bool {
 		bottom = math.Nextafter(bottom, math.MaxFloat64)
 	}
 	return bottom < top
-}
-
-// Panic to escape parsing
-func parsePanic(err error, inputName string) {
-	return panic(fmt.Sprintf("Could not parse %v: %v'", inputName, err))
-}
-
-// Parse a big.Float
-func parseBig(number string) {
-	// Do we need to care about the actual base used?
-	f, _, err := big.ParseFloat(number, DefaultBase, DefaultHighPrec)
-	return f, err
 }

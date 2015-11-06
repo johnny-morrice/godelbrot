@@ -1,7 +1,11 @@
 package libgodelbrot
 
-// An interface to the Godelbrot system at large
-type GodelbrotApp *ContextInit
+import (
+	"functorama.com/demo/base"
+	"functorama.com/demo/sequence"
+	"functorama.com/demo/region"
+	"functorama.com/demo/sharedregion"
+)
 
 func (app *GodelbrotApp) IterateLimit() uint8 {
 	return app.info.UserDescription.IterateLimit

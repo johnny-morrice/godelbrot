@@ -1,33 +1,22 @@
-package base
+package libgodelbrot
 
-type mockRenderApplication struct {
-	tLimits             bool
-	tPictureDimensions  bool
-	tPictureAspect      bool
-	tBigUserCoords      bool
-	tNativeUserCoords   bool
-	tFixAspect          bool
-	tSequentialNumerics bool
-	tRegionNumerics     bool
-	tRegionConfig       bool
-	tConcurrentConfig   bool
-	tDraw               bool
+import (
+	"functorama.com/demo/base"
+	"functorama.com/demo/sequence"
+	"functorama.com/demo/region"
+	"functorama.com/demo/sharedregion"
+)
 
-	iterLimit          uint
-	divergeLimit       float64
-	pictureW           uint
-	pictureH           uint
-	pictureAspect      float64
+type MockRenderApplication struct {
+	base.MockRenderApplication
+	sequence.MockRenderApplication
+	region.MockRenderApplication
+	sharedregion.MockRenderApplication
+
 	bigUserMin         BigComplex
 	bigUserMax         BigComplex
 	nativeUserMin      complex128
 	nativeUserMax      complex128
-	fixAspect          bool
-	sequentialNumerics SequentialNumerics
-	regionNumerics     RegionNumerics
-	regionConfig       RegionParameters
-	concurrentConfig   ConcurrentRegionParameters
-	draw               DrawingContext
 }
 
 func (mock *mockRenderApplication) Limits() (uint, float64) {

@@ -6,50 +6,37 @@ import (
 	"testing"
 )
 
-func TestInitializeContext(t *testing.T) {
+func TestNewRenderContextFactory(t *testing.T) {
+	if testing.Short {
+		t.Skip("Skipping in short mode")
+	}
+
 	desc := DefaultRenderDescription()
-	context := InitializeContext(desc)
+	goodFactory, noError := NewRenderContextFactory(desc)
 
-	if context.info == nil {
+	if goodFactory == nil {
+		t.Fatal("Good factory was nil")
+	}
+
+	if goodFactory.info == nil {
 		t.Error("info was nil")
 	}
 
-	if context.numerics == nil {
-		t.Error("info was nil")
+	if noError != nil {
+		t.Error("Expected no error")
 	}
 
-	if context.renderer == nil {
-		t.Error("renderer was nil")
+	// Copy default description
+	badDesc := &(*desc)
+	badDesc.Renderer = RenderMode(200)
+	badFactory, isError := NewRenderContextFactory(badDesc)
+
+	if badFactory != nil {
+		t.Error("Bad factory existed")
 	}
 
-	if context.palette == nil {
-		t.Error("palette was nil")
-	}
-
-	if context.picture == nil {
-		t.Error("picture was nil")
-	}
-}
-
-func TestUserFacade(t *testing.T) {
-	mock := &mockRenderContext{
-		picture: image.NewNRGBA(image.ZR),
-		err:     fmt.Errorf("Fake error!"),
-	}
-	context := ContextInit{RenderContext: mock}
-	facade := context.NewUserFacade()
-	pic, err := facade.Render()
-
-	if !mock.tRender {
-		t.Error("Expected method not called on mock")
-	}
-
-	if pic != mock.picture {
-		t.Error("Facade returned unexpected picture:", pic)
-	}
-
-	if err != mock.err {
-		t.Error("Facade returned unexpected error:", err)
+	if isError == nil {
+		t.Error("Expected error")
 	}
 }
 
@@ -58,7 +45,7 @@ func TestContextInitPalette(t *testing.T) {
 		PaletteType: StoredPalette,
 		PaletteCode: "pretty",
 	}
-	context := ContextInit{
+	context := &RenderContextFactory{
 		info: RenderInfo{
 			UserDescription: desc,
 		},
@@ -124,62 +111,44 @@ func TestContextInitNumerics(t *testing.T) {
 		ImagMax:  bigBoundary,
 	}
 
-	context := ContextInit{}
+	context := &RenderContextFactory{}
 
 	context.info.UserDescription = autoNativeEasy
-	contextNativeCheck(t, context, "autoNativeEasy")
+	contextNativeCheck(t, context)
 
 	context.info.UserDescription = autoNativeEdge
-	contextNativeCheck(t, context, "autoNativeEdge")
+	contextNativeCheck(t, context)
 
 	context.info.UserDescription = autoBigEasy
-	contextBigCheck(t, context, "autoBigEasy")
+	contextBigCheck(t, context)
 
 	context.info.UserDescription = autoBigEdge
-	contextBigCheck(t, context, "autoBigEdge")
+	contextBigCheck(t, context)
 
 	// Check manual settings
 	context.info.UserDescription = RenderDescription{}
 
-	context.info.UserDescription.Numerics.NativeNumericsMode
-	contextNativeCheck(t, context, "Manual Numerics")
+	context.info.UserDescription.Numerics = NativeNumericsMode
+	contextNativeCheck(t, context)
 
-	context.info.UserDescription.Numerics.BigNumericsMode
-	contextBigCheck(t, context, "Big Numerics")
+	context.info.UserDescription.Numerics = BigNumericsMode
+	contextBigCheck(t, context)
 
 }
 
-func contextNativeCheck(t *testing.T, context ContextInit, description string) {
+func contextNativeCheck(t *testing.T, context *RenderContextFactory) {
 	context.initNumerics()
 	if context.info.DetectedNumericsMode != NativeNumericsMode {
-		t.Error("When checking ", description,
-			"expected metadata to indicate native numerics, but received:",
+		t.Error("Expected native numerics, but received:",
 			context.info.DetectedNumericsMode)
-	}
-
-	switch context.numerics.(type) {
-	case NativeNumericsFactory:
-		// All good
-	default:
-		t.Error("When checking", description,
-			"Expected numerics to be native but received:", context.numerics)
 	}
 }
 
-func contextBigCheck(t *testing.T, context ContextInit, description string) {
+func contextBigCheck(t *testing.T, context *RenderContextFactory) {
 	context.initNumerics()
 	if context.info.DetectedNumericsMode != BigNumericsMode {
-		t.Error("When checking ", description,
-			"expected metadata to indicate native numerics, but received:",
+		t.Error("Expected big numerics, but received:",
 			context.info.DetectedNumericsMode)
-	}
-
-	switch context.numerics.(type) {
-	case BigNumericsFactory:
-		// All good
-	default:
-		t.Error("When checking", description,
-			"Expected numerics to be native but received:", context.numerics)
 	}
 }
 
@@ -191,7 +160,7 @@ func TestInitRenderStrategy(t *testing.T) {
 	const bigJobs = 20
 
 	// Check auto first
-	autoSequence := ContextInit{
+	autoSequence := &RenderContextFactory{
 		info: RenderInfo{
 			DetectedNumericsMode: NativeNumericsMode,
 			UserDescription: RenderDescription{
@@ -201,7 +170,7 @@ func TestInitRenderStrategy(t *testing.T) {
 		},
 	}
 
-	autoNativeRegion := ContextInit{
+	autoNativeRegion := &RenderContextFactory{
 		info: RenderInfo{
 			DetectedNumericsMode: NativeNumericsMode,
 			UserDescription: RenderDescription{
@@ -212,7 +181,7 @@ func TestInitRenderStrategy(t *testing.T) {
 		},
 	}
 
-	autoBigRegion := ContextInit{
+	autoBigRegion := &RenderContextFactory{
 		info: RenderInfo{
 			DetectedNumericsMode: BigNumericsMode,
 			UserDescription: RenderDescription{
@@ -223,7 +192,7 @@ func TestInitRenderStrategy(t *testing.T) {
 		},
 	}
 
-	autoBigConcurrent := ContextInit{
+	autoBigConcurrent := &RenderContextFactory{
 		info: RenderInfo{
 			DetectedNumericsMode: BigNumericsMode,
 			UserDescription: RenderDescription{
@@ -232,12 +201,35 @@ func TestInitRenderStrategy(t *testing.T) {
 		},
 	}
 
-	autoNativeConcurrent := ContextInit{
+	autoNativeConcurrent := &RenderContextFactory{
 		info: RenderInfo{
 			DetectedNumericsMode: NativeNumericsMode,
 			UserDescription: RenderDescription{
 				Jobs: bigJobs,
 			},
 		},
+	}
+
+	// Check manual render mode setting
+	manual := *&autoNativeRegion
+
+	renderCheck(t, autoSequence, SequenceRenderMode)
+	renderCheck(t, autoNativeRegion, RegionRenderMode)
+	renderCheck(t, autoBigRegion, RegionRenderMode)
+	renderCheck(t, autoBigConcurrent, ConcurrentRenderMode)
+	renderCheck(t, autoNativeConcurrent, ConcurrentRenderMode)
+
+	modes := []RenderMode[RegionRenderMode, SequenceRenderMode, ConcurrentRenderMode]
+	for _, mode := range modes {
+		manual.info.UserDescription.Numerics = mode
+		renderCheck(t, manual, mode)
+	}
+}
+
+func renderCheck(t *testing.T, context *RenderContextFactory, strategy RenderMode) {
+	context.initRenderStrategy()
+	if context.info.DetectedNumericsMode != strategy {
+		t.Error("Expected render strategy", strategy,
+			"but received:", context.info.DetectedRenderStrategy)
 	}
 }
