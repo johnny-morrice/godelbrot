@@ -4,6 +4,7 @@ import (
 	"image"
 	"math/rand"
 	"testing"
+	"time"
 	"functorama.com/demo/base"
 	"functorama.com/demo/draw"
 )
@@ -59,6 +60,10 @@ func TestTrackerBusy(t *testing.T) {
 }
 
 func TestTrackerSendInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping in short mode")
+	}
+
 	const jobCount = 3
 	tracker := RenderTracker{
 		jobs: jobCount,
@@ -75,25 +80,38 @@ func TestTrackerSendInput(t *testing.T) {
 	expect := RenderInput{Command: ThreadStop}
 
 	// Pump input channels
-	for i := 0; i < jobCount; i++ {
-		if tracker.nextThread != i {
-			t.Error("Unexpected target thread")
+	go func() {
+		for range tracker.input {
+			timeout(t, func() <-chan bool { return tracker.sendInput(expect) })
 		}
-		tracker.sendInput(expect)
-		actual := <-tracker.input[i]
-		if sameInput(actual, expect) {
-			t.Error("On channel", i, "expected input", expect, "but received", actual)
-		}
-	}
+	}()
 
-	// Ensure thread wrap around
-	if tracker.nextThread != 0 {
-		t.Error("Unexpected target thread after wrap")
+	// Check each thread has input
+	for _, threadInput := range tracker.input {
+		timeout(t, func() <-chan bool {
+			done := make(chan bool, 1)
+			<-threadInput
+			done <- true
+			return done
+		})
 	}
-	tracker.sendInput(expect)
-	actual := <-tracker.input[0]
-	if sameInput(actual, expect) {
-		t.Error("On channel 0 after wrap expected input", expect, "but received", actual)
+}
+
+
+// todo find a library that does this already
+func timeout(t *testing.T, f func() <-chan bool) {
+	timer := make(chan bool, 1)
+	done := f()
+	go func() {
+		time.Sleep(1 * time.Second)
+		timer <- true
+	}()
+
+	select {
+	case <-done:
+		return
+	case <-timer:
+		t.Error("Timed out")
 	}
 }
 

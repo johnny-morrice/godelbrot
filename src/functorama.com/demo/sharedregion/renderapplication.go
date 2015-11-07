@@ -10,7 +10,7 @@ type SharedRegionFactory interface {
 
 type SharedRegionConfig struct {
     BufferSize uint
-    Jobs uint
+    Jobs uint32
 }
 
 type RenderApplication interface {

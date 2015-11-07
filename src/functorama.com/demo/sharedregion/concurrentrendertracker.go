@@ -9,8 +9,6 @@ import (
 type RenderTracker struct {
 	// Number of jobs
 	jobs int
-	// round robin input scheduler
-	nextThread int
 	// nth element incremented when nth thread processing
 	processing []uint32
 	// input channels to threads
@@ -41,7 +39,6 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 		input:      make([]chan RenderInput, config.Jobs),
 		output:     make([]chan RenderOutput, config.Jobs),
 		buffer:     newBuffer(config.BufferSize),
-		nextThread: 0,
 		config:     config,
 		context:       app.DrawingContext(),
 		uniform:    make([]SharedRegionNumerics, base.AllocMedium),
@@ -95,15 +92,25 @@ func (tracker *RenderTracker) renderRegions(regions []SharedRegionNumerics) {
 }
 
 // Send input and mark as busy
-func (tracker *RenderTracker) sendInput(input RenderInput) {
-	threadIndex := tracker.nextThread
+func (tracker *RenderTracker) sendInput(input RenderInput) <-chan bool {
+	done := make(chan bool, 1)
 	// We want to proceed straight back to reading in order to avoid deadlock
-	go func() { tracker.input[threadIndex] <- input }()
-	tracker.processing[threadIndex]++
-
-	// Rount robin
-	tracker.nextThread++
-	tracker.nextThread = tracker.nextThread % tracker.jobs
+	go func() {
+		// Give to first render thread that is ready
+		for {
+			for _, threadInput := range tracker.input {
+				select {
+				case threadInput <-input:
+					goto complete
+				default:
+					continue
+				}
+			}
+		}
+complete:
+		done <- true
+	}()
+	return done
 }
 
 // A single step in render tracking
