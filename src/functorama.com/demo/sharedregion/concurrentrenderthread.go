@@ -28,6 +28,8 @@ type RenderThread struct {
 	ThreadId   uint
 	InputChan  <-chan RenderInput
 	OutputChan chan<- RenderOutput
+	ReadyChan chan<- bool
+	WorkingChan chan<- bool
 	SharedConfig     SharedRegionConfig
 	RegionConfig 	 region.RegionConfig
 	BaseConfig	base.BaseConfig
@@ -49,7 +51,7 @@ func NewRenderThreadFactory(app RenderApplication) *RenderThreadFactory {
 	}
 }
 
-func (factory *RenderThreadFactory) Build(inputChan <-chan RenderInput, outputChan chan<- RenderOutput) RenderThread {
+func (factory *RenderThreadFactory) Build(readyChan chan<- bool, workingChan chan<- bool, inputChan <-chan RenderInput, outputChan chan<- RenderOutput) RenderThread {
 	collapseBound := factory.regionConfig.CollapseSize
 	buffSize := factory.sharedConfig.BufferSize
 	memberSize := collapseBound * collapseBound * buffSize
@@ -57,6 +59,8 @@ func (factory *RenderThreadFactory) Build(inputChan <-chan RenderInput, outputCh
 		ThreadId:   factory.count,
 		InputChan:  inputChan,
 		OutputChan: outputChan,
+		ReadyChan: readyChan,
+		WorkingChan: workingChan,
 		SharedConfig:     factory.sharedConfig,
 		RegionConfig:	factory.regionConfig,
 		buffSize: buffSize,
@@ -69,7 +73,9 @@ func (factory *RenderThreadFactory) Build(inputChan <-chan RenderInput, outputCh
 // Implements a single Render thread
 func (thread *RenderThread) Run() {
 	for {
+		thread.ReadyChan<- true
 		input := <-thread.InputChan
+		thread.WorkingChan<- true
 		switch input.Command {
 		case ThreadRender:
 			result := thread.Pass(input.Regions)

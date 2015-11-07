@@ -20,7 +20,7 @@ func TestRenderThreadFactory(t *testing.T) {
 	mock := &MockRenderApplication{}
 	factory := NewRenderThreadFactory(mock)
 
-	threads := []RenderThread{factory.Build(nil, nil), factory.Build(nil, nil)}
+	threads := []RenderThread{factory.Build(nil, nil, nil, nil), factory.Build(nil, nil, nil, nil)}
 
 	if !mock.TSharedRegionConfig {
 		t.Error("Mock did not receive expected method call")

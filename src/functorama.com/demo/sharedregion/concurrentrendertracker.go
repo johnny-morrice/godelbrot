@@ -9,22 +9,20 @@ import (
 type RenderTracker struct {
 	// Number of jobs
 	jobs int
-	// nth element incremented when nth thread processing
-	processing []uint32
+	working []chan bool
+	ready []chan bool
+	// schedule channel
+	schedule chan chan<- RenderInput
 	// input channels to threads
 	input []chan RenderInput
 	// output channels to threads
 	output []chan RenderOutput
-	// Local buffer of unprocessed regions
-	buffer []SharedRegionNumerics
 	// Concurrent render config
 	config SharedRegionConfig
 	// drawing context for drawing onto image
 	context draw.DrawingContext
-	// Processed uniform regions
-	uniform []SharedRegionNumerics
-	// Processed Mandelbrot points
-	points []base.PixelMember
+	uniformChan chan SharedRegionNumerics
+	memberChan chan base.PixelMember
 	// Thread factory
 	factory *RenderThreadFactory
 	// Initial region
@@ -35,141 +33,167 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 	config := app.SharedRegionConfig()
 	tracker := RenderTracker{
 		jobs: int(config.Jobs),
-		processing: make([]uint32, config.Jobs),
+		working: make([]chan bool, config.Jobs),
+		ready: make([]chan bool, config.Jobs),
 		input:      make([]chan RenderInput, config.Jobs),
 		output:     make([]chan RenderOutput, config.Jobs),
-		buffer:     newBuffer(config.BufferSize),
 		config:     config,
 		context:       app.DrawingContext(),
-		uniform:    make([]SharedRegionNumerics, base.AllocMedium),
-		points:     make([]base.PixelMember, base.AllocLarge),
+		memberChan: make(chan base.PixelMember),
+		uniformChan: make(chan SharedRegionNumerics),
 		factory:	NewRenderThreadFactory(app),
 		initialRegion: app.SharedRegionFactory().Build(),
 	}
+
 	for i := 0; i < int(config.Jobs); i++ {
-		tracker.processing[i] = 0
+		readyChan := make(chan bool, 1)
+		workingChan := make(chan bool, 1)
 		inputChan := make(chan RenderInput)
 		outputChan := make(chan RenderOutput)
+		tracker.working[i] = workingChan
+		tracker.ready[i] = readyChan
 		tracker.input[i] = inputChan
 		tracker.output[i] = outputChan
 	}
 	return &tracker
 }
 
-// True if at least one thread is processing
-func (tracker *RenderTracker) busy() bool {
-	for _, wait := range tracker.processing {
-		if wait > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-// Render a set of regions using the next thread in the round robin scheme
-func (tracker *RenderTracker) renderRegions(regions []SharedRegionNumerics) {
-
-	tracker.buffer = append(tracker.buffer, regions...)
-
-	if len(tracker.buffer) == 0 {
-		return
-	}
-
-	input := RenderInput{Command: ThreadRender}
-
-	// If we're busy, wait for buffer to fill before sending
-	if tracker.busy() {
-		if len(tracker.buffer) >= int(tracker.config.BufferSize) {
-			input.Regions = tracker.buffer
-			tracker.cleanBuffer()
-			tracker.sendInput(input)
-		}
-	} else {
-		input.Regions = tracker.buffer
-		tracker.cleanBuffer()
-		tracker.sendInput(input)
-	}
-}
-
-// Send input and mark as busy
-func (tracker *RenderTracker) sendInput(input RenderInput) <-chan bool {
-	done := make(chan bool, 1)
-	// We want to proceed straight back to reading in order to avoid deadlock
-	go func() {
-		// Give to first render thread that is ready
-		for {
-			for _, threadInput := range tracker.input {
-				select {
-				case threadInput <-input:
-					goto complete
-				default:
-					continue
-				}
-			}
-		}
-complete:
-		done <- true
-	}()
-	return done
-}
-
 // A single step in render tracking
 func (tracker *RenderTracker) step(output RenderOutput) {
 
 	// Give more work to the threads
-	tracker.renderRegions(output.Children)
+	tracker.work(output.Children)
 
 	// Stash the completed areas
-	tracker.uniform = append(tracker.uniform, output.UniformRegions...)
-	tracker.points = append(tracker.points, output.Members...)
+	go func() {
+		for _, uni := range output.UniformRegions {
+			tracker.uniformChan<- uni
+		}
+	}()
+
+	go func() {
+		for _, member := range output.Members {
+			tracker.memberChan<- member
+		}
+	}()
 }
 
 // draw to the image
 func (tracker *RenderTracker) draw() {
-	for _, uniform := range tracker.uniform {
+	for uniform := range tracker.uniformChan {
 		uniform.ClaimExtrinsics()
 		region.DrawUniform(tracker.context, uniform)
 	}
 
 	// We do not need to claim any extrinsics here, because we are merely drawing a render result
 	// that requires no extra context
-	for _, member := range tracker.points {
+	for member := range tracker.memberChan {
 		draw.DrawPoint(tracker.context, member)
 	}
-}
-
-func (tracker *RenderTracker) cleanBuffer() {
-	tracker.buffer = newBuffer(tracker.config.BufferSize)
 }
 
 func newBuffer(bufferSize uint) []SharedRegionNumerics {
 	return make([]SharedRegionNumerics, 0, bufferSize)
 }
 
-// How do we test Render?
+func (tracker *RenderTracker) inputSchedule() (chan<- bool, <-chan bool) {
+	stop := make(chan bool)
+	busyChan := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				// Nothing here
+			}
+			busy := false
+			for i, readyChan := range tracker.ready {
+				select {
+				case <-readyChan:
+					tracker.schedule<- tracker.input[i]
+				default:
+					busy = true
+					continue
+				}
+			}
+			go func() { busyChan<- busy }()
+		}
+	}()
+
+	return stop, busyChan
+}
+
+func (tracker *RenderTracker) circulate() (chan<- bool, <-chan bool) {
+	stop := make(chan bool)
+	waitingChan := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				// Nothing here
+			}
+			waiting := false
+			for i, workingChan := range tracker.working {
+				select {
+				case <-workingChan:
+					// Await result
+					go func() {
+						result := <- tracker.output[i]
+						tracker.step(result)
+					}()
+					waiting = true
+				default:
+					continue
+				}
+			}
+			go func() {waitingChan<- waiting}()
+		}
+	}()
+
+	return stop, waitingChan
+}
+
+func (tracker *RenderTracker) wait(busy <-chan bool, waiting <-chan bool) {
+	for {
+		if !(<-busy || <-waiting) {
+			return
+		}
+	}
+}
+
+func (tracker *RenderTracker) work(more []SharedRegionNumerics) {
+	go func() {
+		inst := RenderInput{
+			Command: ThreadRender,
+			Regions: more,
+		}
+		inputChan := <-tracker.schedule
+		inputChan<- inst
+	}()
+}
 
 // Render the Mandelbrot set concurrently
 func (tracker *RenderTracker) Render() {
 	// Launch threads
 	for i := uint32(0); i < tracker.config.Jobs; i++ {
-		thread := tracker.factory.Build(tracker.input[i], tracker.output[i])
+		thread := tracker.factory.Build(tracker.ready[i], tracker.working[i], tracker.input[i], tracker.output[i])
 		go thread.Run()
 	}
 
-	firstBatch := []SharedRegionNumerics{tracker.initialRegion}
-	tracker.renderRegions(firstBatch)
+	// Run the pool
+	tracker.work([]SharedRegionNumerics{tracker.initialRegion})
+	inputStop, busyChan := tracker.inputSchedule()
+	outputStop, waitingChan := tracker.circulate()
 
-	for tracker.busy() {
-		for i, outputChan := range tracker.output {
-			select {
-			case output := <-outputChan:
-				tracker.processing[i]--
-				tracker.step(output)
-			default:
-				// Wait till next input
-			}
-		}
-	}
+	// Stop the pool
+	tracker.wait(busyChan, waitingChan)
+	inputStop<- true
+	outputStop<- true
 
 	// Shut down threads
 	for _, input := range tracker.input {

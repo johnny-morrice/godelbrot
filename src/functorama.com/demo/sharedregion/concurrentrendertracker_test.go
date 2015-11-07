@@ -2,7 +2,6 @@ package sharedregion
 
 import (
 	"image"
-	"math/rand"
 	"testing"
 	"time"
 	"functorama.com/demo/base"
@@ -32,70 +31,16 @@ func TestNewRenderTracker(t *testing.T) {
 	if outputCount != jobCount {
 		t.Error("Thread output channels of unexpected length", outputCount)
 	}
-	processCount := len(tracker.processing)
-	if processCount != jobCount {
-		t.Error("Thread processing tracker of unexpected length", processCount)
+	workingCount := len(tracker.working)
+	if workingCount != jobCount {
+		t.Error("Working tracker of unexpected length", workingCount)
+	}
+	readyCount := len(tracker.ready)
+	if readyCount != jobCount {
+		t.Error("Ready tracer of unexpected length", readyCount)
 	}
 }
 
-func TestTrackerBusy(t *testing.T) {
-	jobCount := 5
-	tracker := RenderTracker{
-		processing: make([]uint32, jobCount),
-	}
-
-	if tracker.busy() {
-		t.Error("New tracker should not be busy")
-	}
-
-	for i := 0; i < jobCount; i++ {
-		for j := 0; j < jobCount; j++ {
-			tracker.processing[j] = 0
-		}
-		tracker.processing[i] = rand.Uint32()
-		if !tracker.busy() {
-			t.Error("Expected tracker to be busy. Tracker processing: ", tracker.processing)
-		}
-	}
-}
-
-func TestTrackerSendInput(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping in short mode")
-	}
-
-	const jobCount = 3
-	tracker := RenderTracker{
-		jobs: jobCount,
-		processing: make([]uint32, jobCount),
-		input:      make([]chan RenderInput, jobCount),
-	}
-
-	// Create input channels
-	for i := 0; i < jobCount; i++ {
-		tracker.input[i] = make(chan RenderInput)
-	}
-
-	// Not zero-value input struct
-	expect := RenderInput{Command: ThreadStop}
-
-	// Pump input channels
-	go func() {
-		for range tracker.input {
-			timeout(t, func() <-chan bool { return tracker.sendInput(expect) })
-		}
-	}()
-
-	// Check each thread has input
-	for _, threadInput := range tracker.input {
-		timeout(t, func() <-chan bool {
-			done := make(chan bool, 1)
-			<-threadInput
-			done <- true
-			return done
-		})
-	}
-}
 
 
 // todo find a library that does this already
