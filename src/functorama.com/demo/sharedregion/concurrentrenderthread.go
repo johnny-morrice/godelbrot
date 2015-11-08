@@ -1,137 +1,135 @@
 package sharedregion
 
 import (
-	"fmt"
+	"sync"
 	"functorama.com/demo/base"
 	"functorama.com/demo/region"
 )
 
-type RenderCommand uint
-
-const (
-	ThreadRender = RenderCommand(iota)
-	ThreadStop
-)
-
 type RenderInput struct {
-	Command RenderCommand
-	Regions []SharedRegionNumerics
+	Region SharedRegionNumerics
 }
 
 type RenderOutput struct {
-	UniformRegions []SharedRegionNumerics
-	Children       []SharedRegionNumerics
-	Members        []base.PixelMember
+	UniformRegions chan SharedRegionNumerics
+	Children       chan SharedRegionNumerics
+	Members        chan base.PixelMember
 }
 
-type RenderThread struct {
-	ThreadId   uint
+type Worker struct {
+	WorkerId   uint16
 	InputChan  chan RenderInput
-	OutputChan chan RenderOutput
-	ReadyChan chan bool
-	WorkingChan chan bool
+	Output RenderOutput
+	WaitingChan chan bool
 	SharedConfig     SharedRegionConfig
 	RegionConfig 	 region.RegionConfig
 	BaseConfig	base.BaseConfig
-	buffSize uint
-	memberBuffSize uint
+	hold sync.WaitGroup
 }
 
-type RenderThreadFactory struct {
-	count uint
+type WorkerFactory struct {
+	count uint16
 	regionConfig region.RegionConfig
 	sharedConfig SharedRegionConfig
 }
-// Easy method to create Render threads
-func NewRenderThreadFactory(app RenderApplication) *RenderThreadFactory {
-	return &RenderThreadFactory{
+
+// Easy method to create Render workers
+func NewWorkerFactory(app RenderApplication) *WorkerFactory {
+	return &WorkerFactory{
 		count: 0,
 		regionConfig: app.RegionConfig(),
 		sharedConfig: app.SharedRegionConfig(),
 	}
 }
 
-func (factory *RenderThreadFactory) Build() RenderThread {
-	collapseBound := factory.regionConfig.CollapseSize
-	buffSize := factory.sharedConfig.BufferSize
-	memberSize := collapseBound * collapseBound * buffSize
-	thread := RenderThread{
-		ThreadId:   factory.count,
+func (factory *WorkerFactory) Build(outputChannels RenderOutput) *Worker {
+	worker := &Worker{
+		WorkerId:   factory.count,
 		InputChan:  make(chan RenderInput),
-		OutputChan: make(chan RenderOutput),
-		ReadyChan: make(chan bool, 1),
-		WorkingChan: make(chan bool, 1),
+		WaitingChan: make(chan bool),
 		SharedConfig:     factory.sharedConfig,
 		RegionConfig:	factory.regionConfig,
-		buffSize: buffSize,
-		memberBuffSize: memberSize,
+		Output: outputChannels,
 	}
 	factory.count++
-	return thread
+	return worker
 }
 
-// Implements a single Render thread
-func (thread *RenderThread) Run() {
+// Implements a single Render worker
+func (worker *Worker) Run() {
+	busy := true
 	for {
-		thread.ReadyChan<- true
-		input := <-thread.InputChan
-		thread.WorkingChan<- true
-		switch input.Command {
-		case ThreadRender:
-			result := thread.Pass(input.Regions)
-			go func() { thread.OutputChan <- result }()
-		case ThreadStop:
-			return
-		default:
-			panic(fmt.Sprintf("Unknown Render Command in thread %v: %v",
-				thread.ThreadId, input.Command))
+		// Enter wait state
+		if busy {
+			worker.WaitingChan<- true
+			busy = false
 		}
-	}
-}
+		select {
+		case input, ok := <-worker.InputChan:
+			if ok {
+				// Enter busy state
+				busy = true
+				worker.WaitingChan<- false
+				worker.Step(input.Region)
+			} else {
+				worker.closeChannels()
+				return
+			}
+		default:
+			continue
+		}
 
-// A pass through the region rendering process, comprising many steps
-func (thread *RenderThread) Pass(Regions []SharedRegionNumerics) RenderOutput {
-	output := thread.createRenderOutput()
-	for _, region := range Regions {
-		thread.Step(region, &output)
 	}
-	return output
 }
 
 // A single Render step
-func (thread *RenderThread) Step(shared SharedRegionNumerics, output *RenderOutput) {
-	// We are in a thread, so we must be sure that we have our own copy of the context
-	shared.GrabThreadPrototype(thread.ThreadId)
+func (worker *Worker) Step(shared SharedRegionNumerics) {
+	// We are in a worker, so we must be sure that we have our own copy of the context
+	shared.GrabWorkerPrototype(worker.WorkerId)
 	// We use proxies to share objects, so we've got to ensure we're using the correct local data
 	shared.ClaimExtrinsics()
 
-	baseConfig := thread.BaseConfig
-	regionConfig := thread.RegionConfig
+	baseConfig := worker.BaseConfig
+	regionConfig := worker.RegionConfig
 	iterateLimit := baseConfig.IterateLimit
 	glitchSamples := regionConfig.GlitchSamples
 	collapseBound := int(regionConfig.CollapseSize)
 
 	if region.Collapse(shared, collapseBound) {
-		points := SharedSequenceCollapse(shared, thread.ThreadId, iterateLimit)
-		output.Members = append(output.Members, points...)
+		points := SharedSequenceCollapse(shared, worker.WorkerId, iterateLimit)
+		worker.hold.Add(len(points))
+		for _, point := range points {
+			go func() {
+				worker.Output.Members<- point
+				worker.hold.Done()
+			}()
+		}
 		return
 	}
 
 	if region.Subdivide(shared, iterateLimit, glitchSamples) {
-		output.Children = append(output.Children, shared.SharedChildren()...)
+		children := shared.SharedChildren()
+		worker.hold.Add(len(children))
+		for _, child := range children {
+			go func() {
+				worker.Output.Children<- child
+				worker.hold.Done()
+			}()
+		}
 		return
 	}
 
-	output.UniformRegions = append(output.UniformRegions, shared)
+	worker.hold.Add(1)
+	go func() {
+		worker.Output.UniformRegions<- shared
+		worker.hold.Done()
+	}()
 }
 
-// Create a new output packet
-func (thread *RenderThread) createRenderOutput() RenderOutput {
-	return RenderOutput{
-		// Q: How much memory should we allocate in advance?
-		UniformRegions: make([]SharedRegionNumerics, 0, thread.buffSize),
-		// What is the correct size for this?
-		Members:  make([]base.PixelMember, 0, thread.memberBuffSize),
-		Children: make([]SharedRegionNumerics, 0, thread.buffSize),
-	}
+func (worker *Worker) closeChannels() {
+	worker.hold.Wait()
+	close(worker.Output.Children)
+	close(worker.Output.UniformRegions)
+	close(worker.Output.Members)
+	close(worker.WaitingChan)
 }

@@ -8,7 +8,7 @@ type MockThreadPrototype struct {
     TGrabThreadPrototype bool
 }
 
-func (mock *MockThreadPrototype) GrabThreadPrototype(threadId uint) {
+func (mock *MockThreadPrototype) GrabWorkerPrototype(threadId uint16) {
     mock.TGrabThreadPrototype = true
 }
 

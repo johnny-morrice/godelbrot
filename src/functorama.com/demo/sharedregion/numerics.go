@@ -7,28 +7,28 @@ import (
 )
 
 // Copy a prototypical object instance into the local thread
-type OpaqueThreadPrototype interface {
-    GrabThreadPrototype(threadId uint)
+type OpaqueWorkerPrototype interface {
+    GrabWorkerPrototype(workerId uint16)
 }
 
 // SharedSequentialNumerics provides sequential (column-wise) rendering calculations for a threaded
 // render strategy
 type SharedSequenceNumerics interface {
     region.ProxySequence
-    OpaqueThreadPrototype
+    OpaqueWorkerPrototype
 }
 
 // SharedRegionNumerics provides a RegionNumerics for threaded render stregies
 type SharedRegionNumerics interface {
     region.RegionNumerics
-    OpaqueThreadPrototype
+    OpaqueWorkerPrototype
     SharedChildren() []SharedRegionNumerics
     SharedRegionSequence() SharedSequenceNumerics
 }
 
-func SharedSequenceCollapse(numerics SharedRegionNumerics, threadId uint, iterateLimit uint8) []base.PixelMember {
+func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16, iterateLimit uint8) []base.PixelMember {
     collapse := numerics.SharedRegionSequence()
-    collapse.GrabThreadPrototype(threadId)
+    collapse.GrabWorkerPrototype(workerId)
     collapse.ClaimExtrinsics()
     return sequence.Capture(collapse, iterateLimit)
 }

@@ -29,25 +29,54 @@ func TestNewRenderTracker(t *testing.T) {
 	}
 }
 
+func TestStashUniforms(t *testing.T) {
+	mockA := &MockNumerics{}
+	mockB := &MockNumerics{}
+	uniforms := []SharedRegionNumerics{mockA, mockB}
 
+	tracker := &RenderTracker{
+		uniformChan: make(chan SharedRegionNumerics),
+	}
 
-// todo find a library that does this already
-func timeout(t *testing.T, f func() <-chan bool) {
-	timer := make(chan bool, 1)
-	done := f()
-	go func() {
-		time.Sleep(1 * time.Second)
-		timer <- true
-	}()
+	go tracker.stashUniforms(uniforms)
 
-	select {
-	case <-done:
-		return
-	case <-timer:
-		t.Error("Timed out")
+	actualAGen := <-tracker.uniformChan
+	actualBGen := <-tracker.uniformChan
+
+	actualA := actualAGen.(*MockNumerics)
+	actualB := actualBGen.(*MockNumerics)
+
+	if actualA != mockA {
+		t.Error("Expected", mockA, "but received", actualA)
+	}
+
+	if actualB != mockB {
+		t.Error("Expected", mockB, "but received", actualB)
 	}
 }
 
+func TestStashMembers(t *testing.T) {
+	pointA := base.PixelMember{I: 1}
+	pointB := base.PixelMember{I: 2}
+	points := []base.PixelMember{pointA, pointB}
+
+	tracker := &RenderTracker{
+		memberChan: make(chan base.PixelMember),
+	}
+
+	go tracker.stashMembers(points)
+
+	actualA := <-tracker.uniformChan
+	actualB := <-tracker.uniformChan
+
+	if actualA != pointA {
+		t.Error("Expected", pointA, "but received", actualA)
+	}
+
+	if actualB != pointB {
+		t.Error("Expected", pointB, "but received", actualB)
+	}
+}
 
 func TestTrackerDraw(t *testing.T) {
 	const iterateLimit = 255
@@ -83,6 +112,22 @@ func TestTrackerDraw(t *testing.T) {
 	}
 }
 
+// todo find a library that does this already
+func timeout(t *testing.T, f func() <-chan bool) {
+	timer := make(chan bool, 1)
+	done := f()
+	go func() {
+		time.Sleep(1 * time.Second)
+		timer <- true
+	}()
+
+	select {
+	case <-done:
+		return
+	case <-timer:
+		t.Error("Timed out")
+	}
+}
 
 func sameInput(a RenderInput, b RenderInput) bool {
 	return a.Command != b.Command && len(a.Regions) == len(b.Regions)
