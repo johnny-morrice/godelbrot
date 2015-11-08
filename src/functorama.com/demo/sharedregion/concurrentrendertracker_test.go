@@ -23,21 +23,9 @@ func TestNewRenderTracker(t *testing.T) {
 		t.Error("Expected tracker to be non-nil")
 	}
 
-	inputCount := len(tracker.input)
-	if inputCount != jobCount {
-		t.Error("Thread input channels of unexpected length: ", inputCount)
-	}
-	outputCount := len(tracker.output)
-	if outputCount != jobCount {
-		t.Error("Thread output channels of unexpected length", outputCount)
-	}
-	workingCount := len(tracker.working)
-	if workingCount != jobCount {
-		t.Error("Working tracker of unexpected length", workingCount)
-	}
-	readyCount := len(tracker.ready)
-	if readyCount != jobCount {
-		t.Error("Ready tracer of unexpected length", readyCount)
+	workerCount := len(tracker.workers)
+	if workerCount != jobCount {
+		t.Error("Expected", jobCount, "workers but received", workerCount)
 	}
 }
 
@@ -60,98 +48,6 @@ func timeout(t *testing.T, f func() <-chan bool) {
 	}
 }
 
-func TestTrackerRenderRegions(t *testing.T) {
-	const jobCount = 1
-	const threadBuff = 2
-	// Check trivial path
-	zeroRegions := []SharedRegionNumerics{}
-	zeroTracker := RenderTracker{
-		buffer: []SharedRegionNumerics{},
-	}
-	zeroTracker.renderRegions(zeroRegions)
-	if len(zeroTracker.buffer) > 0 {
-		t.Error("Unexpected buffer growth:", zeroTracker)
-	}
-
-	// When not busy, just send whatever we have to the next thread
-	startInputChan := make(chan RenderInput)
-	startRegions := []SharedRegionNumerics{&MockNumerics{}}
-	startTracker := RenderTracker{
-		jobs: jobCount,
-		buffer:     []SharedRegionNumerics{},
-		processing: []uint32{0},
-		input:      []chan RenderInput{startInputChan},
-	}
-	startTracker.renderRegions(startRegions)
-	startOut := <-startTracker.input[0]
-	if startOut.Command != ThreadRender && len(startOut.Regions) != 1 {
-		t.Error("Read unexpected input:", startOut)
-	}
-	if len(startTracker.buffer) != 0 {
-		t.Error("Tracker had unexpected buffer length:", startTracker)
-	}
-
-	// When busy, wait till the buffer fills
-	busyInputChan := make(chan RenderInput)
-	busyRegions := []SharedRegionNumerics{&MockNumerics{}}
-	busyTracker := RenderTracker{
-		jobs: jobCount,
-		buffer:     []SharedRegionNumerics{},
-		processing: []uint32{1},
-		input:      []chan RenderInput{busyInputChan},
-		config:     SharedRegionConfig{BufferSize: threadBuff},
-	}
-	busyTracker.renderRegions(busyRegions)
-	if len(busyTracker.buffer) != 1 {
-		t.Error("Tracker had unexpected buffer length")
-	}
-	busyTracker.renderRegions(busyRegions)
-	out := <-busyTracker.input[0]
-	if out.Command != ThreadRender && len(out.Regions) != 2 {
-		t.Error("Read unexpected input:", out)
-	}
-	if len(busyTracker.buffer) != 0 {
-		t.Error("Tracker had unexpected buffer length")
-	}
-}
-
-func TestTrackerStep(t *testing.T) {
-	const jobCount = 1
-	child := &MockNumerics{}
-	uniform := &MockNumerics{}
-	member := base.PixelMember{I: 1, J: 2}
-	out := RenderOutput{
-		Children:       []SharedRegionNumerics{child},
-		UniformRegions: []SharedRegionNumerics{uniform},
-		Members:        []base.PixelMember{member},
-	}
-
-	// The tracker is not busy
-	inputChan := make(chan RenderInput)
-	tracker := RenderTracker{
-		jobs: jobCount,
-		buffer:     []SharedRegionNumerics{},
-		processing: []uint32{0},
-		input:      []chan RenderInput{inputChan},
-		uniform:    []SharedRegionNumerics{},
-		points:     []base.PixelMember{},
-	}
-
-	tracker.step(out)
-
-	actual := <-tracker.input[0]
-	if len(actual.Regions) != 1 {
-		t.Error("Expected 1 region in the input channel but received:", actual)
-	}
-
-	if len(tracker.uniform) != 1 {
-		t.Error("Expected 1 uniform region but tracker was:", tracker)
-	}
-
-	if len(tracker.points) != 1 {
-		t.Error("Expected 1 base.PixelMember but tracker was:", tracker)
-	}
-}
 
 func TestTrackerDraw(t *testing.T) {
 	const iterateLimit = 255
@@ -162,10 +58,19 @@ func TestTrackerDraw(t *testing.T) {
 		Col: draw.NewRedscalePalette(iterateLimit),
 	}
 	tracker := RenderTracker{
-		uniform: []SharedRegionNumerics{uniform},
-		points:  []base.PixelMember{point},
+		uniformChan: make(chan SharedRegionNumerics),
+		memberChan: make(chan base.PixelMember),
 		context:    context,
 	}
+
+	go func() {
+		tracker.uniformChan<- uniform
+		close(tracker.uniformChan)
+	}()
+	go func() {
+		tracker.memberChan<- point
+		close(tracker.memberChan)
+	}()
 
 	tracker.draw()
 

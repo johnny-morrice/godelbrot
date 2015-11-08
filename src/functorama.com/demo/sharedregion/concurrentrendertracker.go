@@ -9,14 +9,8 @@ import (
 type RenderTracker struct {
 	// Number of jobs
 	jobs int
-	working []chan bool
-	ready []chan bool
-	// schedule channel
+	workers []RenderThread
 	schedule chan chan<- RenderInput
-	// input channels to threads
-	input []chan RenderInput
-	// output channels to threads
-	output []chan RenderOutput
 	// Concurrent render config
 	config SharedRegionConfig
 	// drawing context for drawing onto image
@@ -31,51 +25,48 @@ type RenderTracker struct {
 
 func NewRenderTracker(app RenderApplication) *RenderTracker {
 	config := app.SharedRegionConfig()
+	factory := NewRenderThreadFactory(app)
+
 	tracker := RenderTracker{
 		jobs: int(config.Jobs),
-		working: make([]chan bool, config.Jobs),
-		ready: make([]chan bool, config.Jobs),
-		input:      make([]chan RenderInput, config.Jobs),
-		output:     make([]chan RenderOutput, config.Jobs),
+		workers: make([]RenderThread, config.Jobs),
 		config:     config,
 		context:       app.DrawingContext(),
 		memberChan: make(chan base.PixelMember),
 		uniformChan: make(chan SharedRegionNumerics),
-		factory:	NewRenderThreadFactory(app),
 		initialRegion: app.SharedRegionFactory().Build(),
 	}
 
 	for i := 0; i < int(config.Jobs); i++ {
-		readyChan := make(chan bool, 1)
-		workingChan := make(chan bool, 1)
-		inputChan := make(chan RenderInput)
-		outputChan := make(chan RenderOutput)
-		tracker.working[i] = workingChan
-		tracker.ready[i] = readyChan
-		tracker.input[i] = inputChan
-		tracker.output[i] = outputChan
+		tracker.workers[i] = factory.Build()
 	}
 	return &tracker
 }
 
-// A single step in render tracking
-func (tracker *RenderTracker) step(output RenderOutput) {
+// A single step in render circulation
+func (tracker *RenderTracker) step(output RenderOutput) (<-chan bool, <-chan bool) {
 
 	// Give more work to the threads
 	tracker.work(output.Children)
+	uniformDone := make(chan bool)
+	memberDone := make(chan bool)
 
 	// Stash the completed areas
 	go func() {
 		for _, uni := range output.UniformRegions {
 			tracker.uniformChan<- uni
 		}
+		uniformDone<- true
 	}()
 
 	go func() {
 		for _, member := range output.Members {
 			tracker.memberChan<- member
 		}
+		memberDone<- true
 	}()
+
+	return uniformDone, memberDone
 }
 
 // draw to the image
@@ -109,10 +100,10 @@ func (tracker *RenderTracker) inputSchedule() (chan<- bool, <-chan bool) {
 				// Nothing here
 			}
 			busy := false
-			for i, readyChan := range tracker.ready {
+			for _, worker := range tracker.workers {
 				select {
-				case <-readyChan:
-					tracker.schedule<- tracker.input[i]
+				case <-worker.ReadyChan:
+					tracker.schedule<- worker.InputChan
 				default:
 					busy = true
 					continue
@@ -138,12 +129,12 @@ func (tracker *RenderTracker) circulate() (chan<- bool, <-chan bool) {
 				// Nothing here
 			}
 			waiting := false
-			for i, workingChan := range tracker.working {
+			for _, worker := range tracker.workers {
 				select {
-				case <-workingChan:
+				case <-worker.WorkingChan:
 					// Await result
 					go func() {
-						result := <- tracker.output[i]
+						result := <- worker.OutputChan
 						tracker.step(result)
 					}()
 					waiting = true
@@ -158,9 +149,11 @@ func (tracker *RenderTracker) circulate() (chan<- bool, <-chan bool) {
 	return stop, waitingChan
 }
 
-func (tracker *RenderTracker) wait(busy <-chan bool, waiting <-chan bool) {
+func (tracker *RenderTracker) wait(busyChan <-chan bool, waitingChan <-chan bool) {
 	for {
-		if !(<-busy || <-waiting) {
+		waiting := <-waitingChan
+		busy := <-busyChan
+		if !(waiting || busy) {
 			return
 		}
 	}
@@ -180,12 +173,11 @@ func (tracker *RenderTracker) work(more []SharedRegionNumerics) {
 // Render the Mandelbrot set concurrently
 func (tracker *RenderTracker) Render() {
 	// Launch threads
-	for i := uint32(0); i < tracker.config.Jobs; i++ {
-		thread := tracker.factory.Build(tracker.ready[i], tracker.working[i], tracker.input[i], tracker.output[i])
-		go thread.Run()
+	for _, worker := range tracker.workers {
+		go worker.Run()
 	}
 
-	// Run the pool
+	// Render fractal
 	tracker.work([]SharedRegionNumerics{tracker.initialRegion})
 	inputStop, busyChan := tracker.inputSchedule()
 	outputStop, waitingChan := tracker.circulate()
@@ -196,9 +188,9 @@ func (tracker *RenderTracker) Render() {
 	outputStop<- true
 
 	// Shut down threads
-	for _, input := range tracker.input {
-		input <- RenderInput{Command: ThreadStop}
+	for _, worker := range tracker.workers {
+		worker.InputChan<- RenderInput{Command: ThreadStop}
 	}
 
-	tracker.draw()
+
 }

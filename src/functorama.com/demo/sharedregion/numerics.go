@@ -6,6 +6,11 @@ import (
 	"functorama.com/demo/region"
 )
 
+// Copy a prototypical object instance into the local thread
+type OpaqueThreadPrototype interface {
+    GrabThreadPrototype(threadId uint)
+}
+
 // SharedSequentialNumerics provides sequential (column-wise) rendering calculations for a threaded
 // render strategy
 type SharedSequenceNumerics interface {

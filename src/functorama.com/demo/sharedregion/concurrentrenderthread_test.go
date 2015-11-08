@@ -20,7 +20,7 @@ func TestRenderThreadFactory(t *testing.T) {
 	mock := &MockRenderApplication{}
 	factory := NewRenderThreadFactory(mock)
 
-	threads := []RenderThread{factory.Build(nil, nil, nil, nil), factory.Build(nil, nil, nil, nil)}
+	threads := []RenderThread{factory.Build(), factory.Build()}
 
 	if !mock.TSharedRegionConfig {
 		t.Error("Mock did not receive expected method call")
@@ -36,24 +36,32 @@ func TestRenderThreadFactory(t *testing.T) {
 func TestThreadRun(t *testing.T) {
 	th := createThread()
 	const uniformLength = 1
-	iChan := make(chan RenderInput)
-	oChan := make(chan RenderOutput)
-	th.InputChan = iChan
-	th.OutputChan = oChan
 
 	go func() {
-		iChan <- RenderInput{
+		th.InputChan <- RenderInput{
 			Command: ThreadRender,
 			Regions: []SharedRegionNumerics{uniformer()},
 		}
-		iChan <- RenderInput{Command: ThreadStop}
+		th.InputChan <- RenderInput{Command: ThreadStop}
+	}()
+
+	stopPump := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-stopPump:
+				return
+			case <-th.ReadyChan:
+				continue
+			}
+		}
 	}()
 
 	go th.Run()
-	out := <- oChan
+	out := <- th.OutputChan
+	stopPump<- true
 
-	const context = "TestThreadRun"
-	threadOutputCheck(t, out, threadOutputExpect{1, 0, 0}, context)
+	threadOutputCheck(t, out, threadOutputExpect{1, 0, 0})
 }
 
 func TestThreadPass(t *testing.T) {
@@ -87,24 +95,22 @@ func TestThreadPass(t *testing.T) {
 	// 1 1C 1C.M
 	all := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider(), collapser()})
 
-	const context = "TestThreadPass"
+	threadOutputCheck(t, zero, threadOutputExpect{})
 
-	threadOutputCheck(t, zero, threadOutputExpect{}, context)
+	threadOutputCheck(t, oneUniform, threadOutputExpect{1, 0, 0})
+	threadOutputCheck(t, twoUniform, threadOutputExpect{2, 0, 0})
 
-	threadOutputCheck(t, oneUniform, threadOutputExpect{1, 0, 0}, context)
-	threadOutputCheck(t, twoUniform, threadOutputExpect{2, 0, 0}, context)
+	threadOutputCheck(t, oneChild, threadOutputExpect{0, children, 0})
+	threadOutputCheck(t, twoChild, threadOutputExpect{0, 2 * children, 0})
 
-	threadOutputCheck(t, oneChild, threadOutputExpect{0, children, 0}, context)
-	threadOutputCheck(t, twoChild, threadOutputExpect{0, 2 * children, 0}, context)
+	threadOutputCheck(t, oneMember, threadOutputExpect{0, 0, collapseCount})
+	threadOutputCheck(t, twoMember, threadOutputExpect{0, 0, 2 * collapseCount})
 
-	threadOutputCheck(t, oneMember, threadOutputExpect{0, 0, collapseCount}, context)
-	threadOutputCheck(t, twoMember, threadOutputExpect{0, 0, 2 * collapseCount}, context)
+	threadOutputCheck(t, oneUniOneChild, threadOutputExpect{1, children, 0})
+	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseCount})
+	threadOutputCheck(t, oneChildOneMember, threadOutputExpect{0, children, collapseCount})
 
-	threadOutputCheck(t, oneUniOneChild, threadOutputExpect{1, children, 0}, context)
-	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseCount}, context)
-	threadOutputCheck(t, oneChildOneMember, threadOutputExpect{0, children, collapseCount}, context)
-
-	threadOutputCheck(t, all, threadOutputExpect{1, children, collapseCount}, context)
+	threadOutputCheck(t, all, threadOutputExpect{1, children, collapseCount})
 }
 
 func TestThreadStep(t *testing.T) {
@@ -133,10 +139,9 @@ func TestThreadStep(t *testing.T) {
 		t.Error("Expected methods not called on uniform region:", uni)
 	}
 
-	const context = "TestThreadStep"
-	threadOutputCheck(t, collapsed, threadOutputExpect{0, 0, collapseCount}, context)
-	threadOutputCheck(t, subdivided, threadOutputExpect{0, children, 0}, context)
-	threadOutputCheck(t, uniformed, threadOutputExpect{1, 0, 0}, context)
+	threadOutputCheck(t, collapsed, threadOutputExpect{0, 0, collapseCount})
+	threadOutputCheck(t, subdivided, threadOutputExpect{0, children, 0})
+	threadOutputCheck(t, uniformed, threadOutputExpect{1, 0, 0})
 }
 
 func stepOkayGeneral(mock *MockNumerics) bool {
@@ -176,7 +181,7 @@ func mocker(path region.RegionType) *MockNumerics {
 	return mock
 }
 
-func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExpect, context string) {
+func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExpect) {
 	actualUniformCount := len(actual.UniformRegions)
 	actualChildCount := len(actual.Children)
 	actualMemberCount := len(actual.Members)
@@ -185,8 +190,7 @@ func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExp
 	okay = okay && actualChildCount == expect.children
 	okay = okay && actualUniformCount == expect.uniform
 	if !okay {
-		t.Error("In context", context,
-			"expected output counts", expect, "but received (",
+		t.Error("Expected output counts", expect, "but received (",
 			actualUniformCount, actualChildCount, actualMemberCount, ")")
 	}
 }
@@ -206,6 +210,10 @@ func threadStepOutput(numerics SharedRegionNumerics) RenderOutput {
 
 func createThread() RenderThread {
 	return RenderThread{
+		InputChan:  make(chan RenderInput),
+		OutputChan: make(chan RenderOutput),
+		ReadyChan: make(chan bool, 1),
+		WorkingChan: make(chan bool, 1),
 		RegionConfig: region.RegionConfig{
 			CollapseSize: collapseSize,
 		},
