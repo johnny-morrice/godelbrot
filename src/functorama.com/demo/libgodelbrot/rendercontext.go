@@ -1,10 +1,7 @@
 package libgodelbrot
 
 import (
-	"fmt"
 	"image"
-	"log"
-	"math"
 	"math/big"
 	"runtime"
 	"strconv"

@@ -1,4 +1,4 @@
-package base
+package libgodelbrot
 
 import (
 	"image"

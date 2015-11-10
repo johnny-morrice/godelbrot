@@ -219,7 +219,7 @@ func TestInitRenderStrategy(t *testing.T) {
 	renderCheck(t, autoBigConcurrent, ConcurrentRenderMode)
 	renderCheck(t, autoNativeConcurrent, ConcurrentRenderMode)
 
-	modes := []RenderMode[RegionRenderMode, SequenceRenderMode, ConcurrentRenderMode]
+	modes := []RenderMode{RegionRenderMode, SequenceRenderMode, ConcurrentRenderMode}
 	for _, mode := range modes {
 		manual.info.UserDescription.Numerics = mode
 		renderCheck(t, manual, mode)

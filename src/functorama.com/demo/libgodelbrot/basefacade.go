@@ -1,5 +1,9 @@
 package libgodelbrot
 
+import (
+    "functorama.com/demo/base"
+)
+
 type BaseFacade struct {
     config base.BaseConfig
 
@@ -14,7 +18,7 @@ func NewBaseFacade(info *RenderInfo) *BaseFacade {
             IterateLimit: desc.IterateLimit,
             DivergeLimit: desc.DivergeLimit,
             FixAspect: desc.FixAspect,
-        }
+        },
     }
 }
 

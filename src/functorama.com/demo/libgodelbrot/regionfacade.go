@@ -1,9 +1,13 @@
 package libgodelbrot
 
+import (
+    "functorama.com/demo/region"
+)
+
 type RegionFacade struct {
     *BaseFacade
     *DrawFacade
-    regionConfig RegionConfig
+    regionConfig region.RegionConfig
     factory GodelbrotRegionNumericsFactory
 }
 

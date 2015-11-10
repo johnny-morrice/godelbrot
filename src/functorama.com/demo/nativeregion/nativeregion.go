@@ -1,4 +1,4 @@
-package nativeregion
+package nativeRegion
 
 import (
 	"image"
@@ -10,7 +10,7 @@ import (
 
 type nativeSubregion struct {
 	populated bool
-	children  []NativeRegion
+	children  []nativeRegion
 }
 
 type nativeMandelbrotThunk struct {
@@ -18,7 +18,7 @@ type nativeMandelbrotThunk struct {
 	evaluated bool
 }
 
-type NativeRegion struct {
+type nativeRegion struct {
 	topLeft     nativeMandelbrotThunk
 	topRight    nativeMandelbrotThunk
 	bottomLeft  nativeMandelbrotThunk
@@ -26,7 +26,7 @@ type NativeRegion struct {
 	midPoint    nativeMandelbrotThunk
 }
 
-func (region *NativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
+func (region *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
 	l, t := base.PlaneToPixel(region.topLeft.C)
 	r, b := base.PlaneToPixel(region.bottomRight.C)
 	return image.Rect(int(l), int(t), int(r), int(b))
@@ -36,7 +36,7 @@ func (region *NativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rect
 type NativeRegionNumerics struct {
 	region.RegionConfig
 	nativebase.NativeBaseNumerics
-	Region             NativeRegion
+	Region             nativeRegion
 	SequenceNumerics   *nativesequence.NativeSequenceNumerics
 	subregion          nativeSubregion
 }
@@ -73,7 +73,7 @@ func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
 
 // Return the children of this region without hiding their types
 // This implementation does not create many new objects
-func (native *NativeRegionNumerics) NativeChildRegions() []NativeRegion {
+func (native *NativeRegionNumerics) NativeChildRegions() []nativeRegion {
 	if native.subregion.populated {
 		return native.subregion.children
 	}
@@ -92,7 +92,7 @@ func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
 	}
 }
 
-func (native *NativeRegionNumerics) Proxy(region NativeRegion) NativeRegionProxy {
+func (native *NativeRegionNumerics) Proxy(region nativeRegion) NativeRegionProxy {
 	return NativeRegionProxy{
 		LocalRegion:   region,
 		NativeRegionNumerics: native,
@@ -128,8 +128,8 @@ func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
 }
 
 // A glitch is possible when points are uniform near the set
-// Due to the shape of the set, a rectangular Nativeregion is not a good approximation
-// An anologous glitch happens when the entire Nativeregion is much larger than the set
+// Due to the shape of the set, a rectangular nativeRegion is not a good approximation
+// An anologous glitch happens when the entire nativeRegion is much larger than the set
 // We handle both these cases here
 func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
 	r := native.Region
@@ -193,28 +193,28 @@ func (native *NativeRegionNumerics) Split() {
 	bottomLeftMid := native.createThunk(complex(leftSectorMid, bottomSectorMid))
 	bottomRightMid := native.createThunk(complex(rightSectorMid, bottomSectorMid))
 
-	tl := NativeRegion{
+	tl := nativeRegion{
 		topLeft:     r.topLeft,
 		topRight:    topSideMid,
 		bottomLeft:  leftSideMid,
 		bottomRight: r.midPoint,
 		midPoint:    topLeftMid,
 	}
-	tr := NativeRegion{
+	tr := nativeRegion{
 		topLeft:     topSideMid,
 		topRight:    r.topRight,
 		bottomLeft:  r.midPoint,
 		bottomRight: rightSideMid,
 		midPoint:    topRightMid,
 	}
-	bl := NativeRegion{
+	bl := nativeRegion{
 		topLeft:     leftSideMid,
 		topRight:    r.midPoint,
 		bottomLeft:  r.bottomLeft,
 		bottomRight: bottomSideMid,
 		midPoint:    bottomLeftMid,
 	}
-	br := NativeRegion{
+	br := nativeRegion{
 		topLeft:     r.midPoint,
 		topRight:    rightSideMid,
 		bottomLeft:  bottomSideMid,
@@ -224,7 +224,7 @@ func (native *NativeRegionNumerics) Split() {
 
 	native.subregion = nativeSubregion{
 		populated: true,
-		children:  []NativeRegion{tl, tr, bl, br},
+		children:  []nativeRegion{tl, tr, bl, br},
 	}
 }
 
@@ -256,7 +256,7 @@ func (native *NativeRegionNumerics) thunks() []nativeMandelbrotThunk {
 	}
 }
 
-func createNativeRegion(min complex128, max complex128) NativeRegion {
+func createNativeRegion(min complex128, max complex128) nativeRegion {
 	left := real(min)
 	right := real(max)
 	top := imag(max)
@@ -278,7 +278,7 @@ func createNativeRegion(min complex128, max complex128) NativeRegion {
 		}
 	}
 
-	region := NativeRegion{
+	region := nativeRegion{
 		topLeft: thunks[0],
 		topRight: thunks[1],
 		bottomLeft: thunks[2],

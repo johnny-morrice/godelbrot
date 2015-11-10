@@ -1,5 +1,9 @@
 package libgodelbrot
 
+import (
+	"image"
+)
+
 // Draw the Mandelbrot set.  This is the main entry point to libgodelbrot
 func Godelbrot(desc *RenderDescription) (image.NRGBA, error) {
 	facade, _, err := GodelbrotRenderContext(desc)

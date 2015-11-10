@@ -8,7 +8,7 @@ import (
 
 type DrawFacade struct {
     picture *image.NRGBA
-    colors Palette
+    colors draw.Palette
 }
 
 var _ draw.DrawingContext = (*DrawFacade)(nil)
@@ -33,7 +33,7 @@ func createImage(info *RenderInfo) *image.NRGBA {
     return image.NewNRGBA(bounds)
 }
 
-func createStoredPalette(info *RenderInfo) Palette {
+func createStoredPalette(info *RenderInfo) draw.Palette {
     palettes := map[string]PaletteFactory{
         "redscale": NewRedscalePalette,
         "pretty":   NewPrettyPalette,
@@ -46,12 +46,12 @@ func createStoredPalette(info *RenderInfo) Palette {
     return found
 }
 
-func createPalette(info *RenderInfo) Palette {
+func createPalette(info *RenderInfo) draw.Palette {
     desc := info.UserDescription
     // We are planning more types of palettes soon
     switch desc.PaletteType {
     case StoredPalette:
-        return draw.createStoredPalette(desc.PaletteCode)
+        return createStoredPalette(desc.PaletteCode)
     default:
         log.Panic("Unknown palette kind:", desc.PaletteType)
     }
