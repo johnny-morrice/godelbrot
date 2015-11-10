@@ -71,18 +71,83 @@ func TestTrackerCirculate(t *testing.T) {
 		schedule: make(chan chan RenderInput),
 	}
 
-	region := &MockNumerics{}
+	expectedRegion := &MockNumerics{}
 
 	// Feed input
-	inputChan := make(chan RenderInput)
+	workerInput := make(chan RenderInput)
 	go func() {
-		tracker.schedule<- inputChan	
+		tracker.schedule<- workerInput	
 	}()
 	go func() {
-		tracker.childChan<- region
+		tracker.childChan<- expectedRegion
 	}()
+	done := make(chan bool, 1)
+	go func() {
+		tracker.circulate()
+		done<- true
+	}
 
+	// Test input
+	abstractNumerics <-workerInput
+	actualRegion := abstractNumerics.(*MockNumerics)
+	if actualRegion != expectedRegion {
+		t.Error("Expected", expectedRegion,
+			"but received", actualRegion)
+	}
 
+	// Test shutdown
+	go func() {
+		tracker.workersDone<- true
+		timeout(t, func() { return done })
+	}
+}
+
+func TestTrackerScheduleWorkers(t *testing.T) {
+	const jobCount = 2
+	tracker := &RenderTracker{
+		workers: make([]Worker, jobCount),
+		schedule: make(chan chan RenderInput),
+		stateChan: make(chan workerState),
+		workerOutput: RenderOutput{
+			UniformRegions: make(chan SharedRegionNumerics),
+			Children: make(chan SharedRegionNumerics),
+			Members: make(chan base.PixelMember),
+		},
+	}
+
+	app := &MockRenderApplication{}
+	factory := NewWorkerFactory(app)
+
+	workerA := factory.Build(tracker.workerOutput)
+	workerB := factory.Build(tracker.workerOutput)
+
+	tracker.workers = []Worker{workerA, workerB}
+
+	// Run schedule process
+	stop := tracker.scheduleWorkers()
+
+	// Test input scheduling
+	go func() {
+		workerA.ReadyChan<- true
+	}
+	actualA := <-tracker.schedule
+
+	if actualA != workerA.inputChan {
+		t.Error("Expected", workerA.inputChan,
+			"but received", actualA)
+	}
+
+	go func() {
+		workerB.ReadyChan<- true
+	}
+	actualB := <-tracker.schedule
+
+	if actualB != workerB.inputChan {
+		t.Error("Expected", workerB.inputChan,
+			"but received", actualB)
+	}
+
+	stop<- true
 }
 
 // todo find a library that does this already
