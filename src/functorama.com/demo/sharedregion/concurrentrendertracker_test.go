@@ -29,55 +29,6 @@ func TestNewRenderTracker(t *testing.T) {
 	}
 }
 
-func TestStashUniforms(t *testing.T) {
-	mockA := &MockNumerics{}
-	mockB := &MockNumerics{}
-	uniforms := []SharedRegionNumerics{mockA, mockB}
-
-	tracker := &RenderTracker{
-		uniformChan: make(chan SharedRegionNumerics),
-	}
-
-	go tracker.stashUniforms(uniforms)
-
-	actualAGen := <-tracker.uniformChan
-	actualBGen := <-tracker.uniformChan
-
-	actualA := actualAGen.(*MockNumerics)
-	actualB := actualBGen.(*MockNumerics)
-
-	if actualA != mockA {
-		t.Error("Expected", mockA, "but received", actualA)
-	}
-
-	if actualB != mockB {
-		t.Error("Expected", mockB, "but received", actualB)
-	}
-}
-
-func TestStashMembers(t *testing.T) {
-	pointA := base.PixelMember{I: 1}
-	pointB := base.PixelMember{I: 2}
-	points := []base.PixelMember{pointA, pointB}
-
-	tracker := &RenderTracker{
-		memberChan: make(chan base.PixelMember),
-	}
-
-	go tracker.stashMembers(points)
-
-	actualA := <-tracker.uniformChan
-	actualB := <-tracker.uniformChan
-
-	if actualA != pointA {
-		t.Error("Expected", pointA, "but received", actualA)
-	}
-
-	if actualB != pointB {
-		t.Error("Expected", pointB, "but received", actualB)
-	}
-}
-
 func TestTrackerDraw(t *testing.T) {
 	const iterateLimit = 255
 	uniform := uniformer()
@@ -101,7 +52,8 @@ func TestTrackerDraw(t *testing.T) {
 		close(tracker.memberChan)
 	}()
 
-	tracker.draw()
+	drawPackets := tracker.syncDrawing
+	tracker.draw(drawPackets)
 
 	if !(uniform.TRect && uniform.TRegionMember) {
 		t.Error("Expected method not called on uniform region:", *uniform)
@@ -110,6 +62,27 @@ func TestTrackerDraw(t *testing.T) {
 	if !(context.TPicture && context.TColors) {
 		t.Error("Expected method not called on drawing context")
 	}
+}
+
+func TestTrackerCirculate(t *testing.T) {
+	tracker := &RenderTracker{
+		workersDone: make(chan bool),
+		childChan: make(chan SharedRegionNumerics),
+		schedule: make(chan chan RenderInput),
+	}
+
+	region := &MockNumerics{}
+
+	// Feed input
+	inputChan := make(chan RenderInput)
+	go func() {
+		tracker.schedule<- inputChan	
+	}()
+	go func() {
+		tracker.childChan<- region
+	}()
+
+
 }
 
 // todo find a library that does this already

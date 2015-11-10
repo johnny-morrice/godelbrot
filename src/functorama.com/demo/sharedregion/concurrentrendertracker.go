@@ -1,6 +1,7 @@
 package sharedregion
 
 import (
+	"sync"
 	"functorama.com/demo/base"
 	"functorama.com/demo/draw"
 	"functorama.com/demo/region"
@@ -29,6 +30,12 @@ type RenderTracker struct {
 type workerState struct {
 	workerId int
 	waiting bool
+}
+
+type drawPacket struct {
+	isRegion bool
+	uniform SharedRegionNumerics
+	point base.PixelMember
 }
 
 func NewRenderTracker(app RenderApplication) *RenderTracker {
@@ -61,35 +68,64 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 	return &tracker
 }
 
-// draw to the image
-func (tracker *RenderTracker) drawUniforms() {
-	for uniform := range tracker.uniformChan {
-		uniform.GrabWorkerPrototype(tracker.jobs)
-		uniform.ClaimExtrinsics()
-		region.DrawUniform(tracker.context, uniform)
+func (tracker *RenderTracker) syncDrawing() chan<- drawPacket {
+	// The number of goroutines we plan to spawn here
+	const spawnCount = 2
+
+	drawSync := make(chan drawPacket)
+	wg := sync.WaitGroup{}
+	wg.Add(spawnCount)
+
+	go func() {
+		for uni := range tracker.uniformChan {
+			drawSync<- drawPacket{isRegion: true, uniform: uni}
+		}
+		wg.Done()
 	}
+
+	go func() {
+		for member := range tracker.memberChan {
+			drawSync<- drawPacket{isRegion: false, point: member}
+		}
+		wg.Done()
+	}
+
+	go func() {
+		wg.Wait()
+		close(drawSync)
+	}
+
+	return drawSync
 }
 
-func (tracker *RenderTracker) drawMembers() {
-	for member := range tracker.memberChan {
-		draw.DrawPoint(tracker.context, member)
+// draw to the image
+func (tracker *RenderTracker) draw(packets chan<- drawPacket) {
+	for packet := range packets {
+		if packet.isRegion {
+			uniform.GrabWorkerPrototype(tracker.jobs)
+			uniform.ClaimExtrinsics()
+			region.DrawUniform(tracker.context, uniform)
+		} else {
+			draw.DrawPoint(tracker.context, member)
+		}
 	}
 }
 
 // We need to stop this
 func (tracker *RenderTracker) circulate()  {
+	shutdown := false
 	for {
 		select {
 		case child := <-tracker.childChan:
+			shutdown = false
 			tracker.addWork(child)
 			continue
-		}
-
-		select {
 		case <-tracker.workersDone:
-			return
+			shutdown = true
 		default:
-			continue
+			if shutdown {
+				return
+			}
 		}
 	}
 }
@@ -135,8 +171,14 @@ func (tracker *RenderTracker) detectEnd() {
 				break
 			}
 		}
-		// Shut down the thread pool
+
+		// Indicate that the workers have finished
 		if allWaiting {
+			// Wait on each worker
+			// They may have data to send
+			for _, worker := range tracker.workers {
+				worker.hold.Wait()
+			}
 			tracker.workersDone<- true
 		}
 	}
@@ -154,8 +196,8 @@ func (tracker *RenderTracker) Render() {
 	go func() { tracker.workers[0].InputChan<- RenderInput{tracker.initialRegion} }()
 	go tracker.scheduleWorkers()
 	go tracker.detectEnd()
-	go tracker.drawUniforms()
-	go tracker.drawMembers()
+	packets := tracker.syncDrawing(packets)
+	go tracker.draw(packets)
 
 	// Circulate output to input until the fractal is drawn
 	tracker.circulate()

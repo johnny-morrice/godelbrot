@@ -55,6 +55,9 @@ func (factory *WorkerFactory) Build(outputChannels RenderOutput) *Worker {
 	return worker
 }
 
+
+// TODO introduce dead-wait status to indicate that data is flushed
+
 // Implements a single Render worker
 func (worker *Worker) Run() {
 	busy := true
