@@ -31,7 +31,7 @@ func TestCreateNativeSharedRegion(t *testing.T) {
 	}
 }
 
-func TestRegionGrabThreadPrototypeEdge(t *testing.T) {
+func TestRegionGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
 	region := createRegion()
 	shared := CreateNativeSharedRegion(region, jobCount)
@@ -40,7 +40,7 @@ func TestRegionGrabThreadPrototypeEdge(t *testing.T) {
 }
 
 
-func TestRegionGrabThreadPrototypeParallel(t *testing.T) {
+func TestRegionGrabWorkerPrototypeParallel(t *testing.T) {
 	// We are testing that one thread can mutate its own state without touching that of others
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
@@ -76,7 +76,7 @@ func TestSharedChildren(t *testing.T) {
 	}
 }
 
-func TestSequenceGrabThreadPrototypeParallel(t *testing.T) {
+func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
 	}
@@ -91,7 +91,7 @@ func TestSequenceGrabThreadPrototypeParallel(t *testing.T) {
 	testMutantParallel(t, sequence, jobCount)
 }
 
-func TestSequenceGrabThreadPrototypeEdge(t *testing.T) {
+func TestSequenceGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
 	region := createRegion()
 	shared := CreateNativeSharedRegion(region, jobCount)
@@ -119,24 +119,24 @@ func expectPanic(t *testing.T, broken func()) {
 }
 
 type mutator interface {
-	sharedregion.OpaqueThreadPrototype
+	sharedregion.OpaqueWorkerPrototype
 	mutate()
 	isMutant() bool
-	id() uint
+	id() uint16
 }
 
-func testMutantParallel(t *testing.T, shared mutator, jobCount uint) {
+func testMutantParallel(t *testing.T, shared mutator, jobCount uint16) {
 	const runs = 10000
 	const mutantId = 0
 
 	hold := sync.WaitGroup{}
 
-	checkDiverge := func(threadId uint, local mutator) {
+	checkDiverge := func(workerId uint16, local mutator) {
 		hold.Add(1)
 		defer hold.Done()
 		for i := 0; i < runs; i++ {
-			local.GrabThreadPrototype(threadId)
-			if threadId == mutantId {
+			local.GrabWorkerPrototype(workerId)
+			if workerId == mutantId {
 				if i == 0 {
 					local.mutate()
 				} else {
@@ -152,30 +152,30 @@ func testMutantParallel(t *testing.T, shared mutator, jobCount uint) {
 		}
 	}
 
-	for threadId := uint(0); threadId < jobCount; threadId++ {
-		go checkDiverge(threadId, shared)
+	for workerId := uint16(0); workerId < jobCount; workerId++ {
+		go checkDiverge(workerId, shared)
 	}
 
 	hold.Wait()
 }
 
 func testMutantEdge(t *testing.T, shared mutator) {
-	const successId uint = 0
-	const badId uint = 1000
+	const successId uint16 = 0
+	const badId uint16 = 1000
 
-	shared.GrabThreadPrototype(successId)
+	shared.GrabWorkerPrototype(successId)
 	if shared.id() != successId {
-		t.Error("Expected threadId", successId,
+		t.Error("Expected workerId", successId,
 			"but received", shared.id())
 	}
 
-	expectPanic(t, func() { shared.GrabThreadPrototype(badId) })
+	expectPanic(t, func() { shared.GrabWorkerPrototype(badId) })
 }
 
 const mutateDiverge = 4.0
 
-func (region NativeSharedRegion) id() uint {
-	return region.threadId
+func (region NativeSharedRegion) id() uint16 {
+	return region.workerId
 }
 
 func (region NativeSharedRegion) mutate() {
@@ -186,8 +186,8 @@ func (region NativeSharedRegion) isMutant() bool {
 	return region.SqrtDivergeLimit == mutateDiverge
 }
 
-func (sequence NativeSharedSequence) id() uint {
-	return sequence.threadId
+func (sequence NativeSharedSequence) id() uint16 {
+	return sequence.workerId
 }
 
 func (sequence NativeSharedSequence) mutate() {

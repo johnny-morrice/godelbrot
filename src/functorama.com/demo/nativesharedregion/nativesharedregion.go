@@ -13,17 +13,19 @@ type NativeSharedRegion struct {
     sequencePrototypes []*nativesequence.NativeSequenceNumerics
 }
 
-func CreateNativeSharedRegion(numerics *nativeregion.NativeRegionNumerics, jobs uint) NativeSharedRegion {
+var _ sharedregion.SharedRegionNumerics = NativeSharedRegion{}
+
+func CreateNativeSharedRegion(numerics *nativeregion.NativeRegionNumerics, jobs uint16) NativeSharedRegion {
     shared := NativeSharedRegion{
         prototypes: make([]*nativeregion.NativeRegionNumerics, jobs),
         sequencePrototypes: make([]*nativesequence.NativeSequenceNumerics, jobs),
     }
-    for i := uint(0); i < jobs; i++ {
+    for i := uint16(0); i < jobs; i++ {
         // Copy
         shared.prototypes[i] = &*numerics
         shared.sequencePrototypes[i] = shared.prototypes[i].SequenceNumerics
     }
-    initLocal := &shared.prototypes[0]
+    initLocal := shared.prototypes[0]
     shared.NativeRegionProxy = nativeregion.NativeRegionProxy{
         NativeRegionNumerics: initLocal,
         LocalRegion: initLocal.Region,
@@ -32,8 +34,8 @@ func CreateNativeSharedRegion(numerics *nativeregion.NativeRegionNumerics, jobs 
     return shared
 }
 
-func (shared NativeSharedRegion) GrabThreadPrototype(workerId uint) {
-    shared.NativeRegionNumerics = &shared.prototypes[workerId]
+func (shared NativeSharedRegion) GrabWorkerPrototype(workerId uint16) {
+    shared.NativeRegionNumerics = shared.prototypes[workerId]
     shared.workerId = workerId
 }
 
@@ -60,7 +62,7 @@ func (shared NativeSharedRegion) SharedRegionSequence() sharedregion.SharedSeque
 func (shared NativeSharedRegion) NativeSharedSequence() NativeSharedSequence {
     return NativeSharedSequence{
         NativeSequenceProxy: nativeregion.NativeSequenceProxy{
-            NativeSequenceNumerics: &shared.sequencePrototypes[shared.workerId],
+            NativeSequenceNumerics: shared.sequencePrototypes[shared.workerId],
             LocalRegion: shared.Region,
         },
         prototypes: shared.sequencePrototypes,
@@ -70,10 +72,12 @@ func (shared NativeSharedRegion) NativeSharedSequence() NativeSharedSequence {
 type NativeSharedSequence struct {
     nativeregion.NativeSequenceProxy
     prototypes []*nativesequence.NativeSequenceNumerics
-    workerId uint
+    workerId uint16
 }
 
-func (shared NativeSharedSequence) GrabThreadPrototype(workerId uint) {
-    shared.NativeSequenceNumerics = &shared.prototypes[workerId]
+var _ sharedregion.SharedSequenceNumerics = NativeSharedSequence{}
+
+func (shared NativeSharedSequence) GrabWorkerPrototype(workerId uint16) {
+    shared.NativeSequenceNumerics = shared.prototypes[workerId]
     shared.workerId = workerId
 }
