@@ -8,4 +8,4 @@ src/github.com
 src/golang.org
 *.memprof
 *.cpuprof
-
+scratch
