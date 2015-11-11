@@ -1,4 +1,4 @@
-package nativeRegion
+package nativeregion
 
 import (
 	"image"
@@ -41,13 +41,16 @@ type NativeRegionNumerics struct {
 	subregion          nativeSubregion
 }
 
-func NewRegionNumerics(specialized nativebase.NativeBaseNumerics, config region.RegionConfig, sequence SequenceNumerics) &NativeRegionNumerics {
+// Check that we implement the interface
+var _ region.RegionNumerics = (*NativeRegionNumerics)(nil)
+
+func NewRegionNumerics(specialized nativebase.NativeBaseNumerics, config region.RegionConfig, seq *nativesequence.NativeSequenceNumerics) *NativeRegionNumerics {
 	planeMin := complex(specialized.RealMin, specialized.ImagMin)
 	planeMax := complex(specialized.RealMax, specialized.ImagMax)
 	return &NativeRegionNumerics{
 		RegionConfig: config,
 		NativeBaseNumerics: specialized,
-		SequenceNumerics: sequence
+		SequenceNumerics: seq,
 		Region: createNativeRegion(planeMin, planeMax),
 	}
 }

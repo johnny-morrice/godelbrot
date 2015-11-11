@@ -1,13 +1,17 @@
 package nativeregion
 
 import (
+    "functorama.com/demo/region"
 	"functorama.com/demo/nativesequence"
 )
 
 type NativeRegionProxy struct {
 	*NativeRegionNumerics
-	LocalRegion   NativeRegion
+	LocalRegion   nativeRegion
 }
+
+// Check we implement the interface
+var _ region.RegionNumerics = NativeRegionProxy{}
 
 func (proxy NativeRegionProxy) ClaimExtrinsics() {
 	proxy.NativeRegionNumerics.Region = proxy.LocalRegion
@@ -15,7 +19,7 @@ func (proxy NativeRegionProxy) ClaimExtrinsics() {
 
 type NativeSequenceProxy struct {
 	*nativesequence.NativeSequenceNumerics
-	LocalRegion   NativeRegion
+	LocalRegion   nativeRegion
 }
 
 func (proxy NativeSequenceProxy) ClaimExtrinsics() {

@@ -9,7 +9,7 @@ import (
 
 func TestNativeProxyRegionClaimExtrinsics(t *testing.T) {
 	native := NativeRegionProxy{
-		LocalRegion: NativeRegion{
+		LocalRegion: nativeRegion{
 			topLeft: nativeMandelbrotThunk{
 				evaluated: true,
 			},

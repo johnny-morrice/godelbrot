@@ -51,7 +51,7 @@ func TestChildrenPopulated(t *testing.T) {
 		subregion: nativeSubregion{
 			populated: true,
 			// We are not inspecting the children here
-			children: make([]NativeRegion, inputChildCount),
+			children: make([]nativeRegion, inputChildCount),
 		},
 	}
 	children := numerics.Children()
@@ -177,7 +177,7 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 
 	subjectRegion := createNativeRegion(initMin, initMax)
 
-	expected := []NativeRegion{
+	expected := []nativeRegion{
 		createNativeRegion(topLeftMin, topLeftMax),
 		createNativeRegion(topRightMin, topRightMax),
 		createNativeRegion(bottomLeftMin, bottomLeftMax),
@@ -211,7 +211,7 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 	}
 }
 
-func thunks(region NativeRegion) []nativeMandelbrotThunk {
+func thunks(region nativeRegion) []nativeMandelbrotThunk {
 	return []nativeMandelbrotThunk{
 		region.topLeft,
 		region.topRight,
