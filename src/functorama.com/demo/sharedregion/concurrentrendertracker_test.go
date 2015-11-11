@@ -137,17 +137,39 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 			"but received", actualA)
 	}
 
-	go func() {
-		workerB.ReadyChan<- true
-	}
-	actualB := <-tracker.schedule
+	stateA := <-tracker.stateChan
+	expectStateA := workerState{0, true}
+	if stateA != expectStateA {
+		t.Error("Expected", expectStateA,
+			"but received", stateA)
+	} 
 
-	if actualB != workerB.inputChan {
-		t.Error("Expected", workerB.inputChan,
-			"but received", actualB)
+	go func() {
+		workerB.ReadyChan<- false
+	}
+
+	stateB := <-tracker.stateChan
+	expectStateB := workerState{1, false}
+	if stateB != expectStateB {
+		t.Error("Expected", expectStateB,
+			"but received", stateB)
 	}
 
 	stop<- true
+}
+
+func TestTrackerDetectEnd(t *testing.T) {
+	if testing.Short {
+		
+	}
+
+	const jobCount = 2
+
+	tracker := &RenderTracker{
+		jobs: jobCount,
+		stateChan: make(chan workerState),
+		workersDone: make(chan bool),
+	}
 }
 
 // todo find a library that does this already
