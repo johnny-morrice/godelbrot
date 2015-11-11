@@ -46,7 +46,7 @@ func TestNewRegionRenderer(t *testing.T) {
 
 func TestRender(t *testing.T) {
 	const iterateLimit uint8 = 200
-	const collapseSize uint = 40
+	const collapseSize int = 40
     expectedPic := image.NewNRGBA(image.ZR)
     mockPalette := &draw.MockPalette{}
     context := &draw.MockDrawingContext{
@@ -54,18 +54,24 @@ func TestRender(t *testing.T) {
         Col: mockPalette,
     }
     collapseSequence := &MockProxySequence{}
-    uniform := &MockNumerics{Path: UniformPath}
+    uniform := &MockNumerics{
+        Path: UniformPath,
+        AppCollapseSize: collapseSize,
+    }
     collapse := &MockNumerics{
     	Path: CollapsePath,
     	MockSequence: collapseSequence,
+        AppCollapseSize: collapseSize,
     }
     mockNumerics := &MockNumerics{
     	Path: SubdividePath,
     	MockChildren: []*MockNumerics{uniform, collapse},
+        MockSequence: &MockProxySequence{},
+        AppCollapseSize: collapseSize,
     }
     factory := &MockFactory{Numerics: mockNumerics}
     baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
-    regionConfig := RegionConfig{CollapseSize: collapseSize}
+    regionConfig := RegionConfig{CollapseSize: uint(collapseSize)}
     renderer := RegionRenderStrategy{
     	factory: factory,
         context: context,
@@ -108,12 +114,13 @@ func TestRender(t *testing.T) {
 
 func TestSubdivideRegions(t *testing.T) {
 	const iterateLimit uint8 = 200
-	const collapseSize uint = 40
-    uniform := &MockNumerics{Path: UniformPath}
-    collapse := &MockNumerics{Path: CollapsePath}
+	const collapseSize = 40
+    uniform := newMockNumerics(UniformPath, collapseSize)
+    collapse := newMockNumerics(CollapsePath, collapseSize)
     mock := &MockNumerics{
     	Path: SubdividePath,
     	MockChildren: []*MockNumerics{uniform, collapse},
+        AppCollapseSize: collapseSize,
     }
     baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
     regionConfig := RegionConfig{CollapseSize: collapseSize}

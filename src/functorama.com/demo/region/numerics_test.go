@@ -130,11 +130,19 @@ func TestUniform(t *testing.T) {
     }
 }
 
+func newMockNumerics(path RegionType, collapseSize int) *MockNumerics {
+    return &MockNumerics{
+        Path: path,
+        AppCollapseSize: collapseSize,
+    }
+}
+
 func TestCollapse(t *testing.T) {
-    uniform := &MockNumerics{Path: UniformPath}
-    collapse := &MockNumerics{Path: CollapsePath}
-    subdivide := &MockNumerics{Path: SubdividePath}
-    glitch := &MockNumerics{Path: GlitchPath}
+    const collapseSize = 10
+    uniform := newMockNumerics(UniformPath, collapseSize)
+    collapse := newMockNumerics(CollapsePath, collapseSize)
+    subdivide := newMockNumerics(SubdividePath, collapseSize)
+    glitch := newMockNumerics(GlitchPath, collapseSize)
 
     numerics := []RegionNumerics{uniform, glitch, subdivide, collapse}
     expect := []bool{false, false, false, true}
