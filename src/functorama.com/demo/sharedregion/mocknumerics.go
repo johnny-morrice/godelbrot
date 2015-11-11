@@ -5,11 +5,11 @@ import (
 )
 
 type MockThreadPrototype struct {
-    TGrabThreadPrototype bool
+    TGrabWorkerPrototype bool
 }
 
 func (mock *MockThreadPrototype) GrabWorkerPrototype(threadId uint16) {
-    mock.TGrabThreadPrototype = true
+    mock.TGrabWorkerPrototype = true
 }
 
 type MockSequence struct {

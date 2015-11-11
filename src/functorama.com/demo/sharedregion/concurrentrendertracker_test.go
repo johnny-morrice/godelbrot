@@ -11,7 +11,7 @@ import (
 func TestNewRenderTracker(t *testing.T) {
 	const jobCount = 5
 	mock := &MockRenderApplication{}
-	mock.SharedConfig.Jobs = uint32(jobCount)
+	mock.SharedConfig.Jobs = uint16(jobCount)
 	mock.SharedFactory = &MockFactory{}
 	tracker := NewRenderTracker(mock)
 
@@ -38,22 +38,25 @@ func TestTrackerDraw(t *testing.T) {
 		Col: draw.NewRedscalePalette(iterateLimit),
 	}
 	tracker := RenderTracker{
-		uniformChan: make(chan SharedRegionNumerics),
-		memberChan: make(chan base.PixelMember),
+		workerOutput: RenderOutput{
+			UniformRegions: make(chan SharedRegionNumerics),
+			Children: make(chan SharedRegionNumerics),
+			Members: make(chan base.PixelMember),
+		},
 		context:    context,
 	}
 
 	go func() {
-		tracker.uniformChan<- uniform
-		close(tracker.uniformChan)
+		tracker.workerOutput.UniformRegions<- uniform
+		close(tracker.workerOutput.UniformRegions)
 	}()
 	go func() {
-		tracker.memberChan<- point
-		close(tracker.memberChan)
+		tracker.workerOutput.Members<- point
+		close(tracker.workerOutput.Members)
 	}()
 
-	drawPackets := tracker.syncDrawing
-	tracker.draw(drawPackets)
+	packets := tracker.syncDrawing()
+	tracker.draw(packets)
 
 	if !(uniform.TRect && uniform.TRegionMember) {
 		t.Error("Expected method not called on uniform region:", *uniform)
@@ -65,10 +68,18 @@ func TestTrackerDraw(t *testing.T) {
 }
 
 func TestTrackerCirculate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping in short mode")
+	}
+
 	tracker := &RenderTracker{
+		workerOutput: RenderOutput{
+			UniformRegions: make(chan SharedRegionNumerics),
+			Children: make(chan SharedRegionNumerics),
+			Members: make(chan base.PixelMember),
+		},
 		workersDone: make(chan bool),
-		childChan: make(chan SharedRegionNumerics),
-		schedule: make(chan chan RenderInput),
+		schedule: make(chan chan<- RenderInput),
 	}
 
 	expectedRegion := &MockNumerics{}
@@ -76,19 +87,21 @@ func TestTrackerCirculate(t *testing.T) {
 	// Feed input
 	workerInput := make(chan RenderInput)
 	go func() {
-		tracker.schedule<- workerInput	
+		tracker.schedule<- workerInput
 	}()
 	go func() {
-		tracker.childChan<- expectedRegion
+		tracker.workerOutput.Children<- expectedRegion
 	}()
+
 	done := make(chan bool, 1)
 	go func() {
 		tracker.circulate()
 		done<- true
-	}
+	}()
 
 	// Test input
-	abstractNumerics <-workerInput
+	actualInput := <-workerInput
+	abstractNumerics := actualInput.Region
 	actualRegion := abstractNumerics.(*MockNumerics)
 	if actualRegion != expectedRegion {
 		t.Error("Expected", expectedRegion,
@@ -98,15 +111,15 @@ func TestTrackerCirculate(t *testing.T) {
 	// Test shutdown
 	go func() {
 		tracker.workersDone<- true
-		timeout(t, func() { return done })
-	}
+		timeout(t, func() <-chan bool { return done })
+	}()
 }
 
 func TestTrackerScheduleWorkers(t *testing.T) {
 	const jobCount = 2
 	tracker := &RenderTracker{
-		workers: make([]Worker, jobCount),
-		schedule: make(chan chan RenderInput),
+		workers: make([]*Worker, jobCount),
+		schedule: make(chan chan<- RenderInput),
 		stateChan: make(chan workerState),
 		workerOutput: RenderOutput{
 			UniformRegions: make(chan SharedRegionNumerics),
@@ -116,24 +129,25 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 	}
 
 	app := &MockRenderApplication{}
-	factory := NewWorkerFactory(app)
+	factory := NewWorkerFactory(app, tracker.workerOutput)
 
-	workerA := factory.Build(tracker.workerOutput)
-	workerB := factory.Build(tracker.workerOutput)
+	workerA := factory.Build()
+	workerB := factory.Build()
 
-	tracker.workers = []Worker{workerA, workerB}
+	tracker.workers = []*Worker{workerA, workerB}
 
 	// Run schedule process
-	stop := tracker.scheduleWorkers()
+	go tracker.scheduleWorkers()
 
 	// Test input scheduling
 	go func() {
-		workerA.ReadyChan<- true
-	}
+		workerA.WaitingChan<- true
+		close(workerA.WaitingChan)
+	}()
 	actualA := <-tracker.schedule
 
-	if actualA != workerA.inputChan {
-		t.Error("Expected", workerA.inputChan,
+	if actualA != workerA.InputChan {
+		t.Error("Expected", workerA.InputChan,
 			"but received", actualA)
 	}
 
@@ -142,11 +156,12 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 	if stateA != expectStateA {
 		t.Error("Expected", expectStateA,
 			"but received", stateA)
-	} 
+	}
 
 	go func() {
-		workerB.ReadyChan<- false
-	}
+		workerB.WaitingChan<- false
+		close(workerB.WaitingChan)
+	}()
 
 	stateB := <-tracker.stateChan
 	expectStateB := workerState{1, false}
@@ -155,21 +170,46 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 			"but received", stateB)
 	}
 
-	stop<- true
+	tracker.stopWorkers()
 }
 
 func TestTrackerDetectEnd(t *testing.T) {
-	if testing.Short {
-		
+	if testing.Short() {
+		t.Skip("Skipping in short mode")
 	}
 
-	const jobCount = 2
+	const jobCount int = 2
 
 	tracker := &RenderTracker{
-		jobs: jobCount,
+		jobs: uint16(jobCount),
 		stateChan: make(chan workerState),
 		workersDone: make(chan bool),
+		workers: make([]*Worker, jobCount),
+		workerOutput: RenderOutput{
+			UniformRegions: make(chan SharedRegionNumerics),
+			Children: make(chan SharedRegionNumerics),
+			Members: make(chan base.PixelMember),
+		},
 	}
+
+	app := &MockRenderApplication{}
+	workerFactory := NewWorkerFactory(app, tracker.workerOutput)
+	for i := 0; i < jobCount; i++ {
+		tracker.workers[i] = workerFactory.Build()
+	}
+
+	go func() {
+		tracker.stateChan<- workerState{0, true}
+	}()
+
+	go func() {
+		tracker.stateChan<- workerState{1, true}
+	}()
+
+	go tracker.detectEnd()
+
+	timeout(t, func() <-chan bool { return tracker.workersDone })
+	close(tracker.stateChan)
 }
 
 // todo find a library that does this already
@@ -187,8 +227,4 @@ func timeout(t *testing.T, f func() <-chan bool) {
 	case <-timer:
 		t.Error("Timed out")
 	}
-}
-
-func sameInput(a RenderInput, b RenderInput) bool {
-	return a.Command != b.Command && len(a.Regions) == len(b.Regions)
 }

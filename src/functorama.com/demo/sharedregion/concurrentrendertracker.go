@@ -37,9 +37,15 @@ type drawPacket struct {
 }
 
 func NewRenderTracker(app RenderApplication) *RenderTracker {
+	output := RenderOutput{
+		UniformRegions: make(chan SharedRegionNumerics),
+		Children: make(chan SharedRegionNumerics),
+		Members: make(chan base.PixelMember),
+	}
+
 	config := app.SharedRegionConfig()
 	iJobs := int(config.Jobs)
-	factory := NewWorkerFactory(app)
+	factory := NewWorkerFactory(app, output)
 
 	tracker := RenderTracker{
 		jobs: config.Jobs,
@@ -49,21 +55,17 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 		config:     config,
 		context:       app.DrawingContext(),
 		initialRegion: app.SharedRegionFactory().Build(),
-		workerOutput: RenderOutput{
-			UniformRegions: make(chan SharedRegionNumerics),
-			Children: make(chan SharedRegionNumerics),
-			Members: make(chan base.PixelMember),
-		}
+		workerOutput: output,
 	}
 
 	for i := 0; i < iJobs; i++ {
-		tracker.workers[i] = factory.Build(tracker.workerOutput)
+		tracker.workers[i] = factory.Build()
 	}
 
 	return &tracker
 }
 
-func (tracker *RenderTracker) syncDrawing() chan<- drawPacket {
+func (tracker *RenderTracker) syncDrawing() <-chan drawPacket {
 	// The number of goroutines we plan to spawn here
 	const spawnCount = 2
 
@@ -72,36 +74,36 @@ func (tracker *RenderTracker) syncDrawing() chan<- drawPacket {
 	wg.Add(spawnCount)
 
 	go func() {
-		for uni := range tracker.uniformChan {
+		for uni := range tracker.workerOutput.UniformRegions {
 			drawSync<- drawPacket{isRegion: true, uniform: uni}
 		}
 		wg.Done()
-	}
+	}()
 
 	go func() {
-		for member := range tracker.memberChan {
+		for member := range tracker.workerOutput.Members {
 			drawSync<- drawPacket{isRegion: false, point: member}
 		}
 		wg.Done()
-	}
+	}()
 
 	go func() {
 		wg.Wait()
 		close(drawSync)
-	}
+	}()
 
 	return drawSync
 }
 
 // draw to the image
-func (tracker *RenderTracker) draw(packets chan<- drawPacket) {
+func (tracker *RenderTracker) draw(packets <-chan drawPacket) {
 	for packet := range packets {
 		if packet.isRegion {
-			uniform.GrabWorkerPrototype(tracker.jobs)
-			uniform.ClaimExtrinsics()
-			region.DrawUniform(tracker.context, uniform)
+			packet.uniform.GrabWorkerPrototype(tracker.jobs)
+			packet.uniform.ClaimExtrinsics()
+			region.DrawUniform(tracker.context, packet.uniform)
 		} else {
-			draw.DrawPoint(tracker.context, member)
+			draw.DrawPoint(tracker.context, packet.point)
 		}
 	}
 }
@@ -111,7 +113,7 @@ func (tracker *RenderTracker) circulate()  {
 	shutdown := false
 	for {
 		select {
-		case child := <-tracker.childChan:
+		case child := <-tracker.workerOutput.Children:
 			shutdown = false
 			tracker.addWork(child)
 			continue
@@ -139,22 +141,17 @@ func (tracker *RenderTracker) addWork(child SharedRegionNumerics) {
 	}()
 }
 
-func (tracker *RenderTracker) scheduleStep() chan<- bool {
-	for running {
-		for i, worker := range tracker.workers {
-			go func() {
-				for ready := range worker.WaitingChan {
-					if ready {
-						tracker.schedule<- worker.InputChan
-					}
-					tracker.stateChan<- workerState{i, ready}
-				}
-			}()
-		}
-}
-
 func (tracker *RenderTracker) scheduleWorkers() {
-	return loop(tracker.scheduleStep)
+	for i, worker := range tracker.workers {
+		go func(id int, slave *Worker) {
+			for ready := range slave.WaitingChan {
+				if ready {
+					tracker.schedule<- slave.InputChan
+				}
+				tracker.stateChan<- workerState{id, ready}
+			}
+		}(i, worker)
+	}
 }
 
 func (tracker *RenderTracker) detectEnd() {
@@ -175,13 +172,21 @@ func (tracker *RenderTracker) detectEnd() {
 		if allWaiting {
 			// Wait on each worker
 			// They may have data to send
+			// This is crucial because it signals the difference between done-for-now and
+			// render-finished
 			for _, worker := range tracker.workers {
-				worker.hold.Wait()
+				worker.Hold.Wait()
 			}
 			tracker.workersDone<- true
 		}
 	}
 
+}
+
+func (tracker *RenderTracker) stopWorkers() {
+	for _, worker := range tracker.workers {
+		close(worker.InputChan)
+	}
 }
 
 // Render the Mandelbrot set concurrently
@@ -194,33 +199,16 @@ func (tracker *RenderTracker) Render() {
 	// Render fractal
 	go func() { tracker.workers[0].InputChan<- RenderInput{tracker.initialRegion} }()
 	go tracker.detectEnd()
-	stop := tracker.scheduleWorkers()
-	packets := tracker.syncDrawing(packets)
+	go tracker.scheduleWorkers()
+
+	packets := tracker.syncDrawing()
 	go tracker.draw(packets)
 
 	// Circulate output to input until the fractal is drawn
 	tracker.circulate()
 
-	close(tracker.uniformChan)
-	close(tracker.memberChan)
+	close(tracker.stateChan)
+	tracker.workerOutput.Close()
 
-	// Shut down workers
-	for _, worker := range tracker.workers {
-		close(worker.InputChan)
-	}
-}
-
-func loop(f func()) chan<- bool {
-	stop := make(chan bool)
-	go func() { 
-		for {
-			// Check for shutdown
-			select {
-			case <-stop:
-				return
-			default:
-			}
-			f()
-		}
-	}
+	tracker.stopWorkers()
 }

@@ -16,6 +16,12 @@ type RenderOutput struct {
 	Members        chan base.PixelMember
 }
 
+func (output RenderOutput) Close() {
+	close(output.UniformRegions)
+	close(output.Children)
+	close(output.Members)
+}
+
 type Worker struct {
 	WorkerId   uint16
 	InputChan  chan RenderInput
@@ -24,32 +30,34 @@ type Worker struct {
 	SharedConfig     SharedRegionConfig
 	RegionConfig 	 region.RegionConfig
 	BaseConfig	base.BaseConfig
-	hold sync.WaitGroup
+	Hold sync.WaitGroup
 }
 
 type WorkerFactory struct {
 	count uint16
 	regionConfig region.RegionConfig
 	sharedConfig SharedRegionConfig
+	output RenderOutput
 }
 
 // Easy method to create Render workers
-func NewWorkerFactory(app RenderApplication) *WorkerFactory {
+func NewWorkerFactory(app RenderApplication, outputChannels RenderOutput) *WorkerFactory {
 	return &WorkerFactory{
 		count: 0,
 		regionConfig: app.RegionConfig(),
 		sharedConfig: app.SharedRegionConfig(),
+		output: outputChannels,
 	}
 }
 
-func (factory *WorkerFactory) Build(outputChannels RenderOutput) *Worker {
+func (factory *WorkerFactory) Build() *Worker {
 	worker := &Worker{
 		WorkerId:   factory.count,
 		InputChan:  make(chan RenderInput),
 		WaitingChan: make(chan bool),
 		SharedConfig:     factory.sharedConfig,
 		RegionConfig:	factory.regionConfig,
-		Output: outputChannels,
+		Output: factory.output,
 	}
 	factory.count++
 	return worker
@@ -100,39 +108,36 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 
 	if region.Collapse(shared, collapseBound) {
 		points := SharedSequenceCollapse(shared, worker.WorkerId, iterateLimit)
-		worker.hold.Add(len(points))
+		worker.Hold.Add(len(points))
 		for _, point := range points {
-			go func() {
-				worker.Output.Members<- point
-				worker.hold.Done()
-			}()
+			go func(member base.PixelMember) {
+				worker.Output.Members<- member
+				worker.Hold.Done()
+			}(point)
 		}
 		return
 	}
 
 	if region.Subdivide(shared, iterateLimit, glitchSamples) {
 		children := shared.SharedChildren()
-		worker.hold.Add(len(children))
+		worker.Hold.Add(len(children))
 		for _, child := range children {
-			go func() {
-				worker.Output.Children<- child
-				worker.hold.Done()
-			}()
+			go func(spawn SharedRegionNumerics) {
+				worker.Output.Children<- spawn
+				worker.Hold.Done()
+			}(child)
 		}
 		return
 	}
 
-	worker.hold.Add(1)
+	worker.Hold.Add(1)
 	go func() {
 		worker.Output.UniformRegions<- shared
-		worker.hold.Done()
+		worker.Hold.Done()
 	}()
 }
 
 func (worker *Worker) closeChannels() {
-	worker.hold.Wait()
-	close(worker.Output.Children)
-	close(worker.Output.UniformRegions)
-	close(worker.Output.Members)
+	worker.Hold.Wait()
 	close(worker.WaitingChan)
 }

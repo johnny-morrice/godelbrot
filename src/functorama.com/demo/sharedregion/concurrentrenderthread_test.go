@@ -2,6 +2,7 @@ package sharedregion
 
 import (
 	"testing"
+	"sync"
 	"functorama.com/demo/base"
 	"functorama.com/demo/region"
 )
@@ -10,116 +11,59 @@ const children = 4
 const collapseCount = 20
 const collapseSize = 10
 
-type threadOutputExpect struct {
+type outputExpect struct {
     uniform  int
     children int
     members  int
 }
 
-func TestRenderThreadFactory(t *testing.T) {
+func TestWorkerFactory(t *testing.T) {
 	mock := &MockRenderApplication{}
-	factory := NewRenderThreadFactory(mock)
+	factory := NewWorkerFactory(mock, RenderOutput{})
 
-	threads := []RenderThread{factory.Build(), factory.Build()}
+	workers := []*Worker{factory.Build(), factory.Build()}
 
 	if !mock.TSharedRegionConfig {
 		t.Error("Mock did not receive expected method call")
 	}
 
-	for i, th := range threads {
-		if th.ThreadId != uint(i) {
-			t.Error("Thread", i, "had incorrect ThreadId: ", th)
+	for i, th := range workers {
+		if th.WorkerId != uint16(i) {
+			t.Error("Worker", i, "had incorrect WorkerId: ", th)
 		}
 	}
 }
 
-func TestThreadRun(t *testing.T) {
-	th := createThread()
+func TestWorkerRun(t *testing.T) {
+	worker := newWorker()
 	const uniformLength = 1
 
 	go func() {
-		th.InputChan <- RenderInput{
-			Command: ThreadRender,
-			Regions: []SharedRegionNumerics{uniformer()},
+		worker.InputChan <- RenderInput{
+			Region: uniformer(),
 		}
-		th.InputChan <- RenderInput{Command: ThreadStop}
+		close(worker.InputChan)
 	}()
 
-	stopPump := make(chan bool)
 	go func() {
-		for {
-			select {
-			case <-stopPump:
-				return
-			case <-th.ReadyChan:
-				continue
-			}
+		for range worker.WaitingChan {
+			// pump the channel
 		}
+		worker.Output.Close()
 	}()
 
-	go th.Run()
-	out := <- th.OutputChan
-	stopPump<- true
+	go worker.Run()
 
-	threadOutputCheck(t, out, threadOutputExpect{1, 0, 0})
+	workerOutputCheck(t, worker, outputExpect{1, 0, 0})
 }
 
-func TestThreadPass(t *testing.T) {
-	// Key: Uniformer Count, Subdivider Count, Member Count
-
-	// 0 0 0
-	zero := threadPassOutput([]SharedRegionNumerics{})
-
-	// 1 0 0
-	oneUniform := threadPassOutput([]SharedRegionNumerics{uniformer()})
-	// 2 0 0
-	twoUniform := threadPassOutput([]SharedRegionNumerics{uniformer(), uniformer()})
-
-	// 0 1C 0
-	oneChild := threadPassOutput([]SharedRegionNumerics{subdivider()})
-	// 0 2C 0
-	twoChild := threadPassOutput([]SharedRegionNumerics{subdivider(), subdivider()})
-
-	// 0 0 1C.M
-	oneMember := threadPassOutput([]SharedRegionNumerics{collapser()})
-	// 0 0 2C.M.
-	twoMember := threadPassOutput([]SharedRegionNumerics{collapser(), collapser()})
-
-	// 1 1C 0
-	oneUniOneChild := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider()})
-	// 1 0 1C.M.
-	oneUniOneMember := threadPassOutput([]SharedRegionNumerics{uniformer(), collapser()})
-	// 0 1C 1C.M
-	oneChildOneMember := threadPassOutput([]SharedRegionNumerics{subdivider(), collapser()})
-
-	// 1 1C 1C.M
-	all := threadPassOutput([]SharedRegionNumerics{uniformer(), subdivider(), collapser()})
-
-	threadOutputCheck(t, zero, threadOutputExpect{})
-
-	threadOutputCheck(t, oneUniform, threadOutputExpect{1, 0, 0})
-	threadOutputCheck(t, twoUniform, threadOutputExpect{2, 0, 0})
-
-	threadOutputCheck(t, oneChild, threadOutputExpect{0, children, 0})
-	threadOutputCheck(t, twoChild, threadOutputExpect{0, 2 * children, 0})
-
-	threadOutputCheck(t, oneMember, threadOutputExpect{0, 0, collapseCount})
-	threadOutputCheck(t, twoMember, threadOutputExpect{0, 0, 2 * collapseCount})
-
-	threadOutputCheck(t, oneUniOneChild, threadOutputExpect{1, children, 0})
-	threadOutputCheck(t, oneUniOneMember, threadOutputExpect{1, 0, collapseCount})
-	threadOutputCheck(t, oneChildOneMember, threadOutputExpect{0, children, collapseCount})
-
-	threadOutputCheck(t, all, threadOutputExpect{1, children, collapseCount})
-}
-
-func TestThreadStep(t *testing.T) {
+func TestWorkerStep(t *testing.T) {
 	coll := collapser()
 	subd := subdivider()
 	uni := uniformer()
-	collapsed := threadStepOutput(coll)
-	subdivided := threadStepOutput(subd)
-	uniformed := threadStepOutput(uni)
+	collapsed := workerStep(coll)
+	subdivided := workerStep(subd)
+	uniformed := workerStep(uni)
 
 	for i, mock := range []*MockNumerics{coll, subd, uni} {
 		if !stepOkayGeneral(mock) {
@@ -139,13 +83,22 @@ func TestThreadStep(t *testing.T) {
 		t.Error("Expected methods not called on uniform region:", uni)
 	}
 
-	threadOutputCheck(t, collapsed, threadOutputExpect{0, 0, collapseCount})
-	threadOutputCheck(t, subdivided, threadOutputExpect{0, children, 0})
-	threadOutputCheck(t, uniformed, threadOutputExpect{1, 0, 0})
+	workers := []*Worker{collapsed, subdivided, uniformed}
+
+	go func() {
+		for _, worker := range workers {
+			worker.Hold.Wait()
+			worker.Output.Close()
+		}
+	}()
+
+	workerOutputCheck(t, collapsed, outputExpect{0, 0, collapseCount})
+	workerOutputCheck(t, subdivided, outputExpect{0, children, 0})
+	workerOutputCheck(t, uniformed, outputExpect{1, 0, 0})
 }
 
 func stepOkayGeneral(mock *MockNumerics) bool {
-	okay := mock.TRect && mock.TGrabThreadPrototype
+	okay := mock.TRect && mock.TGrabWorkerPrototype
 	okay = okay && mock.TClaimExtrinsics
 	return okay
 }
@@ -181,10 +134,38 @@ func mocker(path region.RegionType) *MockNumerics {
 	return mock
 }
 
-func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExpect) {
-	actualUniformCount := len(actual.UniformRegions)
-	actualChildCount := len(actual.Children)
-	actualMemberCount := len(actual.Members)
+func workerOutputCheck(t *testing.T, worker *Worker, expect outputExpect) {
+	actualUniformCount := 0
+	actualMemberCount := 0
+	actualChildCount := 0
+
+	hold := sync.WaitGroup{}
+	const outputFieldCount = 3
+	hold.Add(outputFieldCount)
+
+	// Drain output channels
+	go func() {
+		for range worker.Output.UniformRegions {
+			actualUniformCount++
+		}
+		hold.Done()
+	}()
+
+	go func() {
+		for range worker.Output.Members {
+			actualMemberCount++
+		}
+		hold.Done()
+	}()
+
+	go func() {
+		for range worker.Output.Children {
+			actualChildCount++
+		}
+		hold.Done()
+	}()
+
+	hold.Wait()
 
 	okay := actualMemberCount == expect.members
 	okay = okay && actualChildCount == expect.children
@@ -195,25 +176,21 @@ func threadOutputCheck(t *testing.T, actual RenderOutput, expect threadOutputExp
 	}
 }
 
-func threadPassOutput(numerics []SharedRegionNumerics) RenderOutput {
-	th := createThread()
-	return th.Pass(numerics)
+func workerStep(numerics SharedRegionNumerics) *Worker {
+	worker := newWorker()
+	worker.Step(numerics)
+	return worker
 }
 
-func threadStepOutput(numerics SharedRegionNumerics) RenderOutput {
-	output := RenderOutput{}
-	th := createThread()
-	th.Step(numerics, &output)
-
-	return output
-}
-
-func createThread() RenderThread {
-	return RenderThread{
+func newWorker() *Worker {
+	return &Worker{
 		InputChan:  make(chan RenderInput),
-		OutputChan: make(chan RenderOutput),
-		ReadyChan: make(chan bool, 1),
-		WorkingChan: make(chan bool, 1),
+		WaitingChan: make(chan bool),
+		Output: RenderOutput{
+			UniformRegions: make(chan SharedRegionNumerics),
+			Children: make(chan SharedRegionNumerics),
+			Members: make(chan base.PixelMember),
+		},
 		RegionConfig: region.RegionConfig{
 			CollapseSize: collapseSize,
 		},
