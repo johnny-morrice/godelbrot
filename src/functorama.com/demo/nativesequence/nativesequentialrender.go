@@ -13,7 +13,7 @@ type NativeSequenceNumerics struct {
 }
 
 func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequenceNumerics {
-	return NativeSequenceNumerics{NativeBaseNumerics: base.CreateNativeBaseNumerics(app)}
+	return NativeSequenceNumerics{NativeBaseNumerics: nativebase.CreateNativeBaseNumerics(app)}
 }
 
 func (native *NativeSequenceNumerics) MandelbrotSequence(iterLimit uint8) {

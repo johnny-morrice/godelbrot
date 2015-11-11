@@ -11,22 +11,17 @@ func TestMemberCaptureSequence(t *testing.T) {
 	if testing.Short() {
 		panic("nativesequence testing impossible in short mode")
 	}
-	base := base.BaseNumerics{
-		PicXMin: 0,
-		PicXMax: 10,
-		PicYMin: 0,
-		PicYMax: 10,
-	}
-	native := nativebase.NativeBaseNumerics{
-		BaseNumerics: base,
-		RealMin:      0.0,
-		RealMax:      10.0,
-		ImagMin:      0.0,
-		ImagMax:      10.0,
-		SqrtDivergeLimit: 2.0,
-	}
 	const iterateLimit = 10
-	numerics := CreateNativeSequenceNumerics(native)
+	app := &nativebase.MockRenderApplication{
+		MockRenderApplication: base.MockRenderApplication{
+			PictureWidth: 10,
+			PictureHeight: 10,
+			Base: base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
+		},
+		PlaneMin: complex(0.0, 0.0),
+		PlaneMax: complex(10.0, 10.0),
+	}
+	numerics := CreateNativeSequenceNumerics(app)
 	numerics.MemberCaptureSequencer()
 	numerics.MandelbrotSequence(iterateLimit)
 	members := numerics.CapturedMembers()
@@ -43,23 +38,18 @@ func TestImageDrawSequence(t *testing.T) {
 	if testing.Short() {
 		panic("nativesequence testing impossible in short mode")
 	}
-	base := base.BaseNumerics{
-		PicXMin: 0,
-		PicXMax: 10,
-		PicYMin: 0,
-		PicYMax: 10,
-	}
-	native := nativebase.NativeBaseNumerics{
-		BaseNumerics: base,
-		RealMin:      0.0,
-		RealMax:      10.0,
-		ImagMin:      0.0,
-		ImagMax:      10.0,
-		SqrtDivergeLimit: 2.0,
-	}
 	const iterateLimit = 10
 	context := draw.NewMockDrawingContext(iterateLimit)
-	numerics := CreateNativeSequenceNumerics(native)
+	app := &nativebase.MockRenderApplication{
+		MockRenderApplication: base.MockRenderApplication{
+			PictureWidth: 10,
+			PictureHeight: 10,
+			Base: base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
+		},
+		PlaneMin: complex(0.0, 0.0),
+		PlaneMax: complex(10.0, 10.0),
+	}
+	numerics := CreateNativeSequenceNumerics(app)
 	numerics.ImageDrawSequencer(context)
 	numerics.MandelbrotSequence(iterateLimit)
 
