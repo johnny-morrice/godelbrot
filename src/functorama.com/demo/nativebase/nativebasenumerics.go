@@ -71,24 +71,18 @@ func (nbn *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeMandelbrotMe
 	}
 }
 
-func (nbn *NativeBaseNumerics) PlaneTopLeft() complex128 {
-	return complex(nbn.RealMin, nbn.ImagMax)
-}
-
 // Size on the plane of 1px
 func (nbn *NativeBaseNumerics) PixelSize() (float64, float64) {
 	return nbn.Runit, nbn.Iunit
 }
 
 func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
-	const debug = true
-	topLeft := nbn.PlaneTopLeft()
 	rUnit, iUnit := nbn.PixelSize()
 	// Translate x
-	tx := real(c) - real(topLeft)
+	tx := real(c) - nbn.RealMin
 
 	// Translate y
-	ty := imag(topLeft) - imag(c)
+	ty := nbn.ImagMax - imag(c)
 
 	// Scale x
 	sx := tx / rUnit
