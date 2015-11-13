@@ -50,8 +50,8 @@ func TestCreateBigBaseNumerics(t *testing.T) {
 
 		expectRMin: -1.0,
 		expectRMax: 1.0,
-		expectIMin: -0.1,
-		expectIMax: 0.9,
+		expectIMin: -0.9,
+		expectIMax: 0.1,
 	}
 
 	tests := []aspectRatioFixHelper{noChange, fatter, taller}
@@ -74,18 +74,17 @@ func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 		},
 		UserMin: userMin,
 		UserMax: userMax,
+		Prec: testPrec,
 	}
 
 	numerics := CreateBigBaseNumerics(mock)
 
-	fixOkay := bigEq(&numerics.RealMin, expectMin.Real())
-	fixOkay = fixOkay && bigEq(&numerics.ImagMin, expectMin.Imag())
-	fixOkay = fixOkay && bigEq(&numerics.RealMax, expectMax.Real())
-	fixOkay = fixOkay && bigEq(&numerics.ImagMax, expectMax.Imag())
+	actualMin := BigComplex{numerics.RealMin, numerics.ImagMin}
+	actualMax := BigComplex{numerics.RealMax, numerics.ImagMax}
 
-	if !fixOkay {
-		t.Error("Aspect ratio fix broken for helper:, ", helper,
-			" received: ", numerics)
+	if !(bigComplexEq(&actualMin, &expectMin) && bigComplexEq(&actualMax, &expectMax)) {
+		t.Error("Expected ", DbgC(expectMin), DbgC(expectMax),
+			"but received", DbgC(actualMin), DbgC(actualMax))
 	}
 
 	mockOkay := mock.TBigUserCoords && mock.TPictureDimensions
@@ -183,4 +182,4 @@ func TestPlaneToPixel(t *testing.T) {
 	}
 }
 
-const testPrec = 53
+const testPrec = uint(53)

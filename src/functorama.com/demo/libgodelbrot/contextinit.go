@@ -221,3 +221,40 @@ func isPixelPerfect(bottom float64, top float64, divisions uint) bool {
 	}
 	return bottom < top
 }
+
+// FastPixelPerfectPrecision reduces Precision of the numeric system, while maintaining adequate
+// accuracy.   Returns the new precison.
+func (base *BigBaseNumerics) FastPixelPerfectPrecision() uint {
+	// To keep things speedy, we will only explore 2 paths through the image
+	xMin, yMin := base.PictureMin()
+	xMax, yMax := base.PictureMax()
+
+	highPrec = 0
+	Runit, Iunit := base.PixelSize()
+
+	topLeft := base.PlaneTopLeft()
+	row := topLeft.Real().Copy()
+	column := topLeft.Imag().Copy()
+
+	// Find lowest required prec in the real axis
+	for i := xMin; i < xMax; i++ {
+		rowPrec := row.MinPrec()
+		if rowPrec > highPrec {
+			highPrec = rowPrec
+		}
+		row.Add(row, Runit)
+	}
+
+	// Find lowest required prec in the y axis
+	for i := yMin; i < yMax; i++ {
+		colPrec := col.MinPrec()
+		if colPrec > highPrec {
+			highPrec = colPrec
+		}
+		row.Sub(column, Iunit)
+	}
+
+	base.SetPrec(highPrec)
+
+	return highPrec
+}

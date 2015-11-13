@@ -1,6 +1,7 @@
 package bigbase
 
 import (
+	"fmt"
 	"math/big"
 )
 
@@ -34,4 +35,21 @@ func CreateBigFloat(f float64, prec uint) big.Float {
 	b.SetFloat64(f)
 	b.SetPrec(prec)
 	return b
+}
+
+// DbgF is a big.Float with an easy to grok string representation
+type DbgF big.Float
+
+func (df DbgF) String() string {
+	bf := big.Float(df)
+	message := "Val: %v Prec: %v"
+	val, _ := bf.Float64()
+	return fmt.Sprintf(message, val, bf.Prec())
+}
+
+// DbgC is a BigComplex with an easy to grok string representation
+type DbgC BigComplex
+
+func (dc DbgC) String() string {
+	return fmt.Sprintf("BigComplex{%v, %v}", DbgF(dc.R), DbgF(dc.I))
 }

@@ -233,3 +233,33 @@ func renderCheck(t *testing.T, context *RenderContextFactory, strategy RenderMod
 			"but received:", context.info.DetectedRenderStrategy)
 	}
 }
+
+func (base *BigBaseNumerics) TestFastPixelPerfectPrecision(t *testing.T) {
+	injective := bigPerfectPixelHelper(CreateBigFloat(1.0, testPrec))
+	twentySeven := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter32(0.0, 1.0), testPrec))
+	fiftyThree := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter(0.0, 1.0), testPrec))
+
+	bases := []BigBaseNumerics{
+		injective,
+		twentySeven,
+		fiftyThree,
+	}
+
+	expectations := []uint{
+		7,
+		27,
+		53,
+	}
+
+	for i, base := range bases {
+		expect := expectations[i]
+		actual := base.FastPixelPerfectPrecision()
+
+		if expect != actual {
+			t.Error("At base", i, "expected precision ", expect, "but received", actual)
+		}
+		if !allBigPrecSet(base, actual) {
+			t.Error("Precision ", actual, "not set on base", i)
+		}
+	}
+}

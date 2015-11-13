@@ -1,9 +1,5 @@
 package bigbase
 
-import (
-	"math/big"
-)
-
 type aspectRatioFixHelper struct {
 	pictureW uint
 	pictureH uint
@@ -21,24 +17,24 @@ type aspectRatioFixHelper struct {
 
 func (helper aspectRatioFixHelper) planeCoords() (BigComplex, BigComplex) {
 	min := BigComplex{
-		R: *big.NewFloat(helper.rMin),
-		I: *big.NewFloat(helper.iMin),
+		R: CreateBigFloat(helper.rMin, testPrec),
+		I: CreateBigFloat(helper.iMin, testPrec),
 	}
 	max := BigComplex{
-		R: *big.NewFloat(helper.rMax),
-		I: *big.NewFloat(helper.iMax),
+		R: CreateBigFloat(helper.rMax, testPrec),
+		I: CreateBigFloat(helper.iMax, testPrec),
 	}
 	return min, max
 }
 
 func (helper aspectRatioFixHelper) expectCoords() (BigComplex, BigComplex) {
 	min := BigComplex{
-		R: *big.NewFloat(helper.expectRMin),
-		I: *big.NewFloat(helper.expectIMin),
+		R: CreateBigFloat(helper.expectRMin, testPrec),
+		I: CreateBigFloat(helper.expectIMin, testPrec),
 	}
 	max := BigComplex{
-		R: *big.NewFloat(helper.expectRMax),
-		I: *big.NewFloat(helper.expectIMax),
+		R: CreateBigFloat(helper.expectRMax, testPrec),
+		I: CreateBigFloat(helper.expectIMax, testPrec),
 	}
 	return min, max
 }

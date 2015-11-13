@@ -34,7 +34,7 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 	bottom := CreateBigFloat(0.0, prec)
 
 	left.Set(planeMin.Real())
-	right.Set(planeMax.Imag())
+	right.Set(planeMax.Real())
 	bottom.Set(planeMin.Imag())
 	top.Set(planeMax.Imag())
 
