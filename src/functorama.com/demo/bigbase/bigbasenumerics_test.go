@@ -1,8 +1,8 @@
-package libgodelbrot
+package bigbase
 
 import (
-	"math/big"
 	"testing"
+	"functorama.com/demo/base"
 )
 
 // Three paths through CreateBigBaseNumerics
@@ -12,8 +12,8 @@ import (
 
 func TestCreateBigBaseNumerics(t *testing.T) {
 	noChange := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -1.0,
 		rMax: 1.0,
@@ -26,8 +26,8 @@ func TestCreateBigBaseNumerics(t *testing.T) {
 		expectIMax: 0.5,
 	}
 	fatter := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -0.5,
 		rMax: 0.5,
@@ -40,8 +40,8 @@ func TestCreateBigBaseNumerics(t *testing.T) {
 		expectIMax: 0.5,
 	}
 	taller := aspectRatioFixHelper{
-		imageW: 200,
-		imageH: 100,
+		pictureW: 200,
+		pictureH: 100,
 
 		rMin: -1.0,
 		rMax: 1.0,
@@ -56,37 +56,40 @@ func TestCreateBigBaseNumerics(t *testing.T) {
 
 	tests := []aspectRatioFixHelper{noChange, fatter, taller}
 	for _, test := range tests {
-		testCreateBigBaseNumerics(test)
+		testCreateBigBaseNumerics(t, test)
 	}
 }
 
-func testCreateBigBaseNumerics(helper aspectRatioFixHelper) {
+func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 	userMin, userMax := helper.planeCoords()
-	expectMin, expectMan := helper.planeCoords()
+	expectMin, expectMax := helper.expectCoords()
 
-	mock := mockRenderApplication{
-		pictureW:   helper.pictureW,
-		pictureH:   helper.pictureH,
-		bigUserMin: userMin,
-		bigUserMax: userMax,
-		fixAspect:  true,
+	mock := &MockRenderApplication{
+		MockRenderApplication: base.MockRenderApplication{
+			PictureWidth:   helper.pictureW,
+			PictureHeight:   helper.pictureH,
+			Base: base.BaseConfig {
+				FixAspect: true,
+			},
+		},
+		UserMin: userMin,
+		UserMax: userMax,
 	}
 
 	numerics := CreateBigBaseNumerics(mock)
 
-	fixOkay := bigEq(numerics.realMin, userMin.Real())
-	fixOkay = fixOkay && bigEq(numerics.imagMin, userMin.Imag())
-	fixOkay = fixOkay && bigEq(numerics.realMax, userMax.Real())
-	fixOkay = fixOkay && bigEq(numerics.imagMax, userMax.Imag())
+	fixOkay := bigEq(&numerics.RealMin, expectMin.Real())
+	fixOkay = fixOkay && bigEq(&numerics.ImagMin, expectMin.Imag())
+	fixOkay = fixOkay && bigEq(&numerics.RealMax, expectMax.Real())
+	fixOkay = fixOkay && bigEq(&numerics.ImagMax, expectMax.Imag())
 
 	if !fixOkay {
 		t.Error("Aspect ratio fix broken for helper:, ", helper,
 			" received: ", numerics)
 	}
 
-	mockOkay := mock.tBigUserCoords && tPictureDimensions
-	mockOkay = mockOkay && tLimits && tBigUserCoords
-	mockOkay = mockOkay && tFixAspect
+	mockOkay := mock.TBigUserCoords && mock.TPictureDimensions
+	mockOkay = mockOkay && mock.TBigUserCoords && mock.TBaseConfig
 
 	if !mockOkay {
 		t.Error("Expected method not called on mock", mock)
@@ -95,62 +98,63 @@ func testCreateBigBaseNumerics(helper aspectRatioFixHelper) {
 
 func TestPlaneToPixel(t *testing.T) {
 	numerics := BigBaseNumerics{
-		realMin:     CreateBigFloat(-1.0, Prec64),
-		imagMax:     CreateBigFloat(1.0, Prec64),
-		imageWidth:  100,
-		imageHeight: 100,
+		RealMin:     CreateBigFloat(-1.0, testPrec),
+		ImagMax:     CreateBigFloat(1.0, testPrec),
 	}
 
+	const imageWidth = 100
+	const imageHeight = 100
+
 	qA := BigComplex{
-		CreateBigFloat(0.1, Prec64),
-		CreateBigFloat(0.1, Prec64),
+		CreateBigFloat(0.1, testPrec),
+		CreateBigFloat(0.1, testPrec),
 	}
 
 	qB := BigComplex{
-		CreateBigFloat(0.1, Prec64),
-		CreateBigFloat(-0.1, Prec64),
+		CreateBigFloat(0.1, testPrec),
+		CreateBigFloat(-0.1, testPrec),
 	}
 
 	qC := BigComplex{
-		CreateBigFloat(-0.1, Prec64),
-		CreateBigFloat(-0.1, Prec64),
+		CreateBigFloat(-0.1, testPrec),
+		CreateBigFloat(-0.1, testPrec),
 	}
 
 	qD := BigComplex{
-		CreateBigFloat(-0.1, Prec64),
-		CreateBigFloat(0.1, Prec64),
+		CreateBigFloat(-0.1, testPrec),
+		CreateBigFloat(0.1, testPrec),
 	}
 
 	origin := BigComplex{
-		CreateBigFloat(0.0, Prec64),
-		CreateBigFloat(0.0, Prec64),
+		CreateBigFloat(0.0, testPrec),
+		CreateBigFloat(0.0, testPrec),
 	}
 
 	offset := BigComplex{
-		CreateBigFloat(-1.0, Prec64),
-		CreateBigFloat(1.0, Prec64),
+		CreateBigFloat(-1.0, testPrec),
+		CreateBigFloat(1.0, testPrec),
 	}
 
-	const expectPixAx uint = 55
-	const expectPixAY uint = 45
+	const expectPixAx = 55
+	const expectPixAY = 45
 
-	const expectPixBx uint = 55
-	const expectPixBy uint = 55
+	const expectPixBx = 55
+	const expectPixBy = 55
 
-	const expectPixCx uint = 45
-	const expectPixCy uint = 55
+	const expectPixCx = 45
+	const expectPixCy = 55
 
-	const expectPixDx uint = 45
-	const expectPixDy uint = 45
+	const expectPixDx = 45
+	const expectPixDy = 45
 
-	const expectOx uint = 50
-	const expectOy uint = 50
+	const expectOx = 50
+	const expectOy = 50
 
-	const expectOffsetX uint = 0
-	const expectOffsetY uint = 0
+	const expectOffsetX = 0
+	const expectOffsetY = 0
 
 	points := []BigComplex{qA, qB, qC, qD, origin, offset}
-	expectedXs := []uint{
+	expectedXs := []int{
 		expectPixAx,
 		expectPixBx,
 		expectPixCx,
@@ -158,7 +162,7 @@ func TestPlaneToPixel(t *testing.T) {
 		expectOx,
 		expectOffsetX,
 	}
-	expectedYs := []uint{
+	expectedYs := []int{
 		expectPixAY,
 		expectPixBy,
 		expectPixCy,
@@ -179,52 +183,4 @@ func TestPlaneToPixel(t *testing.T) {
 	}
 }
 
-func (base *BigBaseNumerics) TestFastPixelPerfectPrecision(t *testing.T) {
-	injective := bigPerfectPixelHelper(CreateBigFloat(1.0, Prec64))
-	twentySeven := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter32(0.0, 1.0), Prec64))
-	fiftyThree := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter(0.0, 1.0), Prec64))
-
-	bases := []BigBaseNumerics{
-		injective,
-		twentySeven,
-		fiftyThree,
-	}
-
-	expectations := []uint{
-		7,
-		27,
-		53,
-	}
-
-	for i, base := range bases {
-		expect := expectations[i]
-		actual := base.FastPixelPerfectPrecision()
-
-		if expect != actual {
-			t.Error("At base", i, "expected precision ", expect, "but received", actual)
-		}
-		if !allBigPrecSet(base, actual) {
-			t.Error("Precision ", actual, "not set on base", i)
-		}
-	}
-}
-
-func TestSetPrec(t *testing.T) {
-	prec := 98
-	base := BigBaseNumerics{}
-	base.SetPrec(prec)
-	if !allBigPrecSet(base, prec) {
-		t.Error("Precison not set on base")
-	}
-}
-
-func allBigPrecSet(base BigBaseNumerics, prec uint) {
-	okay := base.realMin.Prec() == prec
-	okay = okay && base.realMax.Prec() == prec
-	okay = okay && base.imagMin.Prec() == prec
-	okay = okay && base.imagMax.Prec() == prec
-	okay = okay && base.divergeLimit.Prec() == prec
-	okay = okay && base.rUnit.Prec() == prec
-	okay = okay && base.iUnit.Prec() == prec
-	return okay
-}
+const testPrec = 53

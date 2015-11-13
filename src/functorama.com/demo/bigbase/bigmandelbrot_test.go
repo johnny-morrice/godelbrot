@@ -1,31 +1,38 @@
-package libgodelbrot
+package bigbase
 
 import (
-	"math/big"
 	"testing"
 )
 
 func TestBigMandelbrotSanity(t *testing.T) {
-	origin := BigComplex{CreateBigFloat(0.0, Prec64), CreateBigFloat(0.0, Prec64)}
-	non := BigComplex{CreateBigFloat(2.0, Prec64), CreateBigFloat(4, Prec64)}
-	divergeLimit := CreateBigFloat(4.0, Prec64)
+	origin := BigComplex{CreateBigFloat(0.0, testPrec), CreateBigFloat(0.0, testPrec)}
+	non := BigComplex{CreateBigFloat(2.0, testPrec), CreateBigFloat(4, testPrec)}
+	sqrtDL := CreateBigFloat(2.0, testPrec)
 	const iterateLimit uint8 = 255
 
-	originMember := CreateBigMandelbrotMember(origin)
-	nonMember := CreateBigMandelbrotMember(non)
+	originMember := BigMandelbrotMember{
+		C: &origin,
+		SqrtDivergeLimit: &sqrtDL,
+		Prec: testPrec,
+	}
+	nonMember := BigMandelbrotMember{
+		C: &non,
+		SqrtDivergeLimit: &sqrtDL,
+		Prec: testPrec,
+	}
 
 	originMember.Mandelbrot(iterateLimit)
 	nonMember.Mandelbrot(iterateLimit)
 
-	if !originMember.InSet() {
+	if !originMember.SetMember() {
 		t.Error("Expected origin to be in Mandelbrot set")
 	}
 
-	if non.InSet() {
+	if nonMember.SetMember() {
 		t.Error("Expected ", nonMember, " to be outside Mandelbrot set")
 	}
 
-	if non.InverseDivergence() >= iterateLimit {
+	if nonMember.InverseDivergence() >= iterateLimit {
 		t.Error("Expected negativeMembership to have InvDivergence below IterateLimit")
 	}
 }

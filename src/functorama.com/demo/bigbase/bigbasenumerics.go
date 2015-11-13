@@ -3,19 +3,19 @@ package bigbase
 import (
 	"math"
 	"math/big"
+	"functorama.com/demo/base"
 )
 
 // Basis for all big.Float numerics
 type BigBaseNumerics struct {
-	BaseNumerics
-	BaseRegionNumerics
+	base.BaseNumerics
 
 	RealMin big.Float
 	RealMax big.Float
 	ImagMin big.Float
 	ImagMax big.Float
 
-	DivergeLimit big.Float
+	SqrtDivergeLimit big.Float
 
 	Runit big.Float
 	Iunit big.Float
@@ -24,181 +24,137 @@ type BigBaseNumerics struct {
 }
 
 func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
-	prec := DefaultHighPrec
+	prec := app.Precision()
 
 	planeMin, planeMax := app.BigUserCoords()
 
-	left := NewBigFloat(0.0, prec)
-	right := NewBigFloat(0.0, prec)
-	bottom := NewBigFloat(0.0, prec)
-	top := NewBigFloat(0.0, prec)
+	left := CreateBigFloat(0.0, prec)
+	right := CreateBigFloat(0.0, prec)
+	top := CreateBigFloat(0.0, prec)
+	bottom := CreateBigFloat(0.0, prec)
 
 	left.Set(planeMin.Real())
-	right.Set(planeMax.Real())
+	right.Set(planeMax.Imag())
 	bottom.Set(planeMin.Imag())
 	top.Set(planeMax.Imag())
 
-	planeWidth := NewBigFloat(0.0, prec)
-	planeWidth.Sub(right, left)
+	planeWidth := CreateBigFloat(0.0, prec)
+	planeWidth.Sub(&right, &left)
 
-	planeHeight := NewBigFloat(0.0, prec)
-	planeHeight.Sub(top, bottom)
+	planeHeight := CreateBigFloat(0.0, prec)
+	planeHeight.Sub(&top, &bottom)
 
-	planeAspect := NewBigFloat(0.0, prec)
-	planeAspect.Quo(planeWidth, planeHeight)
+	planeAspect := CreateBigFloat(0.0, prec)
+	planeAspect.Quo(&planeWidth, &planeHeight)
 
-	nativePictureAspect := AppPictureAspectRatio(app)
-	pictureAspect := NewBigFloat(nativePictureAspect, prec)
+	nativePictureAspect := base.AppPictureAspectRatio(app)
+	pictureAspect := CreateBigFloat(nativePictureAspect, prec)
 
-	thindicator := planeAspect.Cmp(pictureAspect)
+	thindicator := planeAspect.Cmp(&pictureAspect)
 
-	if app.FixAspect() {
+	baseConfig := app.BaseConfig()
+
+	if baseConfig.FixAspect {
 		// If the plane aspect is greater than image aspect
 		// Then the plane is too short, so must be made taller
 		if thindicator == 1 {
-			taller := NewBigFloat(0.0, prec)
-			taller.Quo(planeWidth, pictureAspect)
-			bottom.Sub(top - taller)
-			planeMin = BigComplex{left, bottom}
+			taller := CreateBigFloat(0.0, prec)
+			taller.Quo(&planeWidth, &pictureAspect)
+			bottom.Sub(&top, &taller)
+			planeWidth.Sub(&top, &bottom)
 		} else if thindicator == -1 {
 			// If the plane aspect is less than the image aspect
 			// Then the plane is too thin, and must be made fatter
-			fatter := NewBigFloat(0.0, prec)
-			fatter.Mul(planeHeight, pictureAspect)
-			right.Add(left, fatter)
-			planeMax = BigComplex{right, top}
+			fatter := CreateBigFloat(0.0, prec)
+			fatter.Mul(&planeHeight, &pictureAspect)
+			right.Add(&left, &fatter)
+			planeHeight.Sub(&right, &left)
 		}
 	}
 
-	iLimit, dLimit := app.Limits()
+	pictureWidth, pictureHeight := app.PictureDimensions()
+	uq := UnitQuery{
+		pictureW: pictureWidth,
+		pictureH: pictureHeight,
+		planeW: &planeWidth,
+		planeH: &planeHeight,
+		prec: prec,
+	}
+	rUnit, iUnit := uq.PixelUnits()
 
-	pictureWidthI, pictureHeightI := app.PictureDimensions()
-	pictureWidth := NewBigFloat(float64(pictureWidthI), prec)
-	pictureHeight := NewBigFloat(float64(pictureHeightI), prec)
+	fSqrtDiverge := math.Sqrt(baseConfig.DivergeLimit)
 
-	rSize := NewBigFloat(0.0, prec)
-	rSize.Quo(planeWidth, pictureWidth)
-	iSize := NewBigFloat(0.0, prec)
-	iSize.Quo(planeHeight, pictureHeight)
+	bbn := BigBaseNumerics{
+		BaseNumerics: base.CreateBaseNumerics(app),
+		RealMin:      left,
+		RealMax:      right,
+		ImagMin:      bottom,
+		ImagMax:      top,
 
-	base := BigBaseNumerics{
-		BaseNumerics: CreateBaseNumerics(app),
-		RealMin:      real(planeMin),
-		RealMax:      real(planeMax),
-		ImagMin:      imag(planeMin),
-		ImagMax:      imag(planeMax),
+		SqrtDivergeLimit: CreateBigFloat(fSqrtDiverge, prec),
 
-		DivergeLimit: NewBigFloat(dLimit, prec),
-
-		Runit:     rSize,
-		Iunit:     iSize,
+		Runit:     rUnit,
+		Iunit:     iUnit,
 		Precision: prec,
 	}
 
-	// Reduce the Precision of the base for swifter rendering
-	base.FastPixelPerfectPrecision()
-
-	return base
+	return bbn
+}
+func (bbn *BigBaseNumerics) CreateBigFloat(x float64) big.Float {
+	return CreateBigFloat(x, bbn.Precision)
 }
 
-func (base *BigBaseNumerics) PictureMin() (int, int) {
-	return base.picXMin, base.picYMin
+func (bbn *BigBaseNumerics) CreateBigComplex(r, i float64) BigComplex {
+	return BigComplex{bbn.CreateBigFloat(r), bbn.CreateBigFloat(i)}
 }
 
-func (base *BigBaseNumerics) PictureMax() (int, int) {
-	return base.picXMax, base.picYMax
-}
-
-func (base *BigBaseNumerics) PlaneTopLeft() BigComplex {
-	return BigComplex{base.RealMin, base.ImagMax}
-}
-
-// Size on the plane of 1px
-func (base *BigBaseNumerics) PixelSize() (big.Float, big.Float) {
-	return Runit, Iunit
-}
-
-func (base *BigBaseNumerics) MandelbrotLimits(int, big.Float) {
-	return base.iterLimit, base.DivergeLimit
-}
-
-func (base *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
-	topLeft := base.PlaneTopLeft()
-	Runit, Iunit := base.PixelSize()
-
+func (bbn *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
 	// Translate x
-	x := base.NewBigFloat(0.0)
-	&x.Sub(c.Real(), topLeft.Real())
+	x := bbn.CreateBigFloat(0.0)
+	x.Sub(c.Real(), &bbn.RealMin)
 	// Scale x
-	&x.Quo(x, Runit)
+	x.Quo(&x, &bbn.Runit)
 
 	// Translate y
-	y := base.NewBigFloat(0.0)
-	y.Sub(c.Imag(), topLeft.Imag())
+	y := bbn.CreateBigFloat(0.0)
+	y.Sub(c.Imag(), &bbn.ImagMax)
 	// Scale y
-	y.Quo(y, Iunit)
+	y.Quo(&y, &bbn.Iunit)
 
-	fx, _ = x.Float64()
-	fy, _ = y.Float64()
+	fx, _ := x.Float64()
+	fy, _ := y.Float64()
 
-	rx = math.Floor(fx)
+	rx = int(math.Floor(fx))
 	// Remember that we draw downwards
-	ry = math.Ceil(-fy)
+	ry = int(math.Ceil(-fy))
 
 	return
 }
 
-// FastPixelPerfectPrecision reduces Precision of the numeric system, while maintaining adequate
-// accuracy.   Returns the new precison.
-func (base *BigBaseNumerics) FastPixelPerfectPrecision() uint {
-	// To keep things speedy, we will only explore 2 paths through the image
-	xMin, yMin := base.PictureMin()
-	xMax, yMax := base.PictureMax()
-
-	highPrec = 0
-	Runit, Iunit := base.PixelSize()
-
-	topLeft := base.PlaneTopLeft()
-	row := topLeft.Real().Copy()
-	column := topLeft.Imag().Copy()
-
-	// Find lowest required prec in the real axis
-	for i := xMin; i < xMax; i++ {
-		rowPrec := row.MinPrec()
-		if rowPrec > highPrec {
-			highPrec = rowPrec
-		}
-		row.Add(row, Runit)
+func (bbn *BigBaseNumerics) CreateMandelbrotMember(c *BigComplex) BigMandelbrotMember {
+	return BigMandelbrotMember{
+		C: c,
+		Prec: bbn.Precision,
+		SqrtDivergeLimit: &bbn.SqrtDivergeLimit,
 	}
-
-	// Find lowest required prec in the y axis
-	for i := yMin; i < yMax; i++ {
-		colPrec := col.MinPrec()
-		if colPrec > highPrec {
-			highPrec = colPrec
-		}
-		row.Sub(column, Iunit)
-	}
-
-	base.SetPrec(highPrec)
-
-	return highPrec
 }
 
-// Set the Precision of the base
-func (base *BigBaseNumerics) SetPrec(prec uint) {
-	base.Precision = prec
-	baseFloats := []big.Float{
-		base.RealMin,
-		base.RealMax,
-		base.ImagMin,
-		base.ImagMax,
-		base.DivergeLimit,
-		base.Runit,
-		base.Iunit,
-	}
+type UnitQuery struct {
+	pictureW uint
+	pictureH uint
+	planeW *big.Float
+	planeH *big.Float
+	prec uint
+}
 
-	for _, f := range baseFloats {
-		f.SetPrec(prec)
-	}
+func (uq UnitQuery) PixelUnits() (big.Float, big.Float) {
+	bigPicWidth := CreateBigFloat(float64(uq.pictureW), uq.prec)
+	bigPicHeight := CreateBigFloat(float64(uq.pictureH), uq.prec)
+
+	rUnit := CreateBigFloat(0.0, uq.prec)
+	rUnit.Quo(uq.planeW, &bigPicWidth)
+	iUnit := CreateBigFloat(0.0, uq.prec)
+	iUnit.Quo(uq.planeH, &bigPicHeight)
+
+	return rUnit, iUnit
 }
