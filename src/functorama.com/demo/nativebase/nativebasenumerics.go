@@ -41,7 +41,7 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 			// If the plane aspect is less than the image aspect
 			// Then the plane is too thin, and must be made fatter
 			fatter := planeHeight * pictureAspect
-			right := real(planeMax) + fatter
+			right := real(planeMin) + fatter
 			planeMax = complex(right, imag(planeMax))
 			planeWidth = right - real(planeMin)
 		}

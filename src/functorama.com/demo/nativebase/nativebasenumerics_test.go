@@ -35,7 +35,7 @@ func TestCreateNativeBaseNumerics(t *testing.T) {
 		iMax: 0.5,
 
 		expectRMin: -0.5,
-		expectRMax: 2.5,
+		expectRMax: 1.5,
 		expectIMin: -0.5,
 		expectIMax: 0.5,
 	}
