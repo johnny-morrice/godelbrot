@@ -101,8 +101,13 @@ func TestPlaneToPixel(t *testing.T) {
 		ImagMax:     CreateBigFloat(1.0, testPrec),
 	}
 
-	const imageWidth = 100
-	const imageHeight = 100
+	const imageSide = 100
+	const planeSideNat = 2.0
+
+	planeSide := CreateBigFloat(planeSideNat, testPrec)
+
+	uq := UnitQuery{imageSide, imageSide, &planeSide, &planeSide}
+	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
 	qA := BigComplex{
 		CreateBigFloat(0.1, testPrec),
@@ -173,9 +178,9 @@ func TestPlaneToPixel(t *testing.T) {
 	for i, point := range points {
 		expectedX := expectedXs[i]
 		expectedY := expectedYs[i]
-		actualX, actualY := numerics.PlaneToPixel(point)
+		actualX, actualY := numerics.PlaneToPixel(&point)
 		if actualX != expectedX || actualY != expectedY {
-			t.Error("Error on point", i, ":", point,
+			t.Error("Error on point", i, ":", DbgC(point),
 				" expected (", expectedX, ",", expectedY, ") but was",
 				"(", actualX, ",", actualY, ")")
 		}

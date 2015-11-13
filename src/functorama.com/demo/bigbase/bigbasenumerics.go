@@ -73,13 +73,7 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 	}
 
 	pictureWidth, pictureHeight := app.PictureDimensions()
-	uq := UnitQuery{
-		pictureW: pictureWidth,
-		pictureH: pictureHeight,
-		planeW: &planeWidth,
-		planeH: &planeHeight,
-		prec: prec,
-	}
+	uq := UnitQuery{pictureWidth, pictureHeight, &planeWidth, &planeHeight}
 	rUnit, iUnit := uq.PixelUnits()
 
 	fSqrtDiverge := math.Sqrt(baseConfig.DivergeLimit)
@@ -108,7 +102,7 @@ func (bbn *BigBaseNumerics) CreateBigComplex(r, i float64) BigComplex {
 	return BigComplex{bbn.CreateBigFloat(r), bbn.CreateBigFloat(i)}
 }
 
-func (bbn *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
+func (bbn *BigBaseNumerics) PlaneToPixel(c *BigComplex) (rx int, ry int) {
 	// Translate x
 	x := bbn.CreateBigFloat(0.0)
 	x.Sub(c.Real(), &bbn.RealMin)
@@ -117,7 +111,7 @@ func (bbn *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
 
 	// Translate y
 	y := bbn.CreateBigFloat(0.0)
-	y.Sub(c.Imag(), &bbn.ImagMax)
+	y.Sub(&bbn.ImagMax, c.Imag())
 	// Scale y
 	y.Quo(&y, &bbn.Iunit)
 
@@ -126,7 +120,7 @@ func (bbn *BigBaseNumerics) PlaneToPixel(c BigComplex) (rx int, ry int) {
 
 	rx = int(math.Floor(fx))
 	// Remember that we draw downwards
-	ry = int(math.Ceil(-fy))
+	ry = int(math.Ceil(fy))
 
 	return
 }
@@ -144,16 +138,17 @@ type UnitQuery struct {
 	pictureH uint
 	planeW *big.Float
 	planeH *big.Float
-	prec uint
 }
 
 func (uq UnitQuery) PixelUnits() (big.Float, big.Float) {
-	bigPicWidth := CreateBigFloat(float64(uq.pictureW), uq.prec)
-	bigPicHeight := CreateBigFloat(float64(uq.pictureH), uq.prec)
+	prec := uq.planeW.Prec()
 
-	rUnit := CreateBigFloat(0.0, uq.prec)
+	bigPicWidth := CreateBigFloat(float64(uq.pictureW), prec)
+	bigPicHeight := CreateBigFloat(float64(uq.pictureH), prec)
+
+	rUnit := CreateBigFloat(0.0, prec)
 	rUnit.Quo(uq.planeW, &bigPicWidth)
-	iUnit := CreateBigFloat(0.0, uq.prec)
+	iUnit := CreateBigFloat(0.0, prec)
 	iUnit.Quo(uq.planeH, &bigPicHeight)
 
 	return rUnit, iUnit
