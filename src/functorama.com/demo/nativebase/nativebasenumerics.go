@@ -64,26 +64,26 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 	}
 }
 
-func (native *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeMandelbrotMember {
+func (nbn *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeMandelbrotMember {
 	return NativeMandelbrotMember{
 		C: c,
-		SqrtDivergeLimit: native.SqrtDivergeLimit,
+		SqrtDivergeLimit: nbn.SqrtDivergeLimit,
 	}
 }
 
-func (native *NativeBaseNumerics) PlaneTopLeft() complex128 {
-	return complex(native.RealMin, native.ImagMax)
+func (nbn *NativeBaseNumerics) PlaneTopLeft() complex128 {
+	return complex(nbn.RealMin, nbn.ImagMax)
 }
 
 // Size on the plane of 1px
-func (native *NativeBaseNumerics) PixelSize() (float64, float64) {
-	return native.Runit, native.Iunit
+func (nbn *NativeBaseNumerics) PixelSize() (float64, float64) {
+	return nbn.Runit, nbn.Iunit
 }
 
-func (native *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
+func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	const debug = true
-	topLeft := native.PlaneTopLeft()
-	rUnit, iUnit := native.PixelSize()
+	topLeft := nbn.PlaneTopLeft()
+	rUnit, iUnit := nbn.PixelSize()
 	// Translate x
 	tx := real(c) - real(topLeft)
 
