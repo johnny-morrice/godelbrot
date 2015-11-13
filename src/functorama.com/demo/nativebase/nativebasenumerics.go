@@ -36,16 +36,19 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 			taller := planeWidth / pictureAspect
 			bottom := imag(planeMax) - taller
 			planeMin = complex(real(planeMin), bottom)
+			planeHeight = imag(planeMax) - bottom
 		} else if planeAspect < pictureAspect {
 			// If the plane aspect is less than the image aspect
 			// Then the plane is too thin, and must be made fatter
 			fatter := planeHeight * pictureAspect
 			right := real(planeMax) + fatter
 			planeMax = complex(right, imag(planeMax))
+			planeWidth = right - real(planeMin)
 		}
 	}
 
-	rUnit, iUnit := PixelUnits(pictureWidth, pictureHeight, planeWidth, planeHeight)
+	uq := UnitQuery{pictureWidth, pictureHeight, planeWidth, planeHeight}
+	rUnit, iUnit := uq.PixelUnits()
 
 	return NativeBaseNumerics{
 		BaseNumerics: base.CreateBaseNumerics(app),
@@ -99,8 +102,15 @@ func (native *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	return
 }
 
-func PixelUnits(pictureW uint, pictureH uint, planeW float64, planeH float64) (float64, float64) {
-	rUnit := planeW / float64(pictureW)
-	iUnit := planeH / float64(pictureH)
+type UnitQuery struct {
+	pictureW uint
+	pictureH uint
+	planeW float64
+	planeH float64
+}
+
+func (uq UnitQuery) PixelUnits() (float64, float64) {
+	rUnit := uq.planeW / float64(uq.pictureW)
+	iUnit := uq.planeH / float64(uq.pictureH)
 	return rUnit, iUnit
 }

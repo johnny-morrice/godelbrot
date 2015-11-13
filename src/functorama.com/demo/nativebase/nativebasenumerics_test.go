@@ -110,7 +110,8 @@ func TestPlaneToPixel(t *testing.T) {
 	}
 	numerics.ImageWidth(width)
 	numerics.ImageHeight(height)
-	numerics.Runit, numerics.Iunit = PixelUnits(width, height, planeSide, planeSide)
+	uq := UnitQuery{width, height, planeSide, planeSide}
+	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
 	const qA = 0.1 + 0.1i
 
