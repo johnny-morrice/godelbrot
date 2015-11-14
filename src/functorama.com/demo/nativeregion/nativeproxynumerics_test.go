@@ -38,7 +38,8 @@ func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
 	planeWidth := real(planeDim)
 	planeHeight := imag(planeDim)
 
-	rUnit, iUnit := nativebase.PixelUnits(picWidth, picHeight, planeWidth, planeHeight)
+	uq := nativebase.UnitQuery{picWidth, picHeight, planeWidth, planeHeight}
+	rUnit, iUnit := uq.PixelUnits()
 
 	numerics := nativesequence.NativeSequenceNumerics{
 		NativeBaseNumerics: nativebase.NativeBaseNumerics{

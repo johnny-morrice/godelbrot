@@ -2,7 +2,6 @@ package region
 
 import (
     "testing"
-    "functorama.com/demo/base"
 )
 
 func TestRenderSequenceRegion(t *testing.T) {
@@ -18,8 +17,7 @@ func TestRenderSequenceRegion(t *testing.T) {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
     }
 
-    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TImageDrawSequencer
-    sequenceOkay = sequenceOkay && mockSequence.TMandelbrotSequence
+    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TSequence
     if !sequenceOkay {
         t.Error("Expected methods not called on mockSequence:", mockSequence)
     }
@@ -27,31 +25,17 @@ func TestRenderSequenceRegion(t *testing.T) {
 
 func TestSequenceCollapse(t *testing.T) {
     const iterateLimit = 40
-    expectedMembers := []base.PixelMember{
-        base.PixelMember{I: 20, J: 40},
-    }
+
     mockSequence := &MockProxySequence{}
-    mockSequence.Captured = expectedMembers
     mockRegion := &MockNumerics{
         MockSequence: mockSequence,
     }
-    actualMembers := SequenceCollapse(mockRegion, iterateLimit)
-
-    membersOkay := len(actualMembers) == len(expectedMembers)
-    for i, exp := range expectedMembers {
-        membersOkay = membersOkay && exp == actualMembers[i]
-    }
-
-    if !membersOkay {
-        t.Error("Expected members", expectedMembers, "but received:", actualMembers)
-    }
-
+    SequenceCollapse(mockRegion, iterateLimit)
     if !mockRegion.TRegionSequence {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
     }
 
-    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TMemberCaptureSequencer
-    sequenceOkay = sequenceOkay && mockSequence.TMandelbrotSequence && mockSequence.TCapturedMembers
+    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TSequence
     if !sequenceOkay {
         t.Error("Expected methods not called on mockSequence:", mockSequence)
     }

@@ -105,8 +105,7 @@ func TestRender(t *testing.T) {
     	t.Error("Expected methods not called on paleete:", mockPalette)
     }
 
-    sequenceOkay := collapseSequence.TClaimExtrinsics && collapseSequence.TImageDrawSequencer
-    sequenceOkay = sequenceOkay && collapseSequence.TMandelbrotSequence
+    sequenceOkay := collapseSequence.TClaimExtrinsics && collapseSequence.TSequence
     if !sequenceOkay {
     	t.Error("Expected methods not called on collapsed sequence numerics:", collapseSequence)
     }

@@ -140,7 +140,8 @@ func TestRect(t *testing.T) {
 		Region:  createNativeRegion(min, max),
 	}
 
-	numerics.Runit, numerics.Iunit = nativebase.PixelUnits(picSide, picSide, planeSide, planeSide)
+	uq := nativebase.UnitQuery{picSide, picSide, planeSide, planeSide}
+	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
 	expectMinX := 0
 	expectMaxX := 2
