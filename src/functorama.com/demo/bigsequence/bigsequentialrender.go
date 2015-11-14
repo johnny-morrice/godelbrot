@@ -1,57 +1,57 @@
 package libgodelbrot
 
-type BigSequentialNumerics struct {
-	BigBaseNumerics
-	sequencer func(i int, j int, member BigMandelbrotMember)
-	members   []PixelMember
+import (
+	"functorama.com/demo/base"
+	"functorama.com/demo/bigbase"
+	"functorama.com/demo/sequence"
+)
+
+type BigSequenceNumerics struct {
+	bigbase.BigBaseNumerics
+	area int
 }
 
-func CreateBigSequentialNumerics(base BigBaseNumerics) BigSequentialNumerics {
-	numerics := BigSequentialNumerics{
-		BigBaseNumerics: base,
-		members:         make([]PixelMember, 0, allocTiny),
+// Check that BigSequenceNumerics implements SequenceNumerics interface
+var _ sequence.SequenceNumerics = (*BigSequenceNumerics)(nil)
+
+func CreateBigSequenceNumerics(app bigbase.RenderApplication) BigSequenceNumerics {
+	w, h := app.PictureDimensions()
+	return BigSequenceNumerics{
+		BigBaseNumerics: bigbase.CreateBigBaseNumerics(app),
+		area: int(w * h),
 	}
 }
 
-func (bigFloat *BigSequentialNumerics) MandelbrotSequence(iterLimit uint8) {
-	topLeft := bigFloat.PlaneTopLeft()
+func (bsn *BigSequenceNumerics) Area() int {
+	return bsn.area
+}
 
-	imageLeft, imageTop := big.PictureMin()
-	imageRight, imageBottom := big.PictureMax()
-	rUnit, iUnit := big.PixelSize()
-	divergeLimit := big.DivergeLimit()
 
-	x := topLeft.Real()
-	for i := imageLeft; i < imageRight; i++ {
-		y := topLeft.Imag()
-		for j := imageTop; j < imageBottom; j++ {
-			member := BigMandelbrotMember{
-				C: BigComplex{x, y},
-			}
-			member.Mandelbrot(iterLimit)
-			bigFloat.Sequencer(i, j, member)
-			y.Sub(y, iUnit)
+func (bsn *BigSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMember {
+	imageLeft, imageTop := bsn.PictureMin()
+	imageRight, imageBottom := bsn.PictureMax()
+
+	out := make(chan base.PixelMember)
+
+	go func() {
+		// Being explicit here to ensure we are making a copy
+		pos := bigbase.BigComplex{
+			R: bsn.RealMin,
 		}
-		x.Add(x, rUnit)
-	}
-}
+		for i := imageLeft; i < imageRight; i++ {
+			pos.I = bsn.ImagMax
+			for j := imageTop; j < imageBottom; j++ {
+				member := bigbase.BigMandelbrotMember{
+					C: &pos,
+					SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
+				}
+				member.Mandelbrot(iterLimit)
+				pos.I.Sub(&pos.I, &bsn.Iunit)
+			}
+			pos.R.Add(&pos.R, &bsn.Runit)
+		}
+		close(out)
+	}()
 
-func (big *BigSequentialNumerics) ImageDrawSequencer(draw DrawingContext) {
-	big.sequencer = func(i, j int, member BigMandelbrotMember) {
-		DrawPoint(draw, PixelMember{i, j, member.MandelbrotMember})
-	}
-}
-
-func (big *BigSequentialNumerics) MemberCaptureSequencer() {
-	big.sequencer = func(i, j int, member BigMandelbrotMember) {
-		big.members = append(big.members, PixelMember{
-			I:      i,
-			J:      j,
-			Member: member,
-		})
-	}
-}
-
-func (big *BigSequentialNumerics) CapturedMembers() []PixelMember {
-	return big.members
+	return out
 }

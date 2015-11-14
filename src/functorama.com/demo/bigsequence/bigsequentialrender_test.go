@@ -2,28 +2,44 @@ package libgodelbrot
 
 import (
 	"testing"
+	"functorama.com/demo/base"
+	"functorama.com/demo/bigbase"
 )
 
 func TestBigMandelbrotSequence(t *testing.T) {
-	base := BaseNumerics{
-		PicXMin: 0,
-		PicXMax: 10,
-		PicYMin: 0,
-		PicYMax: 10,
-	}
-	bigBase := BigBaseNumerics{
-		BaseNumerics: base,
-		RealMin:      CreateBigFloat(0.0, Prec64),
-		RealMax:      CreateBigFloat(10.0, Prec64),
-		ImagMin:      CreateBigFloat(0.0, Prec64),
-		ImagMax:      CreateBigFloat(10.0, Prec64),
-		DivergeLimit: CreateBigFloat(4.0, Prec64),
-	}
-	numerics := CreateBigSequentialNumerics(bigBase)
-	numerics.MemberCaptureSequencer()
-	members := numerics.CapturedMembers()
+	const prec = 53
+	const iterLimit = 10
 
-	expectedCount := 100
+	app := &bigbase.MockRenderApplication{
+		MockRenderApplication: base.MockRenderApplication{
+			Base: base.BaseConfig{
+				DivergeLimit: 4.0,
+			},
+			PictureWidth: 10,
+			PictureHeight: 10,
+		},
+		UserMin: bigbase.CreateBigComplex(0.0, 0.0, prec),
+		UserMax: bigbase.CreateBigComplex(10.0, 10.0, prec),
+
+	}
+	numerics := CreateBigSequenceNumerics(app)
+	out := numerics.Sequence(iterLimit)
+
+	const expectedCount = 100
+	actualArea := numerics.Area()
+
+	if expectedCount != actualArea {
+		t.Error("Expected area of", expectedCount,
+			"but received", actualArea)
+	}
+
+	members := make([]base.PixelMember, actualArea)
+
+	i := 0
+	for point := range out {
+		members[i] = point
+		i++
+	}
 	actualCount := len(members)
 
 	if expectedCount != actualCount {
