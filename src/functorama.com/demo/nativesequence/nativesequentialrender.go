@@ -8,8 +8,7 @@ import (
 
 type NativeSequenceNumerics struct {
 	nativebase.NativeBaseNumerics
-	picW int
-	picH int
+	area int
 }
 
 // Check we implement interface
@@ -19,13 +18,12 @@ func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequen
 	w, h := app.PictureDimensions()
 	return NativeSequenceNumerics{
 		NativeBaseNumerics: nativebase.CreateNativeBaseNumerics(app),
-		picW: int(w),
-		picH: int(h),
+		area: int(w * h),
 	}
 }
 
 func (nsn *NativeSequenceNumerics) Area() int {
-	return nsn.picW * nsn.picH
+	return nsn.area
 }
 
 func (nsn *NativeSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMember {
