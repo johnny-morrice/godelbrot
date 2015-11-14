@@ -150,7 +150,7 @@ func (tracker *RenderTracker) scheduleWorkers() {
 				}
 				go func() {
 					tracker.stateChan<- workerState{id, ready}
-				}
+				}()
 			}
 		}(i, worker)
 	}
