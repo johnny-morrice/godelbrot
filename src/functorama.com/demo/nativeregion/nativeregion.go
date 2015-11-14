@@ -29,7 +29,7 @@ type nativeRegion struct {
 func (region *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
 	l, t := base.PlaneToPixel(region.topLeft.C)
 	r, b := base.PlaneToPixel(region.bottomRight.C)
-	return image.Rect(int(l), int(t), int(r), int(b))
+	return image.Rect(l, t, r, b)
 }
 
 // Extend NativeBaseNumerics and add support for regions
