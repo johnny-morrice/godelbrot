@@ -38,7 +38,7 @@ func (nsn *NativeSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMe
 	go func() {
 		x := nsn.RealMin
 		for i := imageLeft; i < imageRight; i++ {
-			y := nsn.RealMax
+			y := nsn.ImagMax
 			for j := imageTop; j < imageBottom; j++ {
 				member := nativebase.NativeMandelbrotMember{
 					C: complex(x, y),
