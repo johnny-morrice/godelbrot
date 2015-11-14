@@ -64,7 +64,7 @@ func TestStrategyRender(t *testing.T) {
         t.Error("Expected a certain picture to be returned but was:", actualPic)
     }
 
-    if !(numerics.TImageDrawSequencer && numerics.TMandelbrotSequence) {
+    if !numerics.TSequence {
         t.Error("Expected methods not called on numerics:", numerics)
     }
 

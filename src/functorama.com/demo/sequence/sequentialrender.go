@@ -21,8 +21,7 @@ func NewSequenceRenderer(app RenderApplication) SequenceRenderStrategy {
 
 // The SequenceRenderStrategy implements RenderContext as it draws the
 // Mandelbrot set line by line
-func (renderer SequenceRenderStrategy) Render() (*image.NRGBA, error) {
-	renderer.numerics.ImageDrawSequencer(renderer.context)
-	renderer.numerics.MandelbrotSequence(renderer.iterateLimit)
-	return renderer.context.Picture(), nil
+func (srs SequenceRenderStrategy) Render() (*image.NRGBA, error) {
+	ImageSequence(srs.numerics, srs.iterateLimit, srs.context)
+	return srs.context.Picture(), nil
 }

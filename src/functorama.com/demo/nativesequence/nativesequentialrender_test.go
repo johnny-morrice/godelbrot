@@ -4,10 +4,9 @@ import (
 	"testing"
 	"functorama.com/demo/base"
 	"functorama.com/demo/nativebase"
-	"functorama.com/demo/draw"
 )
 
-func TestMemberCaptureSequence(t *testing.T) {
+func TestSequence(t *testing.T) {
 	if testing.Short() {
 		panic("nativesequence testing impossible in short mode")
 	}
@@ -22,38 +21,26 @@ func TestMemberCaptureSequence(t *testing.T) {
 		PlaneMax: complex(10.0, 10.0),
 	}
 	numerics := CreateNativeSequenceNumerics(app)
-	numerics.MemberCaptureSequencer()
-	numerics.MandelbrotSequence(iterateLimit)
-	members := numerics.CapturedMembers()
+	out := numerics.Sequence(iterateLimit)
 
 	const expectedCount = 100
+	actualArea := numerics.Area()
+
+	if expectedCount != actualArea {
+		t.Error("Expected area of", expectedCount,
+			"but received", actualArea)
+	}
+
+	members := make([]base.PixelMember, actualArea)
+
+	i := 0
+	for point := range out {
+		members[i] = point
+		i++
+	}
 	actualCount := len(members)
 
 	if expectedCount != actualCount {
 		t.Error("Expected", expectedCount, "members but there were", actualCount)
-	}
-}
-
-func TestImageDrawSequence(t *testing.T) {
-	if testing.Short() {
-		panic("nativesequence testing impossible in short mode")
-	}
-	const iterateLimit = 10
-	context := draw.NewMockDrawingContext(iterateLimit)
-	app := &nativebase.MockRenderApplication{
-		MockRenderApplication: base.MockRenderApplication{
-			PictureWidth: 10,
-			PictureHeight: 10,
-			Base: base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
-		},
-		PlaneMin: complex(0.0, 0.0),
-		PlaneMax: complex(10.0, 10.0),
-	}
-	numerics := CreateNativeSequenceNumerics(app)
-	numerics.ImageDrawSequencer(context)
-	numerics.MandelbrotSequence(iterateLimit)
-
-	if !(context.TPicture && context.TColors) {
-		t.Error("Expected methods not called on drawing context")
 	}
 }

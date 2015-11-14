@@ -2,60 +2,58 @@ package nativesequence
 
 import (
 	"functorama.com/demo/base"
-	"functorama.com/demo/draw"
 	"functorama.com/demo/nativebase"
+	"functorama.com/demo/sequence"
 )
 
 type NativeSequenceNumerics struct {
 	nativebase.NativeBaseNumerics
-	sequencer func(i int, j int, member nativebase.NativeMandelbrotMember)
-	members   []base.PixelMember
+	picW int
+	picH int
 }
+
+// Check we implement interface
+var _ sequence.SequenceNumerics = (*NativeSequenceNumerics)(nil)
 
 func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequenceNumerics {
-	return NativeSequenceNumerics{NativeBaseNumerics: nativebase.CreateNativeBaseNumerics(app)}
+	w, h := app.PictureDimensions()
+	return NativeSequenceNumerics{
+		NativeBaseNumerics: nativebase.CreateNativeBaseNumerics(app),
+		picW: int(w),
+		picH: int(h),
+	}
 }
 
-func (native *NativeSequenceNumerics) MandelbrotSequence(iterLimit uint8) {
-	topLeft := native.PlaneTopLeft()
+func (nsn *NativeSequenceNumerics) Area() int {
+	return nsn.picW * nsn.picH
+}
 
-	imageLeft, imageTop := native.PictureMin()
-	imageRight, imageBottom := native.PictureMax()
-	rUnit, iUnit := native.PixelSize()
-	sqrtDl := native.SqrtDivergeLimit
+func (nsn *NativeSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMember {
+	imageLeft, imageTop := nsn.PictureMin()
+	imageRight, imageBottom := nsn.PictureMax()
+	rUnit, iUnit := nsn.PixelSize()
+	sqrtDl := nsn.SqrtDivergeLimit
 
-	x := real(topLeft)
-	for i := imageLeft; i < imageRight; i++ {
-		y := imag(topLeft)
-		for j := imageTop; j < imageBottom; j++ {
-			member := nativebase.NativeMandelbrotMember{
-				C: complex(x, y),
-				SqrtDivergeLimit: sqrtDl,
+	out := make(chan base.PixelMember)
+
+	// This goroutine will exit once all members have been read out
+	go func() {
+		x := nsn.RealMin
+		for i := imageLeft; i < imageRight; i++ {
+			y := nsn.RealMax
+			for j := imageTop; j < imageBottom; j++ {
+				member := nativebase.NativeMandelbrotMember{
+					C: complex(x, y),
+					SqrtDivergeLimit: sqrtDl,
+				}
+				member.Mandelbrot(iterLimit)
+				out<- base.PixelMember{I: i, J: j, Member: member.BaseMandelbrot}
+				y -= iUnit
 			}
-			member.Mandelbrot(iterLimit)
-			native.sequencer(i, j, member)
-			y -= iUnit
+			x += rUnit
 		}
-		x += rUnit
-	}
-}
+		close(out)
+	}()
 
-func (native *NativeSequenceNumerics) ImageDrawSequencer(context draw.DrawingContext) {
-	native.sequencer = func(i, j int, member nativebase.NativeMandelbrotMember) {
-		draw.DrawPoint(context, base.PixelMember{i, j, &member})
-	}
-}
-
-func (native *NativeSequenceNumerics) MemberCaptureSequencer() {
-	native.sequencer = func(i, j int, member nativebase.NativeMandelbrotMember) {
-		native.members = append(native.members, base.PixelMember{
-			I:      i,
-			J:      j,
-			Member: &member,
-		})
-	}
-}
-
-func (native *NativeSequenceNumerics) CapturedMembers() []base.PixelMember {
-	return native.members
+	return out
 }
