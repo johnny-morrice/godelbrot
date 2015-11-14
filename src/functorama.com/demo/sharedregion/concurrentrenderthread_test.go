@@ -8,7 +8,7 @@ import (
 )
 
 const children = 4
-const collapseCount = 20
+const collapseCount = 1
 const collapseSize = 10
 
 type outputExpect struct {
@@ -105,7 +105,6 @@ func stepOkayGeneral(mock *MockNumerics) bool {
 
 func collapser() *MockNumerics {
 	mock := mocker(region.CollapsePath)
-	mock.SharedMockSequence.Captured = make([]base.PixelMember, collapseCount)
 	return mock
 }
 
