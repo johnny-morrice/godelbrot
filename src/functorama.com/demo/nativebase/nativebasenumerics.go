@@ -97,14 +97,14 @@ func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 }
 
 type UnitQuery struct {
-	pictureW uint
-	pictureH uint
-	planeW float64
-	planeH float64
+	PictureW uint
+	PictureH uint
+	PlaneW float64
+	PlaneH float64
 }
 
 func (uq UnitQuery) PixelUnits() (float64, float64) {
-	rUnit := uq.planeW / float64(uq.pictureW)
-	iUnit := uq.planeH / float64(uq.pictureH)
+	rUnit := uq.PlaneW / float64(uq.PictureW)
+	iUnit := uq.PlaneH / float64(uq.PictureH)
 	return rUnit, iUnit
 }
