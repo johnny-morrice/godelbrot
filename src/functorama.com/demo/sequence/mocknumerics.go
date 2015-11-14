@@ -9,6 +9,8 @@ type MockNumerics struct {
     TSequence bool
     TArea bool
     TSubImage bool
+
+    PointCount int
 }
 
 // Check MockNumerics implements SequenceNumerics interface
@@ -17,8 +19,16 @@ var _ SequenceNumerics = (*MockNumerics)(nil)
 func (mn *MockNumerics) Sequence(iterateLimit uint8) <-chan base.PixelMember {
     mn.TSequence = true
 
-    out := make(chan base.PixelMember, 1)
+    out := make(chan base.PixelMember)
+
+    go func() {
+    for i := 0; i < mn.PointCount; i++ {
+        out<- base.PixelMember{}
+    }
     close(out)
+    }()
+
+
     return out
 }
 

@@ -148,9 +148,9 @@ func (tracker *RenderTracker) scheduleWorkers() {
 				if ready {
 					tracker.schedule<- slave.InputChan
 				}
-				go func() {
-					tracker.stateChan<- workerState{id, ready}
-				}()
+				go func(slaveReady bool) {
+					tracker.stateChan<- workerState{id, slaveReady}
+				}(ready)
 			}
 		}(i, worker)
 	}

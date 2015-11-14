@@ -105,6 +105,7 @@ func stepOkayGeneral(mock *MockNumerics) bool {
 
 func collapser() *MockNumerics {
 	mock := mocker(region.CollapsePath)
+	mock.SharedMockSequence.PointCount = collapseCount
 	return mock
 }
 
@@ -164,7 +165,9 @@ func workerOutputCheck(t *testing.T, worker *Worker, expect outputExpect) {
 		hold.Done()
 	}()
 
+	worker.Hold.Wait()
 	hold.Wait()
+
 
 	okay := actualMemberCount == expect.members
 	okay = okay && actualChildCount == expect.children

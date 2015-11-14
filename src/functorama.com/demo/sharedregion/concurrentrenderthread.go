@@ -108,13 +108,13 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 
 	if region.Collapse(shared, collapseBound) {
 		points := SharedSequenceCollapse(shared, worker.WorkerId, iterateLimit)
-		worker.Hold.Add(len(points))
-		for _, point := range points {
-			go func(member base.PixelMember) {
+		worker.Hold.Add(1)
+		go func() {
+			for member := range points {
 				worker.Output.Members<- member
-				worker.Hold.Done()
-			}(point)
-		}
+			}
+			worker.Hold.Done()
+		}()
 		return
 	}
 
