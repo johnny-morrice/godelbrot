@@ -1,33 +1,34 @@
-package libgodelbrot
+package bigregion
 
 import (
 	"testing"
+	"functorama.com/demo/bigbase"
 )
 
 func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
 	big := BigRegionNumericsProxy{
-		Region: BigRegion{
+		BigRegionNumerics: &BigRegionNumerics{},
+		LocalRegion: bigRegion{
 			topLeft: bigMandelbrotThunk{
 				evaluated: true,
 			},
 		},
-		Numerics: &BigRegionNumerics{},
 	}
 
-	big.ClaimExtrinsincs()
+	big.ClaimExtrinsics()
 
-	if big.Region != big.Numerics.region {
+	if big.LocalRegion != big.BigRegionNumerics.Region {
 		t.Error("Expected extrinsics were not claimed")
 	}
 }
 
 func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 	const prec uint = 53
-	regMin := CreateBigComplex(-1.0-1.0, prec)
-	regMax := CreateBigComplex(1.0, 1.0, prec)
+	regMin := bigbase.CreateBigComplex(-1.0, -1.0, prec)
+	regMax := bigbase.CreateBigComplex(1.0, 1.0, prec)
 
-	planeMin := CreateBigComplex(-2.0, -2.0, prec)
-	planeMax := CreateBigComplex(2.0, 2.0, prec)
+	planeMin := bigbase.CreateBigComplex(-2.0, -2.0, prec)
+	planeMax := bigbase.CreateBigComplex(2.0, 2.0, prec)
 
 	numerics := BigSequenceNumerics{
 		RealMin: planeMin.Real(),
@@ -44,8 +45,8 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 		},
 	}
 	big := BigSequenceNumericsProxy{
-		Region:   createBigRegion(regMin, regMax),
-		Numerics: &numerics,
+		BigSequenceNumerics: &numerics,
+		LocalRegion:   createBigRegion(regMin, regMax),
 	}
 
 	big.ClaimExtrinsincs()

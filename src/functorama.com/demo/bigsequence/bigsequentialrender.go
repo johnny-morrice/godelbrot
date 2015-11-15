@@ -1,4 +1,4 @@
-package libgodelbrot
+package bigsequence
 
 import (
 	"functorama.com/demo/base"

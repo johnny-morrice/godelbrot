@@ -1,18 +1,24 @@
-package libgodelbrot
+package bigregion
 
 import (
 	"image"
 	"math/big"
+	"functorama.com/demo/base"
+	"functorama.com/demo/sequence"
+	"functorama.com/demo/region"
+	"functorama.com/demo/bigbase"
+	"functorama.com/demo/bigsequence"
 )
 
 type bigSubregion struct {
 	populated bool
-	children  []BigRegion
+	children  []bigRegion
 }
 
 type bigMandelbrotThunk struct {
-	bigMandelbrotMember
+	bigbase.BigMandelbrotMember
 	evaluated bool
+	cStore bigbase.BigComplex
 }
 
 type bigRegion struct {
@@ -23,49 +29,63 @@ type bigRegion struct {
 	midPoint    bigMandelbrotThunk
 }
 
-func createBigRegion(min BigComplex, max BigComplex) bigRegion {
+// Rect return a rectangle representing the position and dimensions of the region on the output
+// image.
+func (br *bigRegion) rect(base *bigbase.BigBaseNumerics) image.Rectangle {
+	l, t := base.PlaneToPixel(br.topLeft.C)
+	r, b := base.PlaneToPixel(br.bottomRight.C)
+	return image.Rect(l, t, r, b)
+}
+
+func (brn *BigRegionNumerics) createBigRegion(min *bigbase.BigComplex, max *bigbase.BigComplex) bigRegion {
 	left := min.Real()
 	right := max.Real()
 	bottom := min.Imag()
 	top := max.Imag()
 
-	midR := big.Float{}
-	midR.Sub(&right, &left)
-	midI := big.Float{}
-	midI.Sub(&top, &bottom)
 
-	topLeft := BigComplex{left, top}
-	topRight := BigComplex{right, top}
-	bottomLeft := BigComplex{left, bottom}
-	bottomRight := BigComplex{right, bottom}
-	midPoint := BigComplex{midR, midI}
+	midR := brn.CreateBigFloat(0.0)
+	midR.Sub(right, left)
+	midI := brn.CreateBigFloat(0.0)
+	midI.Sub(top, bottom)
 
 	return bigRegion{
-		topLeft:     topLeft,
-		topRight:    topRight,
-		bottomLeft:  bottomLeft,
-		bottomRight: bottomRight,
-		midPoint:    midPoint,
+		topLeft:     brn.createBigThunk(left, top),
+		topRight:    brn.createBigThunk(right, top),
+		bottomLeft:  brn.createBigThunk(bottom, left),
+		bottomRight: brn.createBigThunk(bottom, right),
+		midPoint:    brn.createBigThunk(&midR, &midI),
 	}
+}
+
+func (brn *BigRegionNumerics) createBigThunk(r *big.Float, i *big.Float) bigMandelbrotThunk {
+	thunk := bigMandelbrotThunk{
+		cStore: bigbase.BigComplex{*r, *i},
+	}
+	thunk.BigMandelbrotMember.C = &thunk.cStore
+	thunk.BigMandelbrotMember.SqrtDivergeLimit = &brn.SqrtDivergeLimit
+	return thunk
 }
 
 // BigRegionNumerics is implementation of RegionNumerics that uses big.Float bignums for arbitrary
 // accuracy.
 type BigRegionNumerics struct {
-	Collapser
-	BigBaseNumerics
-	region             bigRegion
+	region.RegionNumerics
+	bigbase.BigBaseNumerics
+	Region             bigRegion
+
+	SequenceNumerics  *bigsequence.BigSequenceNumerics
 	subregion          bigSubregion
-	sequentialNumerics *BigSequentialNumerics
 }
+var _ region.RegionNumerics = (*BigRegionNumerics)(nil)
 
 // Children returns a list of subdivided children.
-func (bigFloat *BigRegionNumerics) Children() []RegionNumerics {
-	if bigFloat.subregion.populated {
-		nextContexts := make([]RegionNumerics, 0, 4)
-		for i, child := range bigFloat.subregion.children {
+func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
+	if brn.subregion.populated {
+		nextContexts := make([]region.RegionNumerics, 0, 4)
+		for i, child := range brn.subregion.children {
 			// Use a proxy to avoid heap allocation
-			nextContexts[i] = bigFloat.proxyNumerics(child)
+			nextContexts[i] = brn.proxyNumerics(&child)
 		}
 		return nextContexts
 	}
@@ -74,27 +94,28 @@ func (bigFloat *BigRegionNumerics) Children() []RegionNumerics {
 }
 
 // RegionalSequenceNumerics returns SequentialNumerics representing the same region on the plane.
-func (bigFloat *BigRegionNumerics) RegionalSequenceNumerics() SequentialNumerics {
+func (brn *BigRegionNumerics) RegionalSequenceNumerics() sequence.SequenceNumerics {
 	return BigSequenceNumericsProxy{
-		Region:   bigFloat.region,
-		Numerics: bigFloat.sequentialNumerics,
+		BigSequenceNumerics: brn.SequenceNumerics,
+		LocalRegion:   brn.Region,
 	}
 }
 
 // MandelbrotPoints returns the corners of this region and its midpoint
-func (bigFloat *BigRegionNumerics) MandelbrotPoints() []MandelbrotMember {
-	r := bigFloat.Region
-	return []MandelbrotMember{
-		r.topLeft.membership,
-		r.topRight.membership,
-		r.bottomLeft.membership,
-		r.bottomRight.membership,
-		r.midPoint.membership,
+func (brn *BigRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
+	r := brn.Region
+	return []base.MandelbrotMember{
+		r.topLeft,
+		r.topRight,
+		r.bottomLeft,
+		r.bottomRight,
+		r.midPoint,
 	}
 }
 
 // EvaluateAllPoints runs the Mandelbrot function on all this region's points
-func (bigFloat *BigRegionNumerics) EvaluateAllPoints(iterateLimit int) {
+func (brn *BigRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
+	r := brn.Region
 	points := []bigMandelbrotThunk{
 		r.topLeft,
 		r.topRight,
@@ -119,37 +140,41 @@ func (bigFloat *BigRegionNumerics) EvaluateAllPoints(iterateLimit int) {
 // Mandelbrot set interior. Since regions are rectangular, we cannot well pick up on curves round
 // these areas. In these cases we must perform extra sampling to be sure that we have not hit a
 // glitch.
-func (bigFloat *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	r := bigFloat.Region
-	member := bigFloat.RegionMember()
-	iDiv := member.InvDivergence()
-	dLimit := bigFloat.DivergeLimit()
-	if iDiv == 0 || iDiv == 1 || member.InSet() {
-		tl := r.topLeft.c
-		br := r.bottomRight.c
+func (brn *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
+	r := brn.Region
+	member := brn.Region.topLeft
+	iDiv := member.InvDivergence
+	if iDiv == 0 || iDiv == 1 || member.InSet {
+		tl := r.topLeft.cStore
+		br := r.bottomRight.cStore
 
-		hUnit := br.Real().Copy()
-		hUnit.Sub(hUnit, tl.Real())
-		hUnit.Quo(hUnit, glitchSamples)
-		vUnit := tl.Imag().Copy()
-		vUnit.Sub(h, br.Imag())
-		vUnit.Quo(vUnit, glitchSamples)
+		bigGlitch := brn.CreateBigFloat(float64(glitchSamples))
 
-		x := tl.Real()
-		for i := 0; i < glitchSamples; i++ {
-			y := tl.Imag()
-			for j := 0; j < glitchSamples; j++ {
-				checkMember := bigMandelbrotMember{
-					C:            BigComplex{x, y},
-					DivergeLimit: dLimit,
+		rUnit := brn.CreateBigFloat(0.0)
+		rUnit.Copy(br.Real())
+		rUnit.Sub(&rUnit, tl.Real())
+		rUnit.Quo(&rUnit, &bigGlitch)
+		iUnit := brn.CreateBigFloat(0.0)
+		iUnit.Copy(tl.Imag())
+		iUnit.Sub(&iUnit, br.Imag())
+		iUnit.Quo(&iUnit, &bigGlitch)
+
+		startI := *tl.Imag()
+		c := bigbase.BigComplex{R: *tl.Real()}
+		for i := uint(0); i < glitchSamples; i++ {
+			c.I = startI
+			for j := uint(0); j < glitchSamples; j++ {
+				checkMember := bigbase.BigMandelbrotMember{
+					C:            &c,
+					SqrtDivergeLimit: &brn.SqrtDivergeLimit,
 				}
-				&checkMember.Mandelbrot(iterateLimit)
+				checkMember.Mandelbrot(iterateLimit)
 				if member.InvDivergence != iDiv {
 					return true
 				}
-				y.Sub(y, vUnit)
+				c.I.Sub(&c.I, &iUnit)
 			}
-			x.Add(x, hUnit)
+			c.R.Add(&c.R, &rUnit)
 		}
 	}
 
@@ -157,13 +182,12 @@ func (bigFloat *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSampl
 }
 
 // Split divides the region into four smaller subregions.
-func (bigFloat *BigRegionNumerics) Split() {
-	heap := bigFloat.Heap
-	r := bigFloat.Region
+func (brn *BigRegionNumerics) Split() {
+	r := brn.Region
 
-	topLeftPos := r.topLeft.c
-	bottomRightPos := r.bottomRight.c
-	midPos := r.midPoint.c
+	topLeftPos := r.topLeft.cStore
+	bottomRightPos := r.bottomRight.cStore
+	midPos := r.midPoint.cStore
 
 	left := topLeftPos.Real()
 	right := bottomRightPos.Real()
@@ -172,80 +196,81 @@ func (bigFloat *BigRegionNumerics) Split() {
 	midR := midPos.Real()
 	midI := midPos.Imag()
 
-	topSideMid := CreatebigMandelbrotThunk(midR, top)
-	bottomSideMid := CreatebigMandelbrotThunk(midR, bottom)
-	leftSideMid := CreatebigMandelbrotThunk(left, midI)
-	rightSideMid := CreatebigMandelbrotThunk(right, midI)
+	bigTwo := brn.CreateBigFloat(2.0)
 
-	leftSectorMid := left.Copy()
-	leftSectorMid.Add(leftSectorMid, midR)
-	leftSectorMid.Quot(leftSectorMid, bigTwo)
+	topSideMid := brn.createBigThunk(midR, top)
+	bottomSideMid := brn.createBigThunk(midR, bottom)
+	leftSideMid := brn.createBigThunk(left, midI)
+	rightSideMid := brn.createBigThunk(right, midI)
 
-	rightSectorMid := right.Copy()
-	rightSectorMid.Add(rightSectorMid, midR)
-	rightSectorMid.Quo(rightSectorMid, bigTwo)
+	leftSectorMid := brn.CreateBigFloat(0.0)
+	leftSectorMid.Copy(left)
+	leftSectorMid.Add(&leftSectorMid, midR)
+	leftSectorMid.Quo(&leftSectorMid, &bigTwo)
 
-	topSectorMid := top.Copy()
-	topSectorMid.Add(topSectorMid, midI)
-	topSectorMid.Quo(topSectorMid, bigTwo)
+	rightSectorMid := brn.CreateBigFloat(0.0)
+	rightSectorMid.Copy(right)
+	rightSectorMid.Add(&rightSectorMid, midR)
+	rightSectorMid.Quo(&rightSectorMid, &bigTwo)
 
-	bottomSectorMid := bottom.Copy()
-	bottomSectorMid.Add(bottomSectorMid, midI)
-	bottomSectorMid.Quo(bottomSectorMid, bigTwo)
+	topSectorMid := brn.CreateBigFloat(0.0)
+	topSectorMid.Copy(top)
+	topSectorMid.Add(&topSectorMid, midI)
+	topSectorMid.Quo(&topSectorMid, &bigTwo)
 
-	tl := BigRegion{
+	bottomSectorMid := brn.CreateBigFloat(0.0)
+	bottomSectorMid.Copy(bottom)
+	bottomSectorMid.Add(&bottomSectorMid, midI)
+	bottomSectorMid.Quo(&bottomSectorMid, &bigTwo)
+
+	tl := bigRegion{
 		topLeft:     r.topLeft,
 		topRight:    topSideMid,
 		bottomLeft:  leftSideMid,
 		bottomRight: r.midPoint,
-		midPoint:    CreatebigMandelbrotThunk(leftSectorMid, topSectorMid),
+		midPoint:    brn.createBigThunk(&leftSectorMid, &topSectorMid),
 	}
-	tr := BigRegion{
+	tr := bigRegion{
 		topLeft:     topSideMid,
 		topRight:    r.topRight,
 		bottomLeft:  r.midPoint,
 		bottomRight: rightSideMid,
-		midPoint:    CreatebigMandelbrotThunk(rightSectorMid, topSectorMid),
+		midPoint:    brn.createBigThunk(&rightSectorMid, &topSectorMid),
 	}
-	bl := BigRegion{
+	bl := bigRegion{
 		topLeft:     leftSideMid,
 		topRight:    r.midPoint,
 		bottomLeft:  r.bottomLeft,
 		bottomRight: bottomSideMid,
-		midPoint:    CreatebigMandelbrotThunk(leftSectorMid, bottomSectorMid),
+		midPoint:    brn.createBigThunk(&leftSectorMid, &bottomSectorMid),
 	}
-	br := BigRegion{
+	br := bigRegion{
 		topLeft:     r.midPoint,
 		topRight:    rightSideMid,
 		bottomLeft:  bottomSideMid,
 		bottomRight: r.bottomRight,
-		midPoint:    CreatebigMandelbrotThunk(rightSectorMid, bottomSectorMid),
+		midPoint:    brn.createBigThunk(&rightSectorMid, &bottomSectorMid),
 	}
 
-	bigFloat.Subregion = BigSubregion{
+	brn.subregion = bigSubregion{
 		populated: true,
-		children:  []BigRegion{tl, tr, bl, br},
+		children:  []bigRegion{tl, tr, bl, br},
 	}
-}
-
-// Rect return a rectangle representing the position and dimensions of the region on the output
-// image.
-func (bigFloat *BigRegionNumerics) Rect() image.Rectangle {
-	region := bigFloat.region
-	l, t := bigFloat.PlaneToPixel(region.topLeft.c)
-	r, b := bigFloat.PlaneToPixel(region.bottomRight.c)
-	return image.Rect(int(l), int(t), int(r), int(b))
 }
 
 // RegionMember returns one MandelbrotMember from the Region
-func (bigFloat *BigRegionNumerics) RegionMember() MandelbrotMember {
-	return bigFloat.Region.topLeft.member.MandelbrotMember
+func (brn *BigRegionNumerics) RegionMember() base.MandelbrotMember {
+	return brn.Region.topLeft.BigMandelbrotMember
 }
 
 // proxyNumerics quickly creates a new *NativeRegionNumerics context
-func (native *NativeRegionNumerics) proxyNumerics(region Region) RegionNumerics {
+func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNumerics {
 	return BigRegionNumericsProxy{
-		Region:   region,
-		Numerics: native,
+		BigRegionNumerics: brn,
+		LocalRegion:   *region,
 	}
+}
+
+func (brn *BigRegionNumerics) Rect() image.Rectangle {
+	return brn.Region.rect(&brn.BigBaseNumerics)
 }

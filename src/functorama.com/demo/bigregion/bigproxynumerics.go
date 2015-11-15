@@ -1,19 +1,29 @@
-package libgodelbrot
+package bigregion
+
+import (
+    "functorama.com/demo/sequence"
+    "functorama.com/demo/region"
+    "functorama.com/demo/bigsequence"
+)
 
 type BigRegionNumericsProxy struct {
-	Region   BigRegion
-	Numerics *BigRegionNumerics
+    *BigRegionNumerics
+	LocalRegion   bigRegion
 }
 
-func (proxy BigRegionNumericsProxy) ClaimExtrinsics() {
-	proxy.Numerics.region = Region
+var _ region.RegionNumerics = BigRegionNumericsProxy{}
+
+func (brnp BigRegionNumericsProxy) ClaimExtrinsics() {
+	brnp.BigRegionNumerics.Region = brnp.LocalRegion
 }
 
 type BigSequenceNumericsProxy struct {
-	Region   BigRegion
-	Numerics *BigSequentialNumerics
+    *bigsequence.BigSequenceNumerics
+	LocalRegion   bigRegion
 }
 
-func (proxy BigSequentialNumerics) ClaimExtrinsics() {
-	proxy.Numerics.SubImage(proxy.Region.Rect())
+var _ sequence.SequenceNumerics = BigSequenceNumericsProxy{}
+
+func (bsnp BigSequenceNumericsProxy) ClaimExtrinsics() {
+	bsnp.BigSequenceNumerics.SubImage(bsnp.LocalRegion.rect(&bsnp.BigSequenceNumerics.BigBaseNumerics))
 }
