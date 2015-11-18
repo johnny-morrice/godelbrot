@@ -44,13 +44,15 @@ type NativeRegionNumerics struct {
 // Check that we implement the interface
 var _ region.RegionNumerics = (*NativeRegionNumerics)(nil)
 
-func NewRegionNumerics(specialized nativebase.NativeBaseNumerics, config region.RegionConfig, seq *nativesequence.NativeSequenceNumerics) *NativeRegionNumerics {
-	planeMin := complex(specialized.RealMin, specialized.ImagMin)
-	planeMax := complex(specialized.RealMax, specialized.ImagMax)
-	return &NativeRegionNumerics{
-		RegionConfig: config,
-		NativeBaseNumerics: specialized,
-		SequenceNumerics: seq,
+func CreateNativeRegionNumerics(app RenderApplication) NativeRegionNumerics {
+	sequence := nativesequence.CreateNativeSequenceNumerics(app)
+	parent := nativebase.CreateNativeBaseNumerics(app)
+	planeMin := complex(parent.RealMin, parent.ImagMin)
+	planeMax := complex(parent.RealMax, parent.ImagMax)
+	return NativeRegionNumerics{
+		NativeBaseNumerics: parent,
+		RegionConfig: app.RegionConfig(),
+		SequenceNumerics: &sequence,
 		Region: createNativeRegion(planeMin, planeMax),
 	}
 }
