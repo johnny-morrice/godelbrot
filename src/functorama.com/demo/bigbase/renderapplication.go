@@ -4,8 +4,12 @@ import (
     "functorama.com/demo/base"
 )
 
-type RenderApplication interface {
-    base.RenderApplication
+type BigCoordProvider interface {
     BigUserCoords() (*BigComplex, *BigComplex)
     Precision() uint
+}
+
+type RenderApplication interface {
+    base.RenderApplication
+    BigCoordProvider
 }
