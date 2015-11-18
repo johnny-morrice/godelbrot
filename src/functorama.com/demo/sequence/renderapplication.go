@@ -9,8 +9,12 @@ type SequenceNumericsFactory interface {
     Build() SequenceNumerics
 }
 
+type SequenceProvider interface {
+    SequenceNumericsFactory() SequenceNumericsFactory
+}
+
 type RenderApplication interface {
 	base.RenderApplication
 	draw.ContextProvider
-	SequenceNumericsFactory() SequenceNumericsFactory
+	SequenceProvider
 }
