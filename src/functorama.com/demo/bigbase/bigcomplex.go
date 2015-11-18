@@ -53,3 +53,11 @@ type DbgC BigComplex
 func (dc DbgC) String() string {
 	return fmt.Sprintf("BigComplex{%v, %v}", DbgF(dc.R), DbgF(dc.I))
 }
+
+func BigEq(a *big.Float, b *big.Float) bool {
+	return a.Cmp(b) == 0
+}
+
+func BigComplexEq(a *BigComplex, b *BigComplex) bool {
+	return BigEq(a.Real(), b.Real()) && BigEq(a.Imag(), b.Imag())
+}

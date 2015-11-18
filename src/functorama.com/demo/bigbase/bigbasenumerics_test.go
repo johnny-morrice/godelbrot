@@ -82,7 +82,7 @@ func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 	actualMin := BigComplex{numerics.RealMin, numerics.ImagMin}
 	actualMax := BigComplex{numerics.RealMax, numerics.ImagMax}
 
-	if !(bigComplexEq(&actualMin, &expectMin) && bigComplexEq(&actualMax, &expectMax)) {
+	if !(BigComplexEq(&actualMin, &expectMin) && BigComplexEq(&actualMax, &expectMax)) {
 		t.Error("Expected ", DbgC(expectMin), DbgC(expectMax),
 			"but received", DbgC(actualMin), DbgC(actualMax))
 	}
