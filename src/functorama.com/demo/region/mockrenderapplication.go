@@ -8,7 +8,10 @@ import (
 type MockRenderApplication struct {
     base.MockRenderApplication
     draw.MockContextProvider
+    MockRegionProvider
+}
 
+type MockRegionProvider struct {
     TRegionConfig bool
     TRegionNumericsFactory bool
 
@@ -16,12 +19,12 @@ type MockRenderApplication struct {
     RegionFactory *MockFactory
 }
 
-func (mock *MockRenderApplication) RegionConfig() RegionConfig {
+func (mock *MockRegionProvider) RegionConfig() RegionConfig {
     mock.TRegionConfig = true
     return mock.RegConfig
 }
 
-func (mock *MockRenderApplication) RegionNumericsFactory() RegionNumericsFactory {
+func (mock *MockRegionProvider) RegionNumericsFactory() RegionNumericsFactory {
     mock.TRegionNumericsFactory = true
     return mock.RegionFactory
 }
