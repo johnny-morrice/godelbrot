@@ -194,12 +194,12 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 
 	for i, ex := range expected {
 		actual := actualChildren[i]
-		exPoints := thunks(ex)
-		acPoints := thunks(actual)
+		exPoints := ex.thunks()
+		acPoints := actual.thunks()
 		fail := false
 		for j, expectThunk := range exPoints {
 			actThunk := acPoints[j]
-			if expectThunk != actThunk {
+			if *expectThunk != *actThunk {
 				fail = true
 				t.Log("Region", i, "error at thunk", j,
 					"expected", expectThunk,
@@ -209,16 +209,6 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 		if fail {
 			t.Fail()
 		}
-	}
-}
-
-func thunks(region nativeRegion) []nativeMandelbrotThunk {
-	return []nativeMandelbrotThunk{
-		region.topLeft,
-		region.topRight,
-		region.bottomLeft,
-		region.bottomRight,
-		region.midPoint,
 	}
 }
 
