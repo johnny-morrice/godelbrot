@@ -6,7 +6,12 @@ import (
 
 type MockRenderApplication struct {
     base.MockRenderApplication
+    MockBigCoordProvider
+}
 
+var _ RenderApplication = (*MockRenderApplication)(nil)
+
+type MockBigCoordProvider struct {
     TBigUserCoords bool
     TPrecision bool
 
@@ -15,14 +20,12 @@ type MockRenderApplication struct {
     Prec uint
 }
 
-var _ RenderApplication = (*MockRenderApplication)(nil)
-
-func (mra *MockRenderApplication) Precision() uint {
-    mra.TPrecision = true
-    return mra.Prec
+func (mbcp *MockBigCoordProvider) Precision() uint {
+    mbcp.TPrecision = true
+    return mbcp.Prec
 }
 
-func (mra *MockRenderApplication) BigUserCoords() (*BigComplex,*BigComplex) {
-    mra.TBigUserCoords = true
-    return &mra.UserMin, &mra.UserMax
+func (mbcp *MockBigCoordProvider) BigUserCoords() (*BigComplex,*BigComplex) {
+    mbcp.TBigUserCoords = true
+    return &mbcp.UserMin, &mbcp.UserMax
 }

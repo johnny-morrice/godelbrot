@@ -72,9 +72,11 @@ func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 				FixAspect: true,
 			},
 		},
-		UserMin: userMin,
-		UserMax: userMax,
-		Prec: testPrec,
+		MockBigCoordProvider: MockBigCoordProvider{
+			UserMin: userMin,
+			UserMax: userMax,
+			Prec: testPrec,
+		},
 	}
 
 	numerics := CreateBigBaseNumerics(mock)
