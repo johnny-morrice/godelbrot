@@ -4,7 +4,6 @@ import (
 	"image"
 	"math/big"
 	"functorama.com/demo/base"
-	"functorama.com/demo/sequence"
 	"functorama.com/demo/region"
 	"functorama.com/demo/bigbase"
 	"functorama.com/demo/bigsequence"
@@ -29,6 +28,16 @@ type bigRegion struct {
 	midPoint    bigMandelbrotThunk
 }
 
+func (br *bigRegion) thunks() []*bigMandelbrotThunk {
+	return []*bigMandelbrotThunk{
+		&br.topLeft,
+		&br.topRight,
+		&br.bottomLeft,
+		&br.bottomRight,
+		&br.midPoint,
+	}
+}
+
 // Rect return a rectangle representing the position and dimensions of the region on the output
 // image.
 func (br *bigRegion) rect(base *bigbase.BigBaseNumerics) image.Rectangle {
@@ -37,12 +46,11 @@ func (br *bigRegion) rect(base *bigbase.BigBaseNumerics) image.Rectangle {
 	return image.Rect(l, t, r, b)
 }
 
-func (brn *BigRegionNumerics) createBigRegion(min *bigbase.BigComplex, max *bigbase.BigComplex) bigRegion {
+func (brn *BigRegionNumerics) createRelativeRegion(min *bigbase.BigComplex, max *bigbase.BigComplex) bigRegion {
 	left := min.Real()
 	right := max.Real()
 	bottom := min.Imag()
 	top := max.Imag()
-
 
 	midR := brn.CreateBigFloat(0.0)
 	midR.Sub(right, left)
@@ -70,19 +78,35 @@ func (brn *BigRegionNumerics) createBigThunk(r *big.Float, i *big.Float) bigMand
 // BigRegionNumerics is implementation of RegionNumerics that uses big.Float bignums for arbitrary
 // accuracy.
 type BigRegionNumerics struct {
-	region.RegionNumerics
+	region.RegionConfig
 	bigbase.BigBaseNumerics
 	Region             bigRegion
-
 	SequenceNumerics  *bigsequence.BigSequenceNumerics
 	subregion          bigSubregion
 }
 var _ region.RegionNumerics = (*BigRegionNumerics)(nil)
 
+func CreateBigRegionNumerics(app RenderApplication) BigRegionNumerics {
+	sequence := bigsequence.CreateBigSequenceNumerics(app)
+	parent := bigbase.CreateBigBaseNumerics(app)
+	planeMin := bigbase.BigComplex{parent.RealMin, parent.ImagMin}
+	planeMax := bigbase.BigComplex{parent.RealMax, parent.ImagMax}
+	return BigRegionNumerics{
+		BigBaseNumerics: parent,
+		RegionConfig: app.RegionConfig(),
+		SequenceNumerics: &sequence,
+		Region: createBigRegion(planeMin, planeMax),
+	}
+}
+
+func (brn *BigRegionNumerics) ClaimExtrinsics() {
+	// We have our extrinsics right here
+}
+
 // Children returns a list of subdivided children.
 func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
 	if brn.subregion.populated {
-		nextContexts := make([]region.RegionNumerics, 0, 4)
+		nextContexts := make([]region.RegionNumerics, 4)
 		for i, child := range brn.subregion.children {
 			// Use a proxy to avoid heap allocation
 			nextContexts[i] = brn.proxyNumerics(&child)
@@ -93,8 +117,8 @@ func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
 	return nil
 }
 
-// RegionalSequenceNumerics returns SequentialNumerics representing the same region on the plane.
-func (brn *BigRegionNumerics) RegionalSequenceNumerics() sequence.SequenceNumerics {
+// RegionSequence returns ProxySequenceNumerics representing the same region on the plane.
+func (brn *BigRegionNumerics) RegionSequence() region.ProxySequence {
 	return BigSequenceNumericsProxy{
 		BigSequenceNumerics: brn.SequenceNumerics,
 		LocalRegion:   brn.Region,
@@ -115,17 +139,10 @@ func (brn *BigRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 
 // EvaluateAllPoints runs the Mandelbrot function on all this region's points
 func (brn *BigRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	r := brn.Region
-	points := []bigMandelbrotThunk{
-		r.topLeft,
-		r.topRight,
-		r.bottomLeft,
-		r.bottomRight,
-		r.midPoint,
-	}
+	thunks := brn.Region.thunks()
 
 	// Ensure points are all evaluated
-	for _, p := range points {
+	for _, p := range thunks {
 		if !p.evaluated {
 			p.Mandelbrot(iterateLimit)
 			p.evaluated = true
@@ -273,4 +290,31 @@ func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNume
 
 func (brn *BigRegionNumerics) Rect() image.Rectangle {
 	return brn.Region.rect(&brn.BigBaseNumerics)
+}
+
+func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
+	corners := []bigbase.BigComplex{
+		bigbase.CreateBigComplex(-1.0, 1.0, prec),
+		bigbase.CreateBigComplex(1.0, 1.0, prec),
+		bigbase.CreateBigComplex(-1.0, -1.0, prec),
+		bigbase.CreateBigComplex(1.0, -1.0, prec),
+		bigbase.CreateBigComplex(0.0, 0.0, prec), // midpoint is not technically a corner
+	}
+
+	thunks := make([]bigMandelbrotThunk, len(corners))
+
+	for i, c := range corners {
+		thunks[i] = bigMandelbrotThunk{
+			cStore: c,
+		}
+		thunks[i].C = &thunks[i].cStore
+	}
+
+	return bigRegion{
+		topLeft: thunks[0],
+		topRight: thunks[1],
+		bottomLeft: thunks[2],
+		bottomRight: thunks[3],
+		midPoint: thunks[4],
+	}
 }

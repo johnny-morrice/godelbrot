@@ -3,16 +3,19 @@ package bigregion
 import (
 	"math/big"
 	"testing"
+	"functorama.com/demo/bigbase"
 )
+
+const prec = 53
 
 func TestRegionSplitPos(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   CreateBigFloat(1.0, Prec64),
-		right:  CreateBigFloat(3.0, Prec64),
-		top:    CreateBigFloat(3.0, Prec64),
-		bottom: CreateBigFloat(1.0, Prec64),
-		midR:   CreateBigFloat(2.0, Prec64),
-		midI:   CreateBigFloat(2.0, Prec64),
+		left:   bigbase.CreateBigFloat(1.0, prec),
+		right:  bigbase.CreateBigFloat(3.0, prec),
+		top:    bigbase.CreateBigFloat(3.0, prec),
+		bottom: bigbase.CreateBigFloat(1.0, prec),
+		midR:   bigbase.CreateBigFloat(2.0, prec),
+		midI:   bigbase.CreateBigFloat(2.0, prec),
 	}
 
 	testRegionSplit(helper, t)
@@ -20,12 +23,12 @@ func TestRegionSplitPos(t *testing.T) {
 
 func TestRegionSplitNeg(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   CreateBigFloat(-100.0, Prec64),
-		right:  CreateBigFloat(-24.0, Prec64),
-		top:    CreateBigFloat(-10.0, Prec64),
-		bottom: CreateBigFloat(-340.0, Prec64),
-		midR:   CreateBigFloat(-62.0, Prec64),
-		midI:   CreateBigFloat(-175.0, Prec64),
+		left:   bigbase.CreateBigFloat(-100.0, prec),
+		right:  bigbase.CreateBigFloat(-24.0, prec),
+		top:    bigbase.CreateBigFloat(-10.0, prec),
+		bottom: bigbase.CreateBigFloat(-340.0, prec),
+		midR:   bigbase.CreateBigFloat(-62.0, prec),
+		midI:   bigbase.CreateBigFloat(-175.0, prec),
 	}
 
 	testRegionSplit(helper, t)
@@ -33,31 +36,32 @@ func TestRegionSplitNeg(t *testing.T) {
 
 func TestRegionSplitNegPos(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   CreateBigFloat(-100.0, Prec64),
-		right:  CreateBigFloat(24.0, Prec64),
-		top:    CreateBigFloat(10.0, Prec64),
-		bottom: CreateBigFloat(-340.0, Prec64),
-		midR:   CreateBigFloat(-38.0, Prec64),
-		midI:   CreateBigFloat(-165.0, Prec64),
+		left:   bigbase.CreateBigFloat(-100.0, prec),
+		right:  bigbase.CreateBigFloat(24.0, prec),
+		top:    bigbase.CreateBigFloat(10.0, prec),
+		bottom: bigbase.CreateBigFloat(-340.0, prec),
+		midR:   bigbase.CreateBigFloat(-38.0, prec),
+		midI:   bigbase.CreateBigFloat(-165.0, prec),
 	}
 
 	testRegionSplit(helper, t)
 }
 
 func TestChildrenPopulated(t *testing.T) {
+	const childCount = 4
+
 	numerics := BigRegionNumerics{
-		subRegion: bigSubregion{
+		subregion: bigSubregion{
 			populated: true,
 			// We are not inspecting the children here
-			children: []bigRegion{nil, nil, nil, nil},
+			children: make([]bigRegion, childCount),
 		},
 	}
 	children := numerics.Children()
 
-	expectedChildren := 4
 	actualChildren := len(children)
-	if actualChildren != expectedChildren {
-		t.Error("Expected", expectedChildren, "but received", actualChildren)
+	if actualChildren != childCount {
+		t.Error("Expected", childCount, "but received", actualChildren)
 	}
 }
 
@@ -72,6 +76,8 @@ func TestChildrenEmpty(t *testing.T) {
 		}()
 		numerics.Children()
 	}
+
+	triggerPanic()
 
 	if !recovered {
 		t.Error("Expected panic e.g. \"Error when raising error\"")
@@ -92,9 +98,17 @@ func TestMandelbrotPoints(t *testing.T) {
 }
 
 func TestEvaluateAllPoints(t *testing.T) {
+	const iterLimit = 1
 	numerics := BigRegionNumerics{}
-	numerics.EvaluateAllPoints(1)
-	region := numerics.region
+	numerics.SqrtDivergeLimit = bigbase.CreateBigFloat(2.0, prec)
+
+	for _, thunk := range numerics.Region.thunks() {
+		thunk.C = &thunk.cStore
+		thunk.SqrtDivergeLimit = &numerics.SqrtDivergeLimit
+	}
+
+	numerics.EvaluateAllPoints(iterLimit)
+	region := numerics.Region
 
 	okay := region.topLeft.evaluated
 	okay = okay && region.topRight.evaluated
@@ -113,19 +127,14 @@ func TestRect(t *testing.T) {
 	right := 1.0
 	top := 1.0
 
-	min := CreateBigComplex(left, bottom)
-	max := CreateBigComplex(right, top)
-	numerics := BigRegionNumerics{
-		region:  createBigRegion(min, max),
-		picXMin: 0,
-		picXMax: 2,
-		picYMin: 0,
-		picYMax: 2,
-		realMin: CreateBigFloat(left, Prec64),
-		realMax: CreateBigFloat(right, Prec64),
-		imagMin: CreateBigFloat(bottom, Prec64),
-		imagMax: CreateBigFloat(top, Prec64),
-	}
+	app := &MockRenderApplication{}
+	app.UserMin = bigbase.CreateBigComplex(left, bottom, prec)
+	app.UserMax = bigbase.CreateBigComplex(right, top, prec)
+	app.Prec = 53
+	app.PictureWidth = 2
+	app.PictureHeight = 2
+
+	numerics := CreateBigRegionNumerics(app)
 
 	expectMinX := 0
 	expectMaxX := 2
@@ -141,45 +150,59 @@ func TestRect(t *testing.T) {
 	if !okay {
 		t.Error("Rectangle had unexpected bounds", r)
 	}
-
 }
 
 func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
-	initMin := BigComplex{helper.left, helper.bottom}
-	initMax := BigComplex{helper.right, helper.top}
+	initMin := bigbase.BigComplex{helper.left, helper.bottom}
+	initMax := bigbase.BigComplex{helper.right, helper.top}
 
-	topLeftMin := BigComplex{helper.left, midI}
-	topLeftMax := BigComplex{midR, helper.top}
+	topLeftMin := bigbase.BigComplex{helper.left, helper.midI}
+	topLeftMax := bigbase.BigComplex{helper.midR, helper.top}
 
-	topRightMin := BigComplex{midR, midI}
-	topRightMax := BigComplex{helper.right, helper.top}
+	topRightMin := bigbase.BigComplex{helper.midR, helper.midI}
+	topRightMax := bigbase.BigComplex{helper.right, helper.top}
 
-	bottomLeftMin := BigComplex{helper.left, helper.bottom}
-	bottomLeftMax := BigComplex{midR, midI}
+	bottomLeftMin := bigbase.BigComplex{helper.left, helper.bottom}
+	bottomLeftMax := bigbase.BigComplex{helper.midR, helper.midI}
 
-	bottomRightMin := BigComplex{midR, helper.bottom}
-	bottomRightMax := BigComplex{helper.right, midI}
+	bottomRightMin := bigbase.BigComplex{helper.midR, helper.bottom}
+	bottomRightMax := bigbase.BigComplex{helper.right, helper.midI}
 
 	subjectRegion := createBigRegion(initMin, initMax)
 
-	expected := []Region{
+	expected := []bigRegion{
 		createBigRegion(topLeftMin, topLeftMax),
 		createBigRegion(topRightMin, topRightMax),
 		createBigRegion(bottomLeftMin, bottomLeftMax),
 		createBigRegion(bottomRightMin, bottomRightMax),
 	}
 
-	actual := subjectRegion.Split()
+	numerics := BigRegionNumerics{}
+	numerics.Region = subjectRegion
+	numerics.SqrtDivergeLimit = bigbase.CreateBigFloat(2.0, prec)
+	numerics.Split()
+	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {
-		similarity := sameRegion(ex, actual.children[i])
-		if !similarity.same {
-			t.Error(
-				"Unexpected child region ", i,
-				", expected point ", similarity.n,
-				"to be ", similarity.a,
-				" but was ", similarity.b,
-			)
+		actual := actualChildren[i]
+		exPoints := ex.thunks()
+		acPoints := actual.thunks()
+
+		fail := false
+		for j, expectThunk := range exPoints {
+
+			actThunk := acPoints[j]
+			okay := bigbase.BigComplexEq(&expectThunk.cStore, &actThunk.cStore)
+			okay = okay && bigbase.BigComplexEq(expectThunk.C, actThunk.C)
+			if !okay {
+				fail = true
+				t.Log("Region", i, "error at thunk", j,
+					"\nexpected\t", bigbase.DbgC(expectThunk.cStore),
+					"\nbut received\t", bigbase.DbgC(actThunk.cStore))
+			}
+		}
+		if fail {
+			t.Fail()
 		}
 	}
 }
@@ -191,29 +214,4 @@ type bigRegionSplitHelper struct {
 	top    big.Float
 	midR   big.Float
 	midI   big.Float
-}
-
-type bigRegionSameness struct {
-	a            big.Float
-	b            complex128
-	regionNumber int
-	same         bool
-}
-
-func sameRegion(a Region, b Region) bigRegionSameness {
-	aPoints := bigPoints(b)
-	bPoints := bigPoints(a)
-
-	for i, ap := range aPoints {
-		bp := bPoints[i]
-		if ap.C.Cmp(bp.C) {
-			return bigRegionSameness{
-				a:            ap.c,
-				b:            bp.c,
-				regionNumber: i,
-				same:         false,
-			}
-		}
-	}
-	return bigRegionSameness{same: true}
 }
