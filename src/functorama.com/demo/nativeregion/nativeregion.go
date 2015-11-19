@@ -26,10 +26,20 @@ type nativeRegion struct {
 	midPoint    nativeMandelbrotThunk
 }
 
-func (region *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
-	l, t := base.PlaneToPixel(region.topLeft.C)
-	r, b := base.PlaneToPixel(region.bottomRight.C)
+func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
+	l, t := base.PlaneToPixel(nr.topLeft.C)
+	r, b := base.PlaneToPixel(nr.bottomRight.C)
 	return image.Rect(l, t, r, b)
+}
+
+func (nr *nativeRegion) thunks() []*nativeMandelbrotThunk {
+	return []*nativeMandelbrotThunk{
+		&nr.topLeft,
+		&nr.topRight,
+		&nr.bottomLeft,
+		&nr.bottomRight,
+		&nr.midPoint,
+	}
 }
 
 // Extend NativeBaseNumerics and add support for regions
@@ -116,13 +126,7 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 }
 
 func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	points := []*nativeMandelbrotThunk{
-		&native.Region.topLeft,
-		&native.Region.topRight,
-		&native.Region.bottomLeft,
-		&native.Region.bottomRight,
-		&native.Region.midPoint,
-	}
+	points := native.Region.thunks()
 	// Ensure points are all evaluated
 	for _, p := range points {
 		if !p.evaluated {
