@@ -293,12 +293,28 @@ func (brn *BigRegionNumerics) Rect() image.Rectangle {
 }
 
 func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
+	left := min.R
+	bottom := min.I
+	right := max.R
+	top := max.I
+
+	prec := left.Prec()
+	bigTwo := bigbase.CreateBigFloat(2.0, prec)
+
+	midR := bigbase.CreateBigFloat(0.0, prec)
+	midR.Add(&right, &left)
+	midR.Quo(&midR, &bigTwo)
+
+	midI := bigbase.CreateBigFloat(0.0, prec)
+	midI.Add(&top, &bottom)
+	midI.Quo(&midI, &bigTwo)
+
 	corners := []bigbase.BigComplex{
-		bigbase.CreateBigComplex(-1.0, 1.0, prec),
-		bigbase.CreateBigComplex(1.0, 1.0, prec),
-		bigbase.CreateBigComplex(-1.0, -1.0, prec),
-		bigbase.CreateBigComplex(1.0, -1.0, prec),
-		bigbase.CreateBigComplex(0.0, 0.0, prec), // midpoint is not technically a corner
+		bigbase.BigComplex{left, top},
+		bigbase.BigComplex{right, top},
+		bigbase.BigComplex{left, bottom},
+		bigbase.BigComplex{right, bottom},
+		bigbase.BigComplex{midR, midI}, // midpoint is not technically a corner
 	}
 
 	thunks := make([]bigMandelbrotThunk, len(corners))

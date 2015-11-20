@@ -170,6 +170,8 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 
 	subjectRegion := createBigRegion(initMin, initMax)
 
+	t.Log("Subject middle:", bigbase.DbgC(subjectRegion.midPoint.cStore))
+
 	expected := []bigRegion{
 		createBigRegion(topLeftMin, topLeftMax),
 		createBigRegion(topRightMin, topRightMax),
@@ -180,6 +182,7 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	numerics := BigRegionNumerics{}
 	numerics.Region = subjectRegion
 	numerics.SqrtDivergeLimit = bigbase.CreateBigFloat(2.0, prec)
+	numerics.Precision = prec
 	numerics.Split()
 	actualChildren := numerics.subregion.children
 
@@ -190,7 +193,6 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 
 		fail := false
 		for j, expectThunk := range exPoints {
-
 			actThunk := acPoints[j]
 			okay := bigbase.BigComplexEq(&expectThunk.cStore, &actThunk.cStore)
 			okay = okay && bigbase.BigComplexEq(expectThunk.C, actThunk.C)
