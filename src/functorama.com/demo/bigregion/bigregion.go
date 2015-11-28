@@ -1,6 +1,7 @@
 package bigregion
 
 import (
+	"log"
 	"image"
 	"math/big"
 	"functorama.com/demo/base"
@@ -103,6 +104,13 @@ func (brn *BigRegionNumerics) ClaimExtrinsics() {
 	// We have our extrinsics right here
 }
 
+func (brn *BigRegionNumerics) BigChildRegions() []bigRegion {
+	if brn.subregion.populated {
+		return brn.subregion.children
+	}
+	log.Panic("No children!")
+}
+
 // Children returns a list of subdivided children.
 func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
 	if brn.subregion.populated {
@@ -113,7 +121,7 @@ func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
 		}
 		return nextContexts
 	}
-	panic("Region asked to provide non-existent children")
+	log.Panic("Region asked to provide non-existent children")
 	return nil
 }
 

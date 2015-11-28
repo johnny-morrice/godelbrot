@@ -15,8 +15,7 @@ func (factory *MockFactory) Build() SharedRegionNumerics {
     return factory.Numerics
 }
 
-type MockRenderApplication struct {
-    region.MockRenderApplication
+type MockSharedRegionProvider struct {
     TSharedRegionConfig bool
     TSharedRegionFactory bool
 
@@ -24,13 +23,18 @@ type MockRenderApplication struct {
     SharedFactory SharedRegionFactory
 }
 
-
-func (mock *MockRenderApplication) SharedRegionConfig() SharedRegionConfig {
-    mock.TSharedRegionConfig = true
-    return mock.SharedConfig
+type MockRenderApplication struct {
+    region.MockRenderApplication
+    MockSharedRegionProvider
 }
 
-func (mock *MockRenderApplication) SharedRegionFactory() SharedRegionFactory {
-    mock.TSharedRegionFactory = true
-    return mock.SharedFactory
+
+func (msrp *MockSharedRegionProvider) SharedRegionConfig() SharedRegionConfig {
+    msrp.TSharedRegionConfig = true
+    return msrp.SharedConfig
+}
+
+func (msrp *MockSharedRegionProvider) SharedRegionFactory() SharedRegionFactory {
+    msrp.TSharedRegionFactory = true
+    return msrp.SharedFactory
 }

@@ -1,6 +1,7 @@
 package nativeregion
 
 import (
+	"log"
 	"image"
 	"functorama.com/demo/base"
 	"functorama.com/demo/nativebase"
@@ -82,7 +83,7 @@ func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
 		}
 		return nextContexts
 	}
-	panic("Region asked to provide non-existent children")
+	log.Panic("Region asked to provide non-existent children")
 	return nil
 }
 
@@ -92,7 +93,7 @@ func (native *NativeRegionNumerics) NativeChildRegions() []nativeRegion {
 	if native.subregion.populated {
 		return native.subregion.children
 	}
-	panic("Region asked to provide non-existent children")
+	log.Panic("Region asked to provide non-existent children")
 	return nil
 }
 

@@ -13,8 +13,12 @@ type SharedRegionConfig struct {
     Jobs uint16
 }
 
-type RenderApplication interface {
-    region.RenderApplication
+type SharedProvider interface {
     SharedRegionConfig() SharedRegionConfig
     SharedRegionFactory() SharedRegionFactory
+}
+
+type RenderApplication interface {
+    region.RenderApplication
+    SharedProvider
 }

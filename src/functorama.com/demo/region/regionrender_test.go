@@ -23,10 +23,9 @@ func TestNewRegionRenderer(t *testing.T) {
         baseConfig: baseConfig,
         regionConfig: regionConfig,
     }
-    mock := &MockRenderApplication{
-        RegionFactory: factory,
-        RegConfig: regionConfig,
-    }
+    mock := &MockRenderApplication{}
+    mock.RegionFactory = factory
+    mock.RegConfig = regionConfig
     mock.Context = context
     mock.Base = baseConfig
 	actualRenderer := NewRegionRenderer(mock)

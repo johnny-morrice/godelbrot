@@ -1,0 +1,7 @@
+define("inheritregion", "bigregion")
+define("inheritsequence", "bigsequence")
+define("SequenceNumerics", "BigSequenceNumerics")
+define("SequenceProxy", "BigSequenceNumericsProxy")
+define("RegionProxy", "BigRegionNumericsProxy")
+define("RegionNumerics", "BigRegionNumerics")
+define("ActualChildren", "BigChildRegions")
