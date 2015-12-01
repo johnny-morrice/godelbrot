@@ -15,14 +15,18 @@ type NativeSharedRegion struct {
 
 var _ sharedregion.SharedRegionNumerics = NativeSharedRegion{}
 
-func CreateNativeSharedRegion(numerics *nativeregion.NativeRegionNumerics, jobs uint16) NativeSharedRegion {
+func MakeNumerics(app RenderApplication) NativeSharedRegion {
+    sharedConfig := app.SharedRegionConfig()
+    jobs := sharedConfig.Jobs
     shared := NativeSharedRegion{
         prototypes: make([]*nativeregion.NativeRegionNumerics, jobs),
         sequencePrototypes: make([]*nativesequence.NativeSequenceNumerics, jobs),
     }
+    numerics := nativeregion.CreateNativeRegionNumerics(app)
     for i := uint16(0); i < jobs; i++ {
-        // Copy
-        shared.prototypes[i] = &*numerics
+        // Copy numerics
+        another := numerics
+        shared.prototypes[i] = &another
         shared.sequencePrototypes[i] = shared.prototypes[i].SequenceNumerics
     }
     initLocal := shared.prototypes[0]

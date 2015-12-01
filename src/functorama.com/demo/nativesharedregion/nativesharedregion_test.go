@@ -4,18 +4,13 @@ import (
 	"sync"
 	"testing"
 	"functorama.com/demo/sharedregion"
-	"functorama.com/demo/nativesequence"
-	"functorama.com/demo/nativeregion"
 )
 
-func TestCreateNativeSharedRegion(t *testing.T) {
+func TestMakeNumerics(t *testing.T) {
 	const jobCount = 2
 
-	// Pointer to non-zero region
-	region := createRegion()
-	region.SqrtDivergeLimit = 3.0
-
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 
 	actualProtoCount := len(shared.prototypes)
 	actualSeqCount := len(shared.sequencePrototypes)
@@ -33,8 +28,8 @@ func TestCreateNativeSharedRegion(t *testing.T) {
 
 func TestRegionGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
-	region := createRegion()
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 
 	testMutantEdge(t, shared)
 }
@@ -49,9 +44,8 @@ func TestRegionGrabWorkerPrototypeParallel(t *testing.T) {
 	const jobCount = 3
 
 	// Pointer to non-zero region
-	region := createRegion()
-
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 
 	testMutantParallel(t, shared, jobCount)
 }
@@ -62,8 +56,8 @@ func TestSharedChildren(t *testing.T) {
 	const jobCount = 1
 	const expectCount = 4
 
-	region := createRegion()
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 
 	shared.Split()
 
@@ -82,10 +76,9 @@ func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 	}
 
 	const jobCount = 3
-	// Pointer to non-zero region
-	region := createRegion()
 
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 	sequence := shared.NativeSharedSequence()
 
 	testMutantParallel(t, sequence, jobCount)
@@ -93,8 +86,8 @@ func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 
 func TestSequenceGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
-	region := createRegion()
-	shared := CreateNativeSharedRegion(region, jobCount)
+	app := makeApp(jobCount)
+	shared := MakeNumerics(app)
 	sequence := shared.NativeSharedSequence()
 
 	testMutantEdge(t, sequence)
@@ -198,8 +191,8 @@ func (sequence NativeSharedSequence) isMutant() bool {
 	return sequence.SqrtDivergeLimit == mutateDiverge
 }
 
-func createRegion() *nativeregion.NativeRegionNumerics {
-	return &nativeregion.NativeRegionNumerics{
-		SequenceNumerics: &nativesequence.NativeSequenceNumerics{},
-	}
+func makeApp(jobCount int) RenderApplication {
+	app := &MockRenderApplication{}
+	app.SharedConfig.Jobs = uint16(jobCount)
+	return app
 }
