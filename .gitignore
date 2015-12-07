@@ -1,11 +1,14 @@
+src/*
+!src/functorama.com/*
+Gododir/*
+!Gododir/main.go
 bin
 pkg
 mandelbrot.png
 *.out
 *.out
 libgodelbrot.test
-src/github.com
-src/golang.org
 *.memprof
 *.cpuprof
 scratch
+
