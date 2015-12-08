@@ -1,5 +1,5 @@
 src/*
-!src/functorama.com/*
+!src/functorama.com/demo/
 Gododir/*
 !Gododir/main.go
 bin
