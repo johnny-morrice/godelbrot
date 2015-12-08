@@ -72,9 +72,9 @@ func testCreateNativeBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 			PictureWidth:   helper.pictureW,
 			PictureHeight:   helper.pictureH,
 		},
-		PlaneMin: userMin,
-		PlaneMax: userMax,
 	}
+	mock.PlaneMin = userMin
+	mock.PlaneMax = userMax
 
 	numerics := CreateNativeBaseNumerics(mock)
 

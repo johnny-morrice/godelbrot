@@ -17,9 +17,9 @@ func TestSequence(t *testing.T) {
 			PictureHeight: 10,
 			Base: base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
 		},
-		PlaneMin: complex(0.0, 0.0),
-		PlaneMax: complex(10.0, 10.0),
 	}
+	app.PlaneMin = complex(0.0, 0.0)
+	app.PlaneMax = complex(10.0, 10.0)
 	numerics := CreateNativeSequenceNumerics(app)
 	out := numerics.Sequence(iterateLimit)
 

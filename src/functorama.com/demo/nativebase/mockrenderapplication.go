@@ -6,7 +6,10 @@ import (
 
 type MockRenderApplication struct {
     base.MockRenderApplication
+    MockNativeCoordProvider
+}
 
+type MockNativeCoordProvider struct {
     TNativeUserCoords bool
 
     PlaneMin complex128
@@ -14,7 +17,7 @@ type MockRenderApplication struct {
     FixAspect bool
 }
 
-func (mock *MockRenderApplication) NativeUserCoords() (complex128, complex128) {
+func (mock *MockNativeCoordProvider) NativeUserCoords() (complex128, complex128) {
     mock.TNativeUserCoords = true
     return mock.PlaneMin, mock.PlaneMax
 }
