@@ -75,7 +75,7 @@ func tasks(p *do.Project) {
 
 func buildFeatures(p *do.Project, subsystem string, components []string) {
     var componentsInstall do.S
-    var componentsTest do.S
+    var componentsTest do.P
     for _, module := range components {
         install := installTaskName(module)
         test := testTaskName(module)
