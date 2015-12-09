@@ -14,7 +14,7 @@ type NativeSequenceNumerics struct {
 // Check we implement interface
 var _ sequence.SequenceNumerics = (*NativeSequenceNumerics)(nil)
 
-func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequenceNumerics {
+func Make(app nativebase.RenderApplication) NativeSequenceNumerics {
 	w, h := app.PictureDimensions()
 	return NativeSequenceNumerics{
 		NativeBaseNumerics: nativebase.Make(app),

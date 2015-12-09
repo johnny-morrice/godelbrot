@@ -56,7 +56,7 @@ type NativeRegionNumerics struct {
 var _ region.RegionNumerics = (*NativeRegionNumerics)(nil)
 
 func Make(app RenderApplication) NativeRegionNumerics {
-	sequence := nativesequence.CreateNativeSequenceNumerics(app)
+	sequence := nativesequence.Make(app)
 	parent := nativebase.Make(app)
 	planeMin := complex(parent.RealMin, parent.ImagMin)
 	planeMax := complex(parent.RealMax, parent.ImagMax)

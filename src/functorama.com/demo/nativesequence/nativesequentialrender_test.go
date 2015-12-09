@@ -20,7 +20,7 @@ func TestSequence(t *testing.T) {
 	}
 	app.PlaneMin = complex(0.0, 0.0)
 	app.PlaneMax = complex(10.0, 10.0)
-	numerics := CreateNativeSequenceNumerics(app)
+	numerics := Make(app)
 	out := numerics.Sequence(iterateLimit)
 
 	const expectedCount = 100
