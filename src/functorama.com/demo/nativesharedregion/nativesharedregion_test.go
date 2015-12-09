@@ -6,11 +6,11 @@ import (
 	"functorama.com/demo/sharedregion"
 )
 
-func TestMakeNumerics(t *testing.T) {
+func TestMake(t *testing.T) {
 	const jobCount = 2
 
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 
 	actualProtoCount := len(shared.prototypes)
 	actualSeqCount := len(shared.sequencePrototypes)
@@ -29,7 +29,7 @@ func TestMakeNumerics(t *testing.T) {
 func TestRegionGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 
 	testMutantEdge(t, shared)
 }
@@ -45,7 +45,7 @@ func TestRegionGrabWorkerPrototypeParallel(t *testing.T) {
 
 	// Pointer to non-zero region
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 
 	testMutantParallel(t, shared, jobCount)
 }
@@ -57,7 +57,7 @@ func TestSharedChildren(t *testing.T) {
 	const expectCount = 4
 
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 
 	shared.Split()
 
@@ -78,7 +78,7 @@ func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 	const jobCount = 3
 
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 	sequence := shared.NativeSharedSequence()
 
 	testMutantParallel(t, sequence, jobCount)
@@ -87,7 +87,7 @@ func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 func TestSequenceGrabWorkerPrototypeEdge(t *testing.T) {
 	const jobCount = 1
 	app := makeApp(jobCount)
-	shared := MakeNumerics(app)
+	shared := Make(app)
 	sequence := shared.NativeSharedSequence()
 
 	testMutantEdge(t, sequence)

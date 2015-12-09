@@ -15,7 +15,7 @@ type NativeSharedRegion struct {
 
 var _ sharedregion.SharedRegionNumerics = NativeSharedRegion{}
 
-func MakeNumerics(app RenderApplication) NativeSharedRegion {
+func Make(app RenderApplication) NativeSharedRegion {
     sharedConfig := app.SharedRegionConfig()
     jobs := sharedConfig.Jobs
     shared := NativeSharedRegion{

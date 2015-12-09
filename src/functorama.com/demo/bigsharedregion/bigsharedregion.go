@@ -15,7 +15,7 @@ type BigSharedRegion struct {
 
 var _ sharedregion.SharedRegionNumerics = BigSharedRegion{}
 
-func MakeNumerics(app RenderApplication) BigSharedRegion {
+func Make(app RenderApplication) BigSharedRegion {
     sharedConfig := app.SharedRegionConfig()
     jobs := sharedConfig.Jobs
     shared := BigSharedRegion{
