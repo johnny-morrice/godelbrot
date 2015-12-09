@@ -51,7 +51,7 @@ func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
 	rUnit, iUnit := uq.PixelUnits()
 
 	return NativeBaseNumerics{
-		BaseNumerics: base.CreateBaseNumerics(app),
+		BaseNumerics: base.Make(app),
 		RealMin:      real(planeMin),
 		RealMax:      real(planeMax),
 		ImagMin:      imag(planeMin),

@@ -79,7 +79,7 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 	fSqrtDiverge := math.Sqrt(baseConfig.DivergeLimit)
 
 	bbn := BigBaseNumerics{
-		BaseNumerics: base.CreateBaseNumerics(app),
+		BaseNumerics: base.Make(app),
 		RealMin:      left,
 		RealMax:      right,
 		ImagMin:      bottom,

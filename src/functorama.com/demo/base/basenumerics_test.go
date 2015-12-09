@@ -9,7 +9,7 @@ func TestCreateBaseNumerics(t *testing.T) {
 	mock.PictureWidth = 10
 	mock.PictureHeight = 20
 
-	numerics := CreateBaseNumerics(mock)
+	numerics := Make(mock)
 
 	mockOkay := mock.TPictureDimensions
 	if !mockOkay {
