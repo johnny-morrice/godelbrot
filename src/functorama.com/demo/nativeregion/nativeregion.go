@@ -55,7 +55,7 @@ type NativeRegionNumerics struct {
 // Check that we implement the interface
 var _ region.RegionNumerics = (*NativeRegionNumerics)(nil)
 
-func CreateNativeRegionNumerics(app RenderApplication) NativeRegionNumerics {
+func Make(app RenderApplication) NativeRegionNumerics {
 	sequence := nativesequence.CreateNativeSequenceNumerics(app)
 	parent := nativebase.Make(app)
 	planeMin := complex(parent.RealMin, parent.ImagMin)

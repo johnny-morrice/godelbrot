@@ -22,7 +22,7 @@ func MakeNumerics(app RenderApplication) NativeSharedRegion {
         prototypes: make([]*nativeregion.NativeRegionNumerics, jobs),
         sequencePrototypes: make([]*nativesequence.NativeSequenceNumerics, jobs),
     }
-    numerics := nativeregion.CreateNativeRegionNumerics(app)
+    numerics := nativeregion.Make(app)
     for i := uint16(0); i < jobs; i++ {
         // Copy numerics
         another := numerics
