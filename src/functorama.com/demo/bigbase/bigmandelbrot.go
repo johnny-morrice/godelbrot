@@ -16,9 +16,9 @@ var _ base.MandelbrotMember = (*BigMandelbrotMember)(nil)
 
 func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	z := CreateBigComplex(0.0, 0.0, member.Prec)
-	aa := CreateBigFloat(0.0, member.Prec)
-	bb := CreateBigFloat(0.0, member.Prec)
-	ab := CreateBigFloat(0.0, member.Prec)
+	aa := MakeBigFloat(0.0, member.Prec)
+	bb := MakeBigFloat(0.0, member.Prec)
+	ab := MakeBigFloat(0.0, member.Prec)
 	i := uint8(0)
 	for ; i < iterateLimit && withinMandLimit(&z, member.SqrtDivergeLimit); i++ {
 		aa.Set(z.Real())

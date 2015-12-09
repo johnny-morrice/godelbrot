@@ -28,27 +28,27 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 
 	planeMin, planeMax := app.BigUserCoords()
 
-	left := CreateBigFloat(0.0, prec)
-	right := CreateBigFloat(0.0, prec)
-	top := CreateBigFloat(0.0, prec)
-	bottom := CreateBigFloat(0.0, prec)
+	left := MakeBigFloat(0.0, prec)
+	right := MakeBigFloat(0.0, prec)
+	top := MakeBigFloat(0.0, prec)
+	bottom := MakeBigFloat(0.0, prec)
 
 	left.Set(planeMin.Real())
 	right.Set(planeMax.Real())
 	bottom.Set(planeMin.Imag())
 	top.Set(planeMax.Imag())
 
-	planeWidth := CreateBigFloat(0.0, prec)
+	planeWidth := MakeBigFloat(0.0, prec)
 	planeWidth.Sub(&right, &left)
 
-	planeHeight := CreateBigFloat(0.0, prec)
+	planeHeight := MakeBigFloat(0.0, prec)
 	planeHeight.Sub(&top, &bottom)
 
-	planeAspect := CreateBigFloat(0.0, prec)
+	planeAspect := MakeBigFloat(0.0, prec)
 	planeAspect.Quo(&planeWidth, &planeHeight)
 
 	nativePictureAspect := base.AppPictureAspectRatio(app)
-	pictureAspect := CreateBigFloat(nativePictureAspect, prec)
+	pictureAspect := MakeBigFloat(nativePictureAspect, prec)
 
 	thindicator := planeAspect.Cmp(&pictureAspect)
 
@@ -58,14 +58,14 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 		// If the plane aspect is greater than image aspect
 		// Then the plane is too short, so must be made taller
 		if thindicator == 1 {
-			taller := CreateBigFloat(0.0, prec)
+			taller := MakeBigFloat(0.0, prec)
 			taller.Quo(&planeWidth, &pictureAspect)
 			bottom.Sub(&top, &taller)
 			planeWidth.Sub(&top, &bottom)
 		} else if thindicator == -1 {
 			// If the plane aspect is less than the image aspect
 			// Then the plane is too thin, and must be made fatter
-			fatter := CreateBigFloat(0.0, prec)
+			fatter := MakeBigFloat(0.0, prec)
 			fatter.Mul(&planeHeight, &pictureAspect)
 			right.Add(&left, &fatter)
 			planeHeight.Sub(&right, &left)
@@ -85,7 +85,7 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 		ImagMin:      bottom,
 		ImagMax:      top,
 
-		SqrtDivergeLimit: CreateBigFloat(fSqrtDiverge, prec),
+		SqrtDivergeLimit: MakeBigFloat(fSqrtDiverge, prec),
 
 		Runit:     rUnit,
 		Iunit:     iUnit,
@@ -94,23 +94,23 @@ func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
 
 	return bbn
 }
-func (bbn *BigBaseNumerics) CreateBigFloat(x float64) big.Float {
-	return CreateBigFloat(x, bbn.Precision)
+func (bbn *BigBaseNumerics) MakeBigFloat(x float64) big.Float {
+	return MakeBigFloat(x, bbn.Precision)
 }
 
 func (bbn *BigBaseNumerics) CreateBigComplex(r, i float64) BigComplex {
-	return BigComplex{bbn.CreateBigFloat(r), bbn.CreateBigFloat(i)}
+	return BigComplex{bbn.MakeBigFloat(r), bbn.MakeBigFloat(i)}
 }
 
 func (bbn *BigBaseNumerics) PlaneToPixel(c *BigComplex) (rx int, ry int) {
 	// Translate x
-	x := bbn.CreateBigFloat(0.0)
+	x := bbn.MakeBigFloat(0.0)
 	x.Sub(c.Real(), &bbn.RealMin)
 	// Scale x
 	x.Quo(&x, &bbn.Runit)
 
 	// Translate y
-	y := bbn.CreateBigFloat(0.0)
+	y := bbn.MakeBigFloat(0.0)
 	y.Sub(&bbn.ImagMax, c.Imag())
 	// Scale y
 	y.Quo(&y, &bbn.Iunit)
@@ -143,12 +143,12 @@ type UnitQuery struct {
 func (uq UnitQuery) PixelUnits() (big.Float, big.Float) {
 	prec := uq.planeW.Prec()
 
-	bigPicWidth := CreateBigFloat(float64(uq.pictureW), prec)
-	bigPicHeight := CreateBigFloat(float64(uq.pictureH), prec)
+	bigPicWidth := MakeBigFloat(float64(uq.pictureW), prec)
+	bigPicHeight := MakeBigFloat(float64(uq.pictureH), prec)
 
-	rUnit := CreateBigFloat(0.0, prec)
+	rUnit := MakeBigFloat(0.0, prec)
 	rUnit.Quo(uq.planeW, &bigPicWidth)
-	iUnit := CreateBigFloat(0.0, prec)
+	iUnit := MakeBigFloat(0.0, prec)
 	iUnit.Quo(uq.planeH, &bigPicHeight)
 
 	return rUnit, iUnit

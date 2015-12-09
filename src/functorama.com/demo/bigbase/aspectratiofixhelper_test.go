@@ -17,24 +17,24 @@ type aspectRatioFixHelper struct {
 
 func (helper aspectRatioFixHelper) planeCoords() (BigComplex, BigComplex) {
 	min := BigComplex{
-		R: CreateBigFloat(helper.rMin, testPrec),
-		I: CreateBigFloat(helper.iMin, testPrec),
+		R: MakeBigFloat(helper.rMin, testPrec),
+		I: MakeBigFloat(helper.iMin, testPrec),
 	}
 	max := BigComplex{
-		R: CreateBigFloat(helper.rMax, testPrec),
-		I: CreateBigFloat(helper.iMax, testPrec),
+		R: MakeBigFloat(helper.rMax, testPrec),
+		I: MakeBigFloat(helper.iMax, testPrec),
 	}
 	return min, max
 }
 
 func (helper aspectRatioFixHelper) expectCoords() (BigComplex, BigComplex) {
 	min := BigComplex{
-		R: CreateBigFloat(helper.expectRMin, testPrec),
-		I: CreateBigFloat(helper.expectIMin, testPrec),
+		R: MakeBigFloat(helper.expectRMin, testPrec),
+		I: MakeBigFloat(helper.expectIMin, testPrec),
 	}
 	max := BigComplex{
-		R: CreateBigFloat(helper.expectRMax, testPrec),
-		I: CreateBigFloat(helper.expectIMax, testPrec),
+		R: MakeBigFloat(helper.expectRMax, testPrec),
+		I: MakeBigFloat(helper.expectIMax, testPrec),
 	}
 	return min, max
 }

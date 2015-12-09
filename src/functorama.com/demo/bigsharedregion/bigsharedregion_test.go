@@ -168,7 +168,7 @@ func testMutantEdge(t *testing.T, shared mutator) {
 	expectPanic(t, func() { shared.GrabWorkerPrototype(badId) })
 }
 
-var mutateDiverge = bigbase.CreateBigFloat(4.0, prec)
+var mutateDiverge = bigbase.MakeBigFloat(4.0, prec)
 
 func (region BigSharedRegion) id() uint16 {
 	return region.workerId

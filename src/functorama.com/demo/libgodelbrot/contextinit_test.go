@@ -235,9 +235,9 @@ func renderCheck(t *testing.T, context *RenderContextFactory, strategy RenderMod
 }
 
 func (base *BigBaseNumerics) TestFastPixelPerfectPrecision(t *testing.T) {
-	injective := bigPerfectPixelHelper(CreateBigFloat(1.0, testPrec))
-	twentySeven := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter32(0.0, 1.0), testPrec))
-	fiftyThree := bigPerfectPixelHelper(CreateBigFloat(math.nextAfter(0.0, 1.0), testPrec))
+	injective := bigPerfectPixelHelper(MakeBigFloat(1.0, testPrec))
+	twentySeven := bigPerfectPixelHelper(MakeBigFloat(math.nextAfter32(0.0, 1.0), testPrec))
+	fiftyThree := bigPerfectPixelHelper(MakeBigFloat(math.nextAfter(0.0, 1.0), testPrec))
 
 	bases := []BigBaseNumerics{
 		injective,

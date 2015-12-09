@@ -11,8 +11,8 @@ type BigComplex struct {
 }
 
 func CreateBigComplex(real float64, imag float64, prec uint) BigComplex {
-	bigReal := CreateBigFloat(real, prec)
-	bigImag := CreateBigFloat(imag, prec)
+	bigReal := MakeBigFloat(real, prec)
+	bigImag := MakeBigFloat(imag, prec)
 	return BigComplex{bigReal, bigImag}
 }
 
@@ -30,7 +30,7 @@ func (c *BigComplex) Add(q *BigComplex, u *BigComplex) {
 }
 
 // Create a new Float, supplying a precision
-func CreateBigFloat(f float64, prec uint) big.Float {
+func MakeBigFloat(f float64, prec uint) big.Float {
 	b := big.Float{}
 	b.SetFloat64(f)
 	b.SetPrec(prec)

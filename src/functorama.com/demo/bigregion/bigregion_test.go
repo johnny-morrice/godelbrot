@@ -10,12 +10,12 @@ const prec = 53
 
 func TestRegionSplitPos(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   bigbase.CreateBigFloat(1.0, prec),
-		right:  bigbase.CreateBigFloat(3.0, prec),
-		top:    bigbase.CreateBigFloat(3.0, prec),
-		bottom: bigbase.CreateBigFloat(1.0, prec),
-		midR:   bigbase.CreateBigFloat(2.0, prec),
-		midI:   bigbase.CreateBigFloat(2.0, prec),
+		left:   bigbase.MakeBigFloat(1.0, prec),
+		right:  bigbase.MakeBigFloat(3.0, prec),
+		top:    bigbase.MakeBigFloat(3.0, prec),
+		bottom: bigbase.MakeBigFloat(1.0, prec),
+		midR:   bigbase.MakeBigFloat(2.0, prec),
+		midI:   bigbase.MakeBigFloat(2.0, prec),
 	}
 
 	testRegionSplit(helper, t)
@@ -23,12 +23,12 @@ func TestRegionSplitPos(t *testing.T) {
 
 func TestRegionSplitNeg(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   bigbase.CreateBigFloat(-100.0, prec),
-		right:  bigbase.CreateBigFloat(-24.0, prec),
-		top:    bigbase.CreateBigFloat(-10.0, prec),
-		bottom: bigbase.CreateBigFloat(-340.0, prec),
-		midR:   bigbase.CreateBigFloat(-62.0, prec),
-		midI:   bigbase.CreateBigFloat(-175.0, prec),
+		left:   bigbase.MakeBigFloat(-100.0, prec),
+		right:  bigbase.MakeBigFloat(-24.0, prec),
+		top:    bigbase.MakeBigFloat(-10.0, prec),
+		bottom: bigbase.MakeBigFloat(-340.0, prec),
+		midR:   bigbase.MakeBigFloat(-62.0, prec),
+		midI:   bigbase.MakeBigFloat(-175.0, prec),
 	}
 
 	testRegionSplit(helper, t)
@@ -36,12 +36,12 @@ func TestRegionSplitNeg(t *testing.T) {
 
 func TestRegionSplitNegPos(t *testing.T) {
 	helper := bigRegionSplitHelper{
-		left:   bigbase.CreateBigFloat(-100.0, prec),
-		right:  bigbase.CreateBigFloat(24.0, prec),
-		top:    bigbase.CreateBigFloat(10.0, prec),
-		bottom: bigbase.CreateBigFloat(-340.0, prec),
-		midR:   bigbase.CreateBigFloat(-38.0, prec),
-		midI:   bigbase.CreateBigFloat(-165.0, prec),
+		left:   bigbase.MakeBigFloat(-100.0, prec),
+		right:  bigbase.MakeBigFloat(24.0, prec),
+		top:    bigbase.MakeBigFloat(10.0, prec),
+		bottom: bigbase.MakeBigFloat(-340.0, prec),
+		midR:   bigbase.MakeBigFloat(-38.0, prec),
+		midI:   bigbase.MakeBigFloat(-165.0, prec),
 	}
 
 	testRegionSplit(helper, t)
@@ -100,7 +100,7 @@ func TestMandelbrotPoints(t *testing.T) {
 func TestEvaluateAllPoints(t *testing.T) {
 	const iterLimit = 1
 	numerics := BigRegionNumerics{}
-	numerics.SqrtDivergeLimit = bigbase.CreateBigFloat(2.0, prec)
+	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
 
 	for _, thunk := range numerics.Region.thunks() {
 		thunk.C = &thunk.cStore
@@ -181,7 +181,7 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 
 	numerics := BigRegionNumerics{}
 	numerics.Region = subjectRegion
-	numerics.SqrtDivergeLimit = bigbase.CreateBigFloat(2.0, prec)
+	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
 	numerics.Precision = prec
 	numerics.Split()
 	actualChildren := numerics.subregion.children

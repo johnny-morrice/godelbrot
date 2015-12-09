@@ -5,9 +5,9 @@ package libgodelbrot
 // MATHEMATICAL VALUES
 
 // Named bignums
-var bigZero big.Float = bigbase.CreateBigFloat(0, DefaultHighPrec)
-var bigOne big.Float = bigbase.CreateBigFloat(1, DefaultHighPrec)
-var bigTwo big.Float = bigbase.CreateBigFloat(2, DefaultHighPrec)
+var bigZero big.Float = bigbase.MakeBigFloat(0, DefaultHighPrec)
+var bigOne big.Float = bigbase.MakeBigFloat(1, DefaultHighPrec)
+var bigTwo big.Float = bigbase.MakeBigFloat(2, DefaultHighPrec)
 
 // DEFAULTS
 

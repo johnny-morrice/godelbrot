@@ -99,46 +99,46 @@ func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 
 func TestPlaneToPixel(t *testing.T) {
 	numerics := BigBaseNumerics{
-		RealMin:     CreateBigFloat(-1.0, testPrec),
-		ImagMax:     CreateBigFloat(1.0, testPrec),
+		RealMin:     MakeBigFloat(-1.0, testPrec),
+		ImagMax:     MakeBigFloat(1.0, testPrec),
 	}
 
 	const imageSide = 100
 	const planeSideNat = 2.0
 
-	planeSide := CreateBigFloat(planeSideNat, testPrec)
+	planeSide := MakeBigFloat(planeSideNat, testPrec)
 
 	uq := UnitQuery{imageSide, imageSide, &planeSide, &planeSide}
 	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
 	qA := BigComplex{
-		CreateBigFloat(0.1, testPrec),
-		CreateBigFloat(0.1, testPrec),
+		MakeBigFloat(0.1, testPrec),
+		MakeBigFloat(0.1, testPrec),
 	}
 
 	qB := BigComplex{
-		CreateBigFloat(0.1, testPrec),
-		CreateBigFloat(-0.1, testPrec),
+		MakeBigFloat(0.1, testPrec),
+		MakeBigFloat(-0.1, testPrec),
 	}
 
 	qC := BigComplex{
-		CreateBigFloat(-0.1, testPrec),
-		CreateBigFloat(-0.1, testPrec),
+		MakeBigFloat(-0.1, testPrec),
+		MakeBigFloat(-0.1, testPrec),
 	}
 
 	qD := BigComplex{
-		CreateBigFloat(-0.1, testPrec),
-		CreateBigFloat(0.1, testPrec),
+		MakeBigFloat(-0.1, testPrec),
+		MakeBigFloat(0.1, testPrec),
 	}
 
 	origin := BigComplex{
-		CreateBigFloat(0.0, testPrec),
-		CreateBigFloat(0.0, testPrec),
+		MakeBigFloat(0.0, testPrec),
+		MakeBigFloat(0.0, testPrec),
 	}
 
 	offset := BigComplex{
-		CreateBigFloat(-1.0, testPrec),
-		CreateBigFloat(1.0, testPrec),
+		MakeBigFloat(-1.0, testPrec),
+		MakeBigFloat(1.0, testPrec),
 	}
 
 	const expectPixAx = 55

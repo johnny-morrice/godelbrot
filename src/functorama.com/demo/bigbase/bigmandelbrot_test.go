@@ -5,9 +5,9 @@ import (
 )
 
 func TestBigMandelbrotSanity(t *testing.T) {
-	origin := BigComplex{CreateBigFloat(0.0, testPrec), CreateBigFloat(0.0, testPrec)}
-	non := BigComplex{CreateBigFloat(2.0, testPrec), CreateBigFloat(4, testPrec)}
-	sqrtDL := CreateBigFloat(2.0, testPrec)
+	origin := BigComplex{MakeBigFloat(0.0, testPrec), MakeBigFloat(0.0, testPrec)}
+	non := BigComplex{MakeBigFloat(2.0, testPrec), MakeBigFloat(4, testPrec)}
+	sqrtDL := MakeBigFloat(2.0, testPrec)
 	const iterateLimit uint8 = 255
 
 	originMember := BigMandelbrotMember{

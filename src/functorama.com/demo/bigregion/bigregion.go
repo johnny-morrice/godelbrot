@@ -53,9 +53,9 @@ func (brn *BigRegionNumerics) createRelativeRegion(min *bigbase.BigComplex, max 
 	bottom := min.Imag()
 	top := max.Imag()
 
-	midR := brn.CreateBigFloat(0.0)
+	midR := brn.MakeBigFloat(0.0)
 	midR.Sub(right, left)
-	midI := brn.CreateBigFloat(0.0)
+	midI := brn.MakeBigFloat(0.0)
 	midI.Sub(top, bottom)
 
 	return bigRegion{
@@ -174,13 +174,13 @@ func (brn *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples ui
 		tl := r.topLeft.cStore
 		br := r.bottomRight.cStore
 
-		bigGlitch := brn.CreateBigFloat(float64(glitchSamples))
+		bigGlitch := brn.MakeBigFloat(float64(glitchSamples))
 
-		rUnit := brn.CreateBigFloat(0.0)
+		rUnit := brn.MakeBigFloat(0.0)
 		rUnit.Copy(br.Real())
 		rUnit.Sub(&rUnit, tl.Real())
 		rUnit.Quo(&rUnit, &bigGlitch)
-		iUnit := brn.CreateBigFloat(0.0)
+		iUnit := brn.MakeBigFloat(0.0)
 		iUnit.Copy(tl.Imag())
 		iUnit.Sub(&iUnit, br.Imag())
 		iUnit.Quo(&iUnit, &bigGlitch)
@@ -222,29 +222,29 @@ func (brn *BigRegionNumerics) Split() {
 	midR := midPos.Real()
 	midI := midPos.Imag()
 
-	bigTwo := brn.CreateBigFloat(2.0)
+	bigTwo := brn.MakeBigFloat(2.0)
 
 	topSideMid := brn.createBigThunk(midR, top)
 	bottomSideMid := brn.createBigThunk(midR, bottom)
 	leftSideMid := brn.createBigThunk(left, midI)
 	rightSideMid := brn.createBigThunk(right, midI)
 
-	leftSectorMid := brn.CreateBigFloat(0.0)
+	leftSectorMid := brn.MakeBigFloat(0.0)
 	leftSectorMid.Copy(left)
 	leftSectorMid.Add(&leftSectorMid, midR)
 	leftSectorMid.Quo(&leftSectorMid, &bigTwo)
 
-	rightSectorMid := brn.CreateBigFloat(0.0)
+	rightSectorMid := brn.MakeBigFloat(0.0)
 	rightSectorMid.Copy(right)
 	rightSectorMid.Add(&rightSectorMid, midR)
 	rightSectorMid.Quo(&rightSectorMid, &bigTwo)
 
-	topSectorMid := brn.CreateBigFloat(0.0)
+	topSectorMid := brn.MakeBigFloat(0.0)
 	topSectorMid.Copy(top)
 	topSectorMid.Add(&topSectorMid, midI)
 	topSectorMid.Quo(&topSectorMid, &bigTwo)
 
-	bottomSectorMid := brn.CreateBigFloat(0.0)
+	bottomSectorMid := brn.MakeBigFloat(0.0)
 	bottomSectorMid.Copy(bottom)
 	bottomSectorMid.Add(&bottomSectorMid, midI)
 	bottomSectorMid.Quo(&bottomSectorMid, &bigTwo)
@@ -308,13 +308,13 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 	top := max.I
 
 	prec := left.Prec()
-	bigTwo := bigbase.CreateBigFloat(2.0, prec)
+	bigTwo := bigbase.MakeBigFloat(2.0, prec)
 
-	midR := bigbase.CreateBigFloat(0.0, prec)
+	midR := bigbase.MakeBigFloat(0.0, prec)
 	midR.Add(&right, &left)
 	midR.Quo(&midR, &bigTwo)
 
-	midI := bigbase.CreateBigFloat(0.0, prec)
+	midI := bigbase.MakeBigFloat(0.0, prec)
 	midI.Add(&top, &bottom)
 	midI.Quo(&midI, &bigTwo)
 
