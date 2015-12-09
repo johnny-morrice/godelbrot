@@ -88,7 +88,7 @@ type BigRegionNumerics struct {
 var _ region.RegionNumerics = (*BigRegionNumerics)(nil)
 
 func Make(app RenderApplication) BigRegionNumerics {
-	sequence := bigsequence.CreateBigSequenceNumerics(app)
+	sequence := bigsequence.Make(app)
 	parent := bigbase.Make(app)
 	planeMin := bigbase.BigComplex{parent.RealMin, parent.ImagMin}
 	planeMax := bigbase.BigComplex{parent.RealMax, parent.ImagMax}

@@ -14,7 +14,7 @@ type BigSequenceNumerics struct {
 // Check that BigSequenceNumerics implements SequenceNumerics interface
 var _ sequence.SequenceNumerics = (*BigSequenceNumerics)(nil)
 
-func CreateBigSequenceNumerics(app bigbase.RenderApplication) BigSequenceNumerics {
+func Make(app bigbase.RenderApplication) BigSequenceNumerics {
 	w, h := app.PictureDimensions()
 	return BigSequenceNumerics{
 		BigBaseNumerics: bigbase.Make(app),

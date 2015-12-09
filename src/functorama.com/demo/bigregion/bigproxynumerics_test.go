@@ -35,7 +35,7 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 	app.UserMin = bigbase.MakeBigComplex(-2.0, -2.0, prec)
 	app.UserMax = bigbase.MakeBigComplex(2.0, 2.0, prec)
 
-	numerics := bigsequence.CreateBigSequenceNumerics(app)
+	numerics := bigsequence.Make(app)
 
 	bsnp := BigSequenceNumericsProxy{
 		BigSequenceNumerics: &numerics,
