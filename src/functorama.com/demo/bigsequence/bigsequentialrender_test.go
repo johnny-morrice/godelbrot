@@ -19,8 +19,8 @@ func TestBigMandelbrotSequence(t *testing.T) {
 			PictureHeight: 10,
 		},
 	}
-	app.UserMin = bigbase.CreateBigComplex(0.0, 0.0, prec)
-	app.UserMax = bigbase.CreateBigComplex(10.0, 10.0, prec)
+	app.UserMin = bigbase.MakeBigComplex(0.0, 0.0, prec)
+	app.UserMax = bigbase.MakeBigComplex(10.0, 10.0, prec)
 	numerics := CreateBigSequenceNumerics(app)
 	out := numerics.Sequence(iterLimit)
 

@@ -199,8 +199,8 @@ func makeApp(jobCount uint16) *MockRenderApplication {
 	app.SharedConfig.Jobs = jobCount
 	app.PictureWidth = 1
 	app.PictureHeight = 1
-	app.UserMin = bigbase.CreateBigComplex(1.0, 1.0, prec)
-	app.UserMax = bigbase.CreateBigComplex(2.0, 2.0, prec)
+	app.UserMin = bigbase.MakeBigComplex(1.0, 1.0, prec)
+	app.UserMax = bigbase.MakeBigComplex(2.0, 2.0, prec)
 	app.Prec = prec
 	return app
 }

@@ -10,7 +10,7 @@ type BigComplex struct {
 	I big.Float
 }
 
-func CreateBigComplex(real float64, imag float64, prec uint) BigComplex {
+func MakeBigComplex(real float64, imag float64, prec uint) BigComplex {
 	bigReal := MakeBigFloat(real, prec)
 	bigImag := MakeBigFloat(imag, prec)
 	return BigComplex{bigReal, bigImag}

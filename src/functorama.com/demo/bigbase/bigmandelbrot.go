@@ -15,7 +15,7 @@ type BigMandelbrotMember struct {
 var _ base.MandelbrotMember = (*BigMandelbrotMember)(nil)
 
 func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
-	z := CreateBigComplex(0.0, 0.0, member.Prec)
+	z := MakeBigComplex(0.0, 0.0, member.Prec)
 	aa := MakeBigFloat(0.0, member.Prec)
 	bb := MakeBigFloat(0.0, member.Prec)
 	ab := MakeBigFloat(0.0, member.Prec)

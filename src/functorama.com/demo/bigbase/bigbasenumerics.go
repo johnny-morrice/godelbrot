@@ -98,7 +98,7 @@ func (bbn *BigBaseNumerics) MakeBigFloat(x float64) big.Float {
 	return MakeBigFloat(x, bbn.Precision)
 }
 
-func (bbn *BigBaseNumerics) CreateBigComplex(r, i float64) BigComplex {
+func (bbn *BigBaseNumerics) MakeBigComplex(r, i float64) BigComplex {
 	return BigComplex{bbn.MakeBigFloat(r), bbn.MakeBigFloat(i)}
 }
 

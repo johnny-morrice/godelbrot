@@ -128,8 +128,8 @@ func TestRect(t *testing.T) {
 	top := 1.0
 
 	app := &MockRenderApplication{}
-	app.UserMin = bigbase.CreateBigComplex(left, bottom, prec)
-	app.UserMax = bigbase.CreateBigComplex(right, top, prec)
+	app.UserMin = bigbase.MakeBigComplex(left, bottom, prec)
+	app.UserMax = bigbase.MakeBigComplex(right, top, prec)
 	app.Prec = 53
 	app.PictureWidth = 2
 	app.PictureHeight = 2

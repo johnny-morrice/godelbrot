@@ -25,15 +25,15 @@ func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
 }
 
 func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
-	min := bigbase.CreateBigComplex(-1.0, -1.0, prec)
-	max := bigbase.CreateBigComplex(1.0, 1.0, prec)
+	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
+	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
 	region := createBigRegion(min, max)
 
 	app := &bigbase.MockRenderApplication{}
 	app.PictureWidth = 100
 	app.PictureHeight = 100
-	app.UserMin = bigbase.CreateBigComplex(-2.0, -2.0, prec)
-	app.UserMax = bigbase.CreateBigComplex(2.0, 2.0, prec)
+	app.UserMin = bigbase.MakeBigComplex(-2.0, -2.0, prec)
+	app.UserMax = bigbase.MakeBigComplex(2.0, 2.0, prec)
 
 	numerics := bigsequence.CreateBigSequenceNumerics(app)
 
