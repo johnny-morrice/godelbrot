@@ -17,7 +17,7 @@ var _ sequence.SequenceNumerics = (*BigSequenceNumerics)(nil)
 func CreateBigSequenceNumerics(app bigbase.RenderApplication) BigSequenceNumerics {
 	w, h := app.PictureDimensions()
 	return BigSequenceNumerics{
-		BigBaseNumerics: bigbase.CreateBigBaseNumerics(app),
+		BigBaseNumerics: bigbase.Make(app),
 		area: int(w * h),
 	}
 }

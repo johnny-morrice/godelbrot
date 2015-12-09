@@ -52,7 +52,7 @@ func (factory *GodelbrotRegionNumericsFactory) Build() sharedregion.SharedRegion
         return nativesharedregion.CreateNativeSharedRegion(region, factory.sharedConfig.Jobs)
     case BigFloatNumericsMode:
         bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)
-        specialized := bigbase.CreateBigBaseNumerics(bigBaseApp)
+        specialized := bigbase.Make(bigBaseApp)
         sequence := bigsequence.NewBigSequenceNumerics(specialized)
         region := bigregion.NewRegionNumerics(specialized, factory.regionConfig, sequence)
         return bigsharedregion.CreateBigSharedRegion(region, factory.sharedConfig.Jobs)

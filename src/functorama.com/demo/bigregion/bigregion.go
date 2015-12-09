@@ -89,7 +89,7 @@ var _ region.RegionNumerics = (*BigRegionNumerics)(nil)
 
 func CreateBigRegionNumerics(app RenderApplication) BigRegionNumerics {
 	sequence := bigsequence.CreateBigSequenceNumerics(app)
-	parent := bigbase.CreateBigBaseNumerics(app)
+	parent := bigbase.Make(app)
 	planeMin := bigbase.BigComplex{parent.RealMin, parent.ImagMin}
 	planeMax := bigbase.BigComplex{parent.RealMax, parent.ImagMax}
 	return BigRegionNumerics{

@@ -5,12 +5,12 @@ import (
 	"functorama.com/demo/base"
 )
 
-// Three paths through CreateBigBaseNumerics
+// Three paths through Make
 // 1. Aspect ratio is okay
 // 2. Aspect ratio is too short
 // 3. Aspect ratio is too thin
 
-func TestCreateBigBaseNumerics(t *testing.T) {
+func TestMake(t *testing.T) {
 	noChange := aspectRatioFixHelper{
 		pictureW: 200,
 		pictureH: 100,
@@ -56,11 +56,11 @@ func TestCreateBigBaseNumerics(t *testing.T) {
 
 	tests := []aspectRatioFixHelper{noChange, fatter, taller}
 	for _, test := range tests {
-		testCreateBigBaseNumerics(t, test)
+		testMake(t, test)
 	}
 }
 
-func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
+func testMake(t *testing.T, helper aspectRatioFixHelper) {
 	userMin, userMax := helper.planeCoords()
 	expectMin, expectMax := helper.expectCoords()
 
@@ -79,7 +79,7 @@ func testCreateBigBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 		},
 	}
 
-	numerics := CreateBigBaseNumerics(mock)
+	numerics := Make(mock)
 
 	actualMin := BigComplex{numerics.RealMin, numerics.ImagMin}
 	actualMax := BigComplex{numerics.RealMax, numerics.ImagMax}

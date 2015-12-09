@@ -46,7 +46,7 @@ func (factory *GodelbrotRegionNumericsFactory) Build() region.RegionNumerics {
         return nativeregion.NewRegionNumerics(specialized, config, sequence)
     case BigFloatNumericsMode:
         bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)
-        specialized := bigbase.CreateBigBaseNumerics(bigBaseApp)
+        specialized := bigbase.Make(bigBaseApp)
         sequence := bigsequence.NewBigSequenceNumerics(specialized)
         return bigregion.NewRegionNumerics(specialized, config, sequence)
     default:

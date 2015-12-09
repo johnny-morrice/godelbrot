@@ -23,7 +23,7 @@ type BigBaseNumerics struct {
 	Precision uint
 }
 
-func CreateBigBaseNumerics(app RenderApplication) BigBaseNumerics {
+func Make(app RenderApplication) BigBaseNumerics {
 	prec := app.Precision()
 
 	planeMin, planeMax := app.BigUserCoords()

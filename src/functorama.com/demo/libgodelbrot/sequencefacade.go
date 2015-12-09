@@ -35,7 +35,7 @@ func (factory *GodelbrotSequenceNumericsFactory) Build() sequence.SequenceNumeri
         return nativesequence.NewNativeSequenceNumerics(specialized)
     case BigFloatNumericsMode:
         bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)
-        specialized := bigbase.CreateBigBaseNumerics(bigBaseApp)
+        specialized := bigbase.Make(bigBaseApp)
         return bigsequence.NewBigSequenceNumerics(specialized)
     default:
         log.Panic("Unknown numerics mode", factory.info.DetectedNumericsMode)
