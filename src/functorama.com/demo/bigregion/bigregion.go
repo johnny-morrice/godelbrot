@@ -109,6 +109,7 @@ func (brn *BigRegionNumerics) BigChildRegions() []bigRegion {
 		return brn.subregion.children
 	}
 	log.Panic("No children!")
+	return nil
 }
 
 // Children returns a list of subdivided children.
