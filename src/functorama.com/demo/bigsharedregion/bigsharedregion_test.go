@@ -5,9 +5,9 @@ import (
 	"testing"
 	"functorama.com/demo/bigbase"
 	"functorama.com/demo/sharedregion"
-	"functorama.com/demo/bigsequence"
-	"functorama.com/demo/bigregion"
 )
+
+const prec = 53
 
 func TestMakeNumerics(t *testing.T) {
 	const jobCount = 2
@@ -79,7 +79,7 @@ func TestSequenceGrabWorkerPrototypeParallel(t *testing.T) {
 
 	const jobCount = 3
 	// Pointer to non-zero region
-	region := makeApp(jobCount)
+	app := makeApp(jobCount)
 
 	shared := MakeNumerics(app)
 	sequence := shared.SharedSequence()
@@ -168,36 +168,39 @@ func testMutantEdge(t *testing.T, shared mutator) {
 	expectPanic(t, func() { shared.GrabWorkerPrototype(badId) })
 }
 
-const mutateDiverge = 4.0
+var mutateDiverge = bigbase.CreateBigFloat(4.0, prec)
 
-func (region SharedRegion) id() uint16 {
+func (region BigSharedRegion) id() uint16 {
 	return region.workerId
 }
 
-func (region SharedRegion) mutate() {
+func (region BigSharedRegion) mutate() {
 	region.SqrtDivergeLimit = mutateDiverge
 }
 
-func (region SharedRegion) isMutant() bool {
-	return region.SqrtDivergeLimit == mutateDiverge
+func (region BigSharedRegion) isMutant() bool {
+	return bigbase.BigEq(&region.SqrtDivergeLimit, &mutateDiverge)
 }
 
-func (sequence SharedSequence) id() uint16 {
+func (sequence BigSharedSequence) id() uint16 {
 	return sequence.workerId
 }
 
-func (sequence SharedSequence) mutate() {
+func (sequence BigSharedSequence) mutate() {
 	sequence.SqrtDivergeLimit = mutateDiverge
 }
 
-func (sequence SharedSequence) isMutant() bool {
-	return sequence.SqrtDivergeLimit == mutateDiverge
+func (sequence BigSharedSequence) isMutant() bool {
+	return bigbase.BigEq(&sequence.SqrtDivergeLimit, &mutateDiverge)
 }
 
-func makeApp() *MockRenderApplication {
+func makeApp(jobCount uint16) *MockRenderApplication {
 	app := &MockRenderApplication{}
-	app.SharedConfig = sharedregion.SharedRegionConfig{
-		Jobs: jobCount,
-	}
+	app.SharedConfig.Jobs = jobCount
+	app.PictureWidth = 1
+	app.PictureHeight = 1
+	app.UserMin = bigbase.CreateBigComplex(1.0, 1.0, prec)
+	app.UserMax = bigbase.CreateBigComplex(2.0, 2.0, prec)
+	app.Prec = prec
 	return app
 }
