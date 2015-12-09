@@ -41,7 +41,7 @@ func (factory *GodelbrotRegionNumericsFactory) Build() region.RegionNumerics {
     switch factory.info.DetectedNumericsMode {
     case NativeNumericsMode:
         nativeBaseApp := CreateNativeBaseFacade(factory.info, factory.baseApp)
-        specialized := nativebase.CreateNativeBaseNumerics(nativeBaseApp)
+        specialized := nativebase.Make(nativeBaseApp)
         sequence := nativesequence.NewNativeSequenceNumerics(specialized)
         return nativeregion.NewRegionNumerics(specialized, config, sequence)
     case BigFloatNumericsMode:

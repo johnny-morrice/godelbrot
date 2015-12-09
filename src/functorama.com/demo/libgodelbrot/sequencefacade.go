@@ -31,7 +31,7 @@ func (factory *GodelbrotSequenceNumericsFactory) Build() sequence.SequenceNumeri
     switch factory.info.DetectedNumericsMode {
     case NativeNumericsMode:
         nativeBaseApp := CreateNativeBaseFacade(factory.info, factory.baseApp)
-        specialized := nativebase.CreateNativeBaseNumerics(nativeBaseApp)
+        specialized := nativebase.Make(nativeBaseApp)
         return nativesequence.NewNativeSequenceNumerics(specialized)
     case BigFloatNumericsMode:
         bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)

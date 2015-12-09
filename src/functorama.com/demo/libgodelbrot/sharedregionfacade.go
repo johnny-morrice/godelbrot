@@ -46,7 +46,7 @@ func (factory *GodelbrotRegionNumericsFactory) Build() sharedregion.SharedRegion
     switch factory.info.DetectedNumericsMode {
     case NativeNumericsMode:
         nativeBaseApp := CreateNativeBaseFacade(factory.info, factory.baseApp)
-        specialized := nativebase.CreateNativeBaseNumerics(nativeBaseApp)
+        specialized := nativebase.Make(nativeBaseApp)
         sequence := nativesequence.NewNativeSequenceNumerics(specialized)
         region := nativeregion.NewRegionNumerics(specialized, factory.regionConfig, sequence)
         return nativesharedregion.CreateNativeSharedRegion(region, factory.sharedConfig.Jobs)

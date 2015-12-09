@@ -20,7 +20,7 @@ type NativeBaseNumerics struct {
 	SqrtDivergeLimit float64
 }
 
-func CreateNativeBaseNumerics(app RenderApplication) NativeBaseNumerics {
+func Make(app RenderApplication) NativeBaseNumerics {
 	planeMin, planeMax := app.NativeUserCoords()
 	planeWidth := real(planeMax) - real(planeMin)
 	planeHeight := imag(planeMax) - imag(planeMin)

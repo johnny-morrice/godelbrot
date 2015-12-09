@@ -5,12 +5,12 @@ import (
 	"functorama.com/demo/base"
 )
 
-// Three paths through CreateNativeBaseNumerics
+// Three paths through Make
 // 1. Aspect ratio is okay
 // 2. Aspect ratio is too short
 // 3. Aspect ratio is too thin
 
-func TestCreateNativeBaseNumerics(t *testing.T) {
+func TestMake(t *testing.T) {
 	noChange := aspectRatioFixHelper{
 		pictureW: 200,
 		pictureH: 100,
@@ -56,11 +56,11 @@ func TestCreateNativeBaseNumerics(t *testing.T) {
 
 	tests := []aspectRatioFixHelper{noChange, fatter, taller}
 	for _, test := range tests {
-		testCreateNativeBaseNumerics(t, test)
+		testMake(t, test)
 	}
 }
 
-func testCreateNativeBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
+func testMake(t *testing.T, helper aspectRatioFixHelper) {
 	userMin, userMax := helper.planeCoords()
 	expectMin, expectMax := helper.expectCoords()
 
@@ -76,7 +76,7 @@ func testCreateNativeBaseNumerics(t *testing.T, helper aspectRatioFixHelper) {
 	mock.PlaneMin = userMin
 	mock.PlaneMax = userMax
 
-	numerics := CreateNativeBaseNumerics(mock)
+	numerics := Make(mock)
 
 
 	actualMin := complex(numerics.RealMin, numerics.ImagMin)

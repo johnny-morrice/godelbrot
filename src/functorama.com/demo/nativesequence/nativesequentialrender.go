@@ -17,7 +17,7 @@ var _ sequence.SequenceNumerics = (*NativeSequenceNumerics)(nil)
 func CreateNativeSequenceNumerics(app nativebase.RenderApplication) NativeSequenceNumerics {
 	w, h := app.PictureDimensions()
 	return NativeSequenceNumerics{
-		NativeBaseNumerics: nativebase.CreateNativeBaseNumerics(app),
+		NativeBaseNumerics: nativebase.Make(app),
 		area: int(w * h),
 	}
 }
