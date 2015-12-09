@@ -22,7 +22,7 @@ func MakeNumerics(app RenderApplication) BigSharedRegion {
         prototypes: make([]*bigregion.BigRegionNumerics, jobs),
         sequencePrototypes: make([]*bigsequence.BigSequenceNumerics, jobs),
     }
-    numerics := bigregion.CreateBigRegionNumerics(app)
+    numerics := bigregion.Make(app)
     for i := uint16(0); i < jobs; i++ {
         // Copy numerics
         another := numerics

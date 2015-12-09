@@ -134,7 +134,7 @@ func TestRect(t *testing.T) {
 	app.PictureWidth = 2
 	app.PictureHeight = 2
 
-	numerics := CreateBigRegionNumerics(app)
+	numerics := Make(app)
 
 	expectMinX := 0
 	expectMaxX := 2
