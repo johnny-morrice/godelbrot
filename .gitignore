@@ -1,5 +1,6 @@
-src/*
-!src/functorama.com/demo/
+src/github.com
+src/golang.org
+src/gopkg.in
 Gododir/*
 !Gododir/main.go
 bin
