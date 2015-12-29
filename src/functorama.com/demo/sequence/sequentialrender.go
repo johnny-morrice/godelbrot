@@ -11,7 +11,7 @@ type SequenceRenderStrategy struct {
 	iterateLimit uint8
 }
 
-func NewSequenceRenderer(app RenderApplication) SequenceRenderStrategy {
+func Make(app RenderApplication) SequenceRenderStrategy {
 	return SequenceRenderStrategy{
 		numerics: app.SequenceNumericsFactory().Build(),
 		context: app.DrawingContext(),
