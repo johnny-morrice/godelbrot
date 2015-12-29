@@ -1,6 +1,8 @@
 package sharedregion
 
 import (
+	"functorama.com/demo/draw"
+	"functorama.com/demo/base"
     "functorama.com/demo/region"
 )
 
@@ -19,6 +21,8 @@ type SharedProvider interface {
 }
 
 type RenderApplication interface {
-    region.RenderApplication
+	base.RenderApplication
+	draw.ContextProvider
+    region.RegionProvider
     SharedProvider
 }
