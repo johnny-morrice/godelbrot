@@ -28,7 +28,7 @@ func TestNewRegionRenderer(t *testing.T) {
     mock.RegConfig = regionConfig
     mock.Context = context
     mock.Base = baseConfig
-	actualRenderer := NewRegionRenderer(mock)
+	actualRenderer := Make(mock)
 
 	if *actualRenderer != expectedRenderer {
 		t.Error("Expected renderer", expectedRenderer,

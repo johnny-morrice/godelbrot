@@ -13,7 +13,7 @@ type RegionRenderStrategy struct {
 	regionConfig RegionConfig
 }
 
-func NewRegionRenderer(app RenderApplication) *RegionRenderStrategy {
+func Make(app RenderApplication) *RegionRenderStrategy {
 	return &RegionRenderStrategy{
 		factory: app.RegionNumericsFactory(),
 		context: app.DrawingContext(),
