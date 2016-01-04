@@ -11,7 +11,6 @@ type SharedRegionFactory interface {
 }
 
 type SharedRegionConfig struct {
-    BufferSize uint
     Jobs uint16
 }
 
