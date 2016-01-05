@@ -1,43 +1,59 @@
 package libgodelbrot
 
-type SequenceFacade struct {
-    *BaseFacade
-    *DrawFacade
-    factory SequenceNumericsFactory
+import (
+    "log"
+    "image"
+    "functorama.com/demo/sequence"
+    "functorama.com/demo/nativesequence"
+    "functorama.com/demo/bigsequence"
+)
+
+type sequenceFacade struct {
+    *baseFacade
+    *drawFacade
+    factory *sequenceNumericsFactory
 }
 
-var _ sequence.RenderApplication = (*SequenceFacade)(nil)
+// sequenceFacade implements a couple of interfaces
+var _ sequence.RenderApplication = (*sequenceFacade)(nil)
+var _ Renderer = (*sequenceFacade)(nil)
 
-func NewSequenceFacade(info *RenderInfo) *SequenceFacade {
-    baseApp := NewBaseFacade(info)
-    facade := &SequenceFacade{
-        BaseFacade: baseApp,
-        DrawFacade: NewDrawFacade(info),
+func makeSequenceFacade(info *Info) *sequenceFacade {
+    baseApp := makeBaseFacade(info)
+    facade := &sequenceFacade{
+        baseFacade: baseApp,
+        drawFacade: makeDrawFacade(info),
     }
-    facade.factory = &GodelbrotSequenceNumericsFactory{info, baseApp}
+    facade.factory = &sequenceNumericsFactory{info, baseApp}
     return facade
 }
 
-func (facade *SequenceFacade) SequenceNumericsFactory() sequence.SequenceNumericsFactory {
+func (facade *sequenceFacade) SequenceNumericsFactory() sequence.SequenceNumericsFactory {
     return facade.factory
 }
 
-type GodelbrotSequenceNumericsFactory struct {
-    info RenderInfo
-    baseApp base.RenderApplication
+func (facade *sequenceFacade) Render() (*image.NRGBA, error) {
+    renderer := sequence.Make(facade)
+    return renderer.Render()
 }
 
-func (factory *GodelbrotSequenceNumericsFactory) Build() sequence.SequenceNumerics {
-    switch factory.info.DetectedNumericsMode {
+type sequenceNumericsFactory struct {
+    desc *Info
+    baseApp *baseFacade
+}
+
+func (factory *sequenceNumericsFactory) Build() sequence.SequenceNumerics {
+    switch factory.desc.NumericsStrategy {
     case NativeNumericsMode:
-        nativeBaseApp := CreateNativeBaseFacade(factory.info, factory.baseApp)
-        specialized := nativebase.Make(nativeBaseApp)
-        return nativesequence.NewNativeSequenceNumerics(specialized)
+        specialBase := makeNativeBaseFacade(factory.desc, factory.baseApp)
+        nativeApp := nativesequence.Make(specialBase)
+        return &nativeApp
     case BigFloatNumericsMode:
-        bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)
-        specialized := bigbase.Make(bigBaseApp)
-        return bigsequence.NewBigSequenceNumerics(specialized)
+        specialBase := makeBigBaseFacade(factory.desc, factory.baseApp)
+        bigApp := bigsequence.Make(specialBase)
+        return &bigApp
     default:
-        log.Panic("Unknown numerics mode", factory.info.DetectedNumericsMode)
+        log.Panic("Invalid NumericsStrategy", factory.desc.NumericsStrategy)
+        return nil
     }
 }

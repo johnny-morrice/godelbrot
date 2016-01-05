@@ -1,55 +1,83 @@
 package libgodelbrot
 
 import (
+    "log"
+    "image"
     "functorama.com/demo/region"
+    "functorama.com/demo/nativeregion"
+    "functorama.com/demo/bigregion"
 )
 
-type RegionFacade struct {
-    *BaseFacade
-    *DrawFacade
+type regionProvider struct {
     regionConfig region.RegionConfig
-    factory GodelbrotRegionNumericsFactory
+    factory *regionNumericsFactory
 }
 
-var _ region.RenderApplication = (*RegionFacade)(nil)
+var _ region.RegionProvider = (*regionProvider)(nil)
 
-func NewRegionFacade(info *RenderInfo) *RegionFacade {
-    baseApp := NewBaseFacade()
-    facade := &RegionFacade{
-        BaseFacade: baseApp,
-        DrawFacade: NewDrawFacade(info),
+func (provider *regionProvider) RegionConfig() region.RegionConfig {
+    return provider.regionConfig
+}
+
+func (provider *regionProvider) RegionNumericsFactory() region.RegionNumericsFactory {
+    return provider.factory
+}
+
+type regionFacade struct {
+    *regionProvider
+    *baseFacade
+    *drawFacade
+}
+
+var _ region.RenderApplication = (*regionFacade)(nil)
+var _ Renderer = (*regionFacade)(nil)
+
+func makeRegionFacade(desc *Info) *regionFacade {
+    req := desc.UserRequest
+    baseApp := makeBaseFacade(desc)
+    facade := &regionFacade{
+        baseFacade: baseApp,
+        drawFacade: makeDrawFacade(desc),
     }
-    facade.factory = &GodelbrotRegionNumericsFactory{info, baseApp}
+
+    provider := &regionProvider{}
+    provider.factory = &regionNumericsFactory{desc, baseApp, provider}
+    provider.regionConfig = region.RegionConfig{
+        GlitchSamples: req.GlitchSamples,
+        CollapseSize: req.RegionCollapse,
+    }
+
+    facade.regionProvider = provider
     return facade
 }
 
-func (facade *RegionFacade) RegionNumericsFactory() region.RegionNumericsFactory {
+func (facade *regionFacade) RegionNumericsFactory() region.RegionNumericsFactory {
     return facade.factory
 }
 
-type GodelbrotRegionNumericsFactory struct {
-    info RenderInfo
-    baseApp base.RenderApplication
+func (facade *regionFacade) Render() (*image.NRGBA, error) {
+    renderer := region.Make(facade)
+    return renderer.Render()
 }
 
-func (factory *GodelbrotRegionNumericsFactory) Build() region.RegionNumerics {
-    desc := factory.info.UserDescription
-    config := region.RegionConfig{
-        GlitchSamples: desc.GlitchSamples,
-        Collapse: desc.RegionCollapse,
-    }
-    switch factory.info.DetectedNumericsMode {
+type regionNumericsFactory struct {
+    desc *Info
+    baseApp *baseFacade
+    provider *regionProvider
+}
+
+func (factory *regionNumericsFactory) Build() region.RegionNumerics {
+    switch factory.desc.NumericsStrategy {
     case NativeNumericsMode:
-        nativeBaseApp := CreateNativeBaseFacade(factory.info, factory.baseApp)
-        specialized := nativebase.Make(nativeBaseApp)
-        sequence := nativesequence.NewNativeSequenceNumerics(specialized)
-        return nativeregion.NewRegionNumerics(specialized, config, sequence)
+        app := makeNativeRegionFacade(factory.desc, factory.baseApp, factory.provider)
+        nativeApp := nativeregion.Make(app)
+        return &nativeApp
     case BigFloatNumericsMode:
-        bigBaseApp := CreateBigBaseFacade(factory.info, factory.baseApp)
-        specialized := bigbase.Make(bigBaseApp)
-        sequence := bigsequence.NewBigSequenceNumerics(specialized)
-        return bigregion.NewRegionNumerics(specialized, config, sequence)
+        app := makeBigRegionFacade(factory.desc, factory.baseApp, factory.provider)
+        bigApp := bigregion.Make(app)
+        return &bigApp
     default:
-        log.Panic("Unknown numerics mode", factory.info.DetectedNumericsMode)
+        log.Panic("Invalid NumericsStrategy", factory.desc.NumericsStrategy)
+        return nil
     }
 }

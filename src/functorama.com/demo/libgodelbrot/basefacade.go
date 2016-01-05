@@ -4,28 +4,30 @@ import (
     "functorama.com/demo/base"
 )
 
-type BaseFacade struct {
+type baseFacade struct {
     config base.BaseConfig
 
     pictureWidth uint
     pictureHeight uint
 }
 
-func NewBaseFacade(info *RenderInfo) *BaseFacade {
-    desc := &info.UserDescription
-    return BaseFacade{
-        config: base.BaseConfig{
-            IterateLimit: desc.IterateLimit,
-            DivergeLimit: desc.DivergeLimit,
-            FixAspect: desc.FixAspect,
-        },
+var _ base.RenderApplication = (*baseFacade)(nil)
+
+func makeBaseFacade(desc *Info) *baseFacade {
+    req := &desc.UserRequest
+    facade := &baseFacade{}
+    facade.config = base.BaseConfig{
+        IterateLimit: req.IterateLimit,
+        DivergeLimit: req.DivergeLimit,
+        FixAspect: req.FixAspect,
     }
+    return facade
 }
 
-func (base *BaseFacade) BaseConfig() base.BaseConfig {
+func (base *baseFacade) BaseConfig() base.BaseConfig {
     return base.config
 }
 
-func (base *BaseFacade) PictureDimensions() (uint, uint) {
-    return pictureWidth, pictureHeight
+func (base *baseFacade) PictureDimensions() (uint, uint) {
+    return base.pictureWidth, base.pictureHeight
 }

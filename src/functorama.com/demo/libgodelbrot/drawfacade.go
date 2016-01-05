@@ -6,54 +6,66 @@ import (
     "functorama.com/demo/draw"
 )
 
-type DrawFacade struct {
+type drawFacade struct {
     picture *image.NRGBA
     colors draw.Palette
 }
 
-var _ draw.DrawingContext = (*DrawFacade)(nil)
+var _ draw.DrawingContext = (*drawFacade)(nil)
+var _ draw.ContextProvider = (*drawFacade)(nil)
 
-
-func CreateDrawFacade(info *RenderInfo) *DrawFacade {
-    facade := &DrawFacade{}
-    facade.colors = createPalette(info)
-    facade.picture = createImage(info)
+func (facade *drawFacade) DrawingContext() draw.DrawingContext {
     return facade
 }
 
-func createImage(info *RenderInfo) *image.NRGBA {
-    desc := info.Desc
+func (facade *drawFacade) Colors() draw.Palette {
+    return facade.colors
+}
+
+func (facade *drawFacade) Picture() *image.NRGBA {
+    return facade.picture
+}
+
+func makeDrawFacade(desc *Info) *drawFacade {
+    facade := &drawFacade{}
+    facade.colors = createPalette(desc)
+    facade.picture = createImage(desc)
+    return facade
+}
+
+func createImage(desc *Info) *image.NRGBA {
+    req := desc.UserRequest
     bounds := image.Rectangle{
         Min: image.ZP,
         Max: image.Point{
-            X: desc.ImageWidth,
-            Y: desc.ImageHeight,
+            X: int(req.ImageWidth),
+            Y: int(req.ImageHeight),
         },
     }
     return image.NewNRGBA(bounds)
 }
 
-func createStoredPalette(info *RenderInfo) draw.Palette {
-    palettes := map[string]PaletteFactory{
-        "redscale": NewRedscalePalette,
-        "pretty":   NewPrettyPalette,
+func createStoredPalette(desc *Info) draw.Palette {
+    palettes := map[string]draw.PaletteFactory{
+        "redscale": draw.NewRedscalePalette,
+        "pretty":   draw.NewPrettyPalette,
     }
-    code := info.UserDescription.PaletteCode
+    code := desc.UserRequest.PaletteCode
     found := palettes[code]
     if found == nil {
         log.Panic("Unknown palette:", code)
     }
-    return found
+    return found(desc.UserRequest.IterateLimit)
 }
 
-func createPalette(info *RenderInfo) draw.Palette {
-    desc := info.UserDescription
+func createPalette(desc *Info) draw.Palette {
+    req := desc.UserRequest
     // We are planning more types of palettes soon
-    switch desc.PaletteType {
+    switch req.PaletteType {
     case StoredPalette:
-        return createStoredPalette(desc.PaletteCode)
+        return createStoredPalette(desc)
     default:
-        log.Panic("Unknown palette kind:", desc.PaletteType)
+        log.Panic("Unknown palette kind:", req.PaletteType)
     }
     return nil
 }

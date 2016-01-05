@@ -1,8 +1,30 @@
 package libgodelbrot
 
-// See base/magic for a discussion of magic numbers as they pertain to this project
+import (
+    "math/big"
+    "functorama.com/demo/bigbase"
+)
 
-// MATHEMATICAL VALUES
+// There are three different kinds of magic number in this program:
+// 1. Mathematical constants.  For example, the location of the Mandelbrot set
+//    is unlikely to change any time soon.  These are the most truly magical
+//    numbers in this program.
+// 2. Defaults.  It is convenient for this library to provide some sensible
+//    defaults for its parameters.  As these are "guaranteed to work", these
+//    represent mathematical truths in their own way.
+// 3. Operational constants.  This program uses various integers in control
+//    flow, in arithmetic, and when requesting memory from the operating system.
+//    These are the least "magical" numbers present in this program.  Each of
+//    these should be reviewed, since it may be desirable to replace these with
+//    an item that can be configured at runtime.
+
+// MATHEMATICAL CONSTANTS
+
+// Minimum bounds of Mandelbrot set
+const MandelbrotMin complex128 = -2.01 - 1.11i
+
+// Maximum bounds of Mandelbrot set
+const MandelbrotMax complex128 = 0.59 + 1.13i
 
 // Named bignums
 var bigZero big.Float = bigbase.MakeBigFloat(0, DefaultHighPrec)
@@ -22,7 +44,7 @@ const DefaultCollapse uint = 8
 const DefaultBufferSize uint = 256
 
 // Default base for newly parsed numbers
-const DefaultBase uint = 10
+const DefaultBase int = 10
 
 // What we consider to be a tiny image area, by default
 const DefaultTinyImageArea uint = 40000

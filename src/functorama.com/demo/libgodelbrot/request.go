@@ -6,6 +6,21 @@ import (
     "strconv"
 )
 
+// Info completely describes the render process
+type Info struct {
+    UserRequest Request
+    // Describe the render strategy in use
+    RenderStrategy RenderMode
+    // Describe the numerics system in use
+    NumericsStrategy NumericsMode
+    Precision uint
+    RealMin big.Float
+    RealMax big.Float
+    ImagMin big.Float
+    ImagMax big.Float
+    Jobs uint16
+}
+
 // Available kinds of palettes
 type PaletteKind uint
 
@@ -18,9 +33,9 @@ type RenderMode uint
 
 const (
     AutoDetectRenderMode       = RenderMode(iota)
-    RegionRenderMode           = RenderMode(iota)
-    SequenceRenderMode       = RenderMode(iota)
-    ConcurrentRegionRenderMode = RenderMode(iota)
+    RegionRenderMode
+    SequenceRenderMode
+    SharedRegionRenderMode
 )
 
 // Available numeric systems
@@ -30,9 +45,9 @@ const (
     // Functions should auto-detect the correct system for rendering
     AutoDetectNumericsMode = NumericsMode(iota)
     // Use the native CPU arithmetic operations
-    NativeNumericsMode = NumericsMode(iota)
+    NativeNumericsMode
     // Use arithmetic based around the standard library big.Float type
-    BigFloatNumericsMode = NumericsMode(iota)
+    BigFloatNumericsMode
 )
 
 // Request is a user description of the render to be accomplished
@@ -67,7 +82,6 @@ func DefaultRequest() *Request {
         IterateLimit:   DefaultIterations,
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
-        BufferSize:     DefaultBufferSize,
         GlitchSamples:  DefaultGlitchSamples,
         Jobs:           uint(jobs),
         RealMin:        float2str(real(MandelbrotMin)),
