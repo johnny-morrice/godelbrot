@@ -38,6 +38,7 @@ func (renderer RegionRenderStrategy) Render() (*image.NRGBA, error) {
 	iterateLimit := renderer.baseConfig.IterateLimit
 	// Add detail from the small regions next
 	for _, region := range smallRegions {
+		region.ClaimExtrinsics()
 		RenderSequenceRegion(region, renderer.context, iterateLimit)
 	}
 
