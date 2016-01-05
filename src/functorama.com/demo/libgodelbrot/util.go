@@ -9,7 +9,7 @@ import (
 )
 
 // I thought this might be a great idea,
-// But it is horrendeous and must be removed
+// but it is horrendeous and must be removed.
 func panic2err(factory func() interface{}) (anything interface{}, err error) {
     defer func() {
         if r := recover(); r != nil {

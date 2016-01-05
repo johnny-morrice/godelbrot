@@ -123,9 +123,9 @@ func (c *configurator) parseUserCoords() {
 
 // Choose an optimal strategy for rendering the image
 func (c *configurator) chooseFastRenderStrategy() {
-    desc := c.UserRequest
+    req := c.UserRequest
 
-    area := desc.ImageWidth * desc.ImageHeight
+    area := req.ImageWidth * req.ImageHeight
     numerics := c.NumericsStrategy
 
     if numerics == AutoDetectNumericsMode {
@@ -136,7 +136,7 @@ func (c *configurator) chooseFastRenderStrategy() {
         // Use `SequenceRenderStrategy' when
         // We have native arithmetic and the image is tiny
         c.useSequenceRenderer()
-    } else if desc.Jobs <= DefaultLowThreading {
+    } else if req.Jobs <= DefaultLowThreading {
         // Use `RegionRenderStrategy' when
         // the number of jobs is small
         c.useRegionRenderer()
@@ -155,11 +155,6 @@ func (c *configurator) useRegionRenderer() {
 }
 
 func (c *configurator) useSharedRegionRenderer() {
-    const max16 = uint(^uint16(0))
-    req := c.UserRequest
-    if req.Jobs > max16 {
-        log.Panic("Job count beyond maximum: ", max16)
-    }
     c.RenderStrategy = SharedRegionRenderMode
 }
 

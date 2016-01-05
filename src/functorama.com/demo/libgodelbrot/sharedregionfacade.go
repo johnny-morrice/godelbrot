@@ -26,7 +26,7 @@ func makeSharedRegionFacade(desc *Info) *sharedRegionFacade {
         CollapseSize: req.RegionCollapse,
     }
     sharedConfig := sharedregion.SharedRegionConfig{
-        Jobs: desc.Jobs,
+        Jobs: desc.UserRequest.Jobs,
     }
     provider := &sharedRegionProvider{
         sharedConfig: sharedConfig,

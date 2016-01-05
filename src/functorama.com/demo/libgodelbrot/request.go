@@ -18,7 +18,6 @@ type Info struct {
     RealMax big.Float
     ImagMin big.Float
     ImagMax big.Float
-    Jobs uint16
 }
 
 // Available kinds of palettes
@@ -68,7 +67,7 @@ type Request struct {
     // Render algorithm
     Renderer RenderMode
     // Number of render threads
-    Jobs           uint
+    Jobs           uint16
     RegionCollapse uint
     // Numerical system
     Numerics NumericsMode
@@ -83,7 +82,7 @@ func DefaultRequest() *Request {
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
         GlitchSamples:  DefaultGlitchSamples,
-        Jobs:           uint(jobs),
+        Jobs:           uint16(jobs),
         RealMin:        float2str(real(MandelbrotMin)),
         ImagMin:        float2str(imag(MandelbrotMin)),
         RealMax:        float2str(real(MandelbrotMax)),
