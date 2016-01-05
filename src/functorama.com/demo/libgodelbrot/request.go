@@ -59,8 +59,7 @@ type Request struct {
     ImagMax      string
     ImageWidth   uint
     ImageHeight  uint
-    // Size of thread input buffer
-    ThreadBufferSize uint
+
     PaletteType      PaletteKind
     PaletteCode      string
     FixAspect        bool
