@@ -5,13 +5,13 @@ import (
     "flag"
     "log"
     "runtime"
-    "encoding/json"
+    "strconv"
     "functorama.com/demo/libgodelbrot"
 )
 
 // Golang entry point
 func main() {
-        // Set number of cores
+    // Set number of cores
     runtime.GOMAXPROCS(runtime.NumCPU())
 
     args := parseArguments()
@@ -20,9 +20,15 @@ func main() {
         log.Fatal("Error:", argErr)
     }
 
-    text, jsonErr := json.Marshal(request)
+    info, godelErr := libgodelbrot.AutoConf(request)
+
+    if godelErr != nil {
+        log.Fatal(godelErr)
+    }
+
+    text, jsonErr := libgodelbrot.ToJSON(info)
     if jsonErr == nil {
-        fmt.Print(text)
+        fmt.Printf("%s", text)
     } else {
         log.Fatal("Error creating JSON:", jsonErr)
     }
@@ -40,10 +46,10 @@ type commandLine struct {
     imagMax        string
     mode           string
     regionCollapse uint
-    renderThreads  uint
+    jobs  uint
     storedPalette  string
     fixAspect      bool
-    numericalSystem string
+    numerics string
     glitchSamples uint
     precision uint
 }
@@ -51,10 +57,18 @@ type commandLine struct {
 // Parse command line arguments into a `commandLine' structure
 func parseArguments() commandLine {
     args := commandLine{}
-    realMin := string(real(libgodelbrot.MandelbrotMin))
-    imagMin := string(imag(libgodelbrot.MandelbrotMin))
-    realMax := string(real(libgodelbrot.MandelbrotMax))
-    imagMax := string(imag(libgodelbrot.MandelbrotMax))
+
+    components := []float64{
+        real(libgodelbrot.MandelbrotMin),
+        imag(libgodelbrot.MandelbrotMin),
+        real(libgodelbrot.MandelbrotMax),
+        imag(libgodelbrot.MandelbrotMax),
+    }
+    bounds := make([]string, len(components))
+    for i, num := range components {
+        bounds[i] = strconv.FormatFloat(num, 'e', -1, 64)
+    }
+
 
     var renderThreads uint
     if cpus := runtime.NumCPU(); cpus > 1 {
@@ -72,26 +86,26 @@ func parseArguments() commandLine {
     flag.UintVar(&args.height, "imageHeight",
         libgodelbrot.DefaultImageHeight, "Height of output PNG")
     flag.StringVar(&args.realMin, "realMin",
-        realMin, "Leftmost position on complex plane")
-    flag.StringVar(&args.imagMax, "imagMax",
-        imagMax, "Topmost position on complex plane")
-    flag.StringVar(&args.realMax, "realMax",
-        realMax, "Rightmost position on complex plane")
+        bounds[0], "Leftmost position on complex plane")
     flag.StringVar(&args.imagMin, "imagMin",
-        imagMin, "Bottommost position on complex plane")
+        bounds[1], "Bottommost position on complex plane")
+    flag.StringVar(&args.realMax, "realMax",
+        bounds[2], "Rightmost position on complex plane")
+    flag.StringVar(&args.imagMax, "imagMax",
+        bounds[3], "Topmost position on complex plane")
     flag.StringVar(&args.mode, "mode", "auto",
         "Render mode.  (auto|sequence|region|concurrent)")
     flag.UintVar(&args.regionCollapse, "collapse",
         libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
-    flag.UintVar(&args.renderThreads, "jobs",
+    flag.UintVar(&args.jobs, "jobs",
         renderThreads, "Number of rendering threads in concurrent renderer")
     flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
-        libgodelbrot.DefaultRegionGlitchSampleSize, "Size of region render glitch-correncting sample set")
+        libgodelbrot.DefaultGlitchSamples, "Size of region render glitch-correncting sample set")
     flag.UintVar(&args.precision, "prec",
         libgodelbrot.DefaultPrecision, "Precision for big.Float render mode")
     flag.StringVar(&args.storedPalette, "storedPalette",
         "pretty", "Name of stored palette (pretty|redscale)")
-    flag.StringVAr(&args.numericalSystem, "numerics",
+    flag.StringVar(&args.numerics, "numerics",
         "auto", "Numerical system (auto|native|bigfloat)")
     flag.BoolVar(&args.fixAspect, "fixAspect",
         true, "Resize plane window to fit image aspect ratio")
@@ -101,7 +115,7 @@ func parseArguments() commandLine {
 }
 
 // Validate and extract a render description from the command line arguments
-func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, error) {
+func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
     if args.iterateLimit > 255 {
         return nil, fmt.Errorf("iterateLimit out of bounds.  Valid values in range (0,255)")
     }
@@ -111,7 +125,7 @@ func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, 
     }
 
     const max16 = uint(^uint16(0))
-    if args.Jobs > max16 {
+    if args.jobs > max16 {
         return nil, fmt.Errorf("jobs out of bounds.  Valid values in range (0, 65535)")
     }
 
@@ -141,14 +155,13 @@ func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, 
         log.Fatal("Unknown render mode:", args.mode)
     }
 
-    description := libgodelbrot.Request {
+    description := &libgodelbrot.Request {
         RealMin: args.realMin,
         RealMax: args.realMax,
         ImagMin: args.imagMin,
         ImagMax: args.imagMax,
-        ImageWidth: args.imageWidth,
-        ImageHeight: args.imageHeight,
-        ThreadBufferSize: args.threadBuffer,
+        ImageWidth: args.width,
+        ImageHeight: args.height,
         PaletteType: libgodelbrot.StoredPalette,
         PaletteCode: args.storedPalette,
         FixAspect: args.fixAspect,
