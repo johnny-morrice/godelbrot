@@ -37,7 +37,6 @@ var apps = []string{
     "renderbrot",
     "godelbrot",
     "webdelbrot",
-    "autobrot",
 }
 
 var all []string
