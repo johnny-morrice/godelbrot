@@ -3,10 +3,32 @@ package libgodelbrot
 import (
     "math/big"
     "log"
+    "encoding/json"
 )
 
 // Object to initialize the godelbrot system
 type configurator Info
+
+func ToJSON(desc *Info) ([]byte, error) {
+    return json.MarshalIndent(desc, "", "    ")
+}
+
+func FromJSON(format []byte) (*Info, error) {
+    desc := new(Info)
+    err := json.Unmarshal(format, desc)
+    if err == nil {
+        desc.regenBounds()
+        return desc, nil
+    } else {
+        return nil, err
+    }
+}
+
+func (desc *Info) regenBounds() {
+    c := (*configurator)(desc)
+    c.parseUserCoords()
+    c.usePrec()
+}
 
 // InitializeContext examines the description, chooses a renderer, numerical system and palette.
 func configure(req *Request) *Info {
@@ -69,6 +91,10 @@ func (c *configurator) chooseAccurateNumerics() {
 
 func (c *configurator) setPrec(bits uint) {
     c.Precision = bits
+    c.usePrec()
+}
+
+func (c *configurator) usePrec() {
     bounds := []*big.Float{
         &c.RealMin,
         &c.RealMax,

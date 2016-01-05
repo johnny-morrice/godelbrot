@@ -59,7 +59,6 @@ type Request struct {
     ImagMax      string
     ImageWidth   uint
     ImageHeight  uint
-
     PaletteType      PaletteKind
     PaletteCode      string
     FixAspect        bool
