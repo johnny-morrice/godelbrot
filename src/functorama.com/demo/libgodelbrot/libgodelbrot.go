@@ -4,17 +4,6 @@ import (
 	"image"
 )
 
-// Draw the Mandelbrot set.  This is the main entry point to libgodelbrot
-func AutoRender(req *Request) (*image.NRGBA, error) {
-	info, configErr := AutoConf(req)
-
-	if configErr == nil {
-		return Render(info)
-	} else {
-		return nil, configErr
-	}
-}
-
 func Render(info *Info) (*image.NRGBA, error) {
 	context, err := MakeRenderer(info)
 
