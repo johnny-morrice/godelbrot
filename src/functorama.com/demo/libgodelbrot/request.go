@@ -73,6 +73,8 @@ type Request struct {
     Numerics NumericsMode
     // Number of samples taken when detecting region render glitches
     GlitchSamples uint
+    // Number of bits for big.Float rendering
+    Precision uint
 }
 
 func DefaultRequest() *Request {

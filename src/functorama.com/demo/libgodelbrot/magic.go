@@ -35,6 +35,8 @@ var bigTwo big.Float = bigbase.MakeBigFloat(2, DefaultHighPrec)
 
 // Default high precision for newly created big floats
 const DefaultHighPrec uint = 500
+// Default precision is for native arithmetic
+const DefaultPrecision uint = 53
 
 const DefaultIterations uint8 = 255
 const DefaultDivergeLimit float64 = 4.0
