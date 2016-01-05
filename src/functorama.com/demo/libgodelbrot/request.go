@@ -82,7 +82,8 @@ func DefaultRequest() *Request {
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
         GlitchSamples:  DefaultGlitchSamples,
-        Jobs:           uint16(jobs),
+        Jobs:           uint16(jobs), // If this overflows, please send money to enable support
+                                      // your ridiculous SPARC machine
         RealMin:        float2str(real(MandelbrotMin)),
         ImagMin:        float2str(imag(MandelbrotMin)),
         RealMax:        float2str(real(MandelbrotMax)),

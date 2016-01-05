@@ -20,9 +20,9 @@ func renderer(desc *Info) (Renderer, error) {
 
     renderer := Renderer(nil)
     switch desc.RenderStrategy {
-    case RegionRenderMode:
-        renderer = makeSequenceFacade(desc)
     case SequenceRenderMode:
+        renderer = makeSequenceFacade(desc)
+    case RegionRenderMode:
         renderer = makeRegionFacade(desc)
     case SharedRegionRenderMode:
         renderer = makeSharedRegionFacade(desc)
