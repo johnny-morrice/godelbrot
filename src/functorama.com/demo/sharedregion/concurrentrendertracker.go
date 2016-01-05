@@ -36,7 +36,7 @@ type drawPacket struct {
 	point base.PixelMember
 }
 
-func NewRenderTracker(app RenderApplication) *RenderTracker {
+func Make(app RenderApplication) *RenderTracker {
 	output := RenderOutput{
 		UniformRegions: make(chan SharedRegionNumerics),
 		Children: make(chan SharedRegionNumerics),

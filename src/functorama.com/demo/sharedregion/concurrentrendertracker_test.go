@@ -8,12 +8,12 @@ import (
 	"functorama.com/demo/draw"
 )
 
-func TestNewRenderTracker(t *testing.T) {
+func TestMake(t *testing.T) {
 	const jobCount = 5
 	mock := &MockRenderApplication{}
 	mock.SharedConfig.Jobs = uint16(jobCount)
 	mock.SharedFactory = &MockFactory{}
-	tracker := NewRenderTracker(mock)
+	tracker := Make(mock)
 
 	if !(mock.TSharedRegionConfig && mock.TDrawingContext) {
 		t.Error("Expected methods not called on mock", mock)
