@@ -116,8 +116,9 @@ func parseArguments() commandLine {
 
 // Validate and extract a render description from the command line arguments
 func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
-    if args.iterateLimit > 255 {
-        return nil, fmt.Errorf("iterateLimit out of bounds.  Valid values in range (0,255)")
+    const max8 = uint(^uint8(0))
+    if args.iterateLimit > max8 {
+        return nil, fmt.Errorf("iterateLimit out of bounds.  Valid values in range (0,%v)", max8)
     }
 
     if args.divergeLimit <= 0.0 {
@@ -126,7 +127,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
 
     const max16 = uint(^uint16(0))
     if args.jobs > max16 {
-        return nil, fmt.Errorf("jobs out of bounds.  Valid values in range (0, 65535)")
+        return nil, fmt.Errorf("jobs out of bounds.  Valid values in range (0,%v)", max16)
     }
 
     numerics := libgodelbrot.AutoDetectNumericsMode
@@ -156,6 +157,9 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
     }
 
     description := &libgodelbrot.Request {
+        IterateLimit: uint8(args.iterateLimit),
+        DivergeLimit: args.divergeLimit,
+        GlitchSamples: args.glitchSamples,
         RealMin: args.realMin,
         RealMax: args.realMax,
         ImagMin: args.imagMin,
@@ -167,6 +171,7 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
         FixAspect: args.fixAspect,
         Numerics: numerics,
         Renderer: renderer,
+        RegionCollapse: args.regionCollapse,
         Jobs: uint16(args.jobs),
     }
 
