@@ -45,7 +45,6 @@ type commandLine struct {
 	mode           string
 	regionCollapse uint
 	renderThreads  uint
-	threadBuffer   uint
 	storedPalette  string
 	fixAspect 	   bool
 	numericalSystem string
@@ -67,39 +66,37 @@ func parseArguments() commandLine {
 		renderThreads = 1
 	}
 
-	flag.UintVar(&args.iterateLimit, "iterateLimit", 
+	flag.UintVar(&args.iterateLimit, "iterateLimit",
 		uint(libgodelbrot.DefaultIterations), "Maximum number of iterations")
-	flag.Float64Var(&args.divergeLimit, "divergeLimit", 
+	flag.Float64Var(&args.divergeLimit, "divergeLimit",
 		libgodelbrot.DefaultDivergeLimit, "Limit where function is said to diverge to infinity")
-	flag.UintVar(&args.width, "imageWidth", 
+	flag.UintVar(&args.width, "imageWidth",
 		libgodelbrot.DefaultImageWidth, "Width of output PNG")
-	flag.UintVar(&args.height, "imageHeight", 
+	flag.UintVar(&args.height, "imageHeight",
 		libgodelbrot.DefaultImageHeight, "Height of output PNG")
-	flag.StringVar(&args.filename, "output", 
+	flag.StringVar(&args.filename, "output",
 		"mandelbrot.png", "Name of output PNG")
-	flag.StringVar(&args.realMin, "realMin", 
+	flag.StringVar(&args.realMin, "realMin",
 		realMin, "Leftmost position of complex plane projected onto PNG image")
-	flag.StringVar(&args.imagMax, "imagMax", 
+	flag.StringVar(&args.imagMax, "imagMax",
 		imagMax, "Topmost position of complex plane projected onto PNG image")
-	flag.StringVar(&args.realMax, "realMax", 
+	flag.StringVar(&args.realMax, "realMax",
 		realMax, "Rightmost position of complex plane projection")
-	flag.StringVar(&args.imagMin, "imagMin", 
+	flag.StringVar(&args.imagMin, "imagMin",
 		imagMin, "Bottommost position of complex plane projection")
-	flag.StringVar(&args.mode, "mode", "auto", 
+	flag.StringVar(&args.mode, "mode", "auto",
 		"Render mode.  (auto|sequence|region|concurrent)")
-	flag.UintVar(&args.regionCollapse, "collapse", 
+	flag.UintVar(&args.regionCollapse, "collapse",
 		libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
-	flag.UintVar(&args.renderThreads, "jobs", 
+	flag.UintVar(&args.renderThreads, "jobs",
 		renderThreads, "Number of rendering threads in concurrent renderer")
-	flag.UintVar(&args.threadBuffer, "buffer", 
-		libgodelbrot.DefaultBufferSize, "Size of per-thread buffer")
 	flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
 		libgodelbrot.DefaultRegionGlitchSampleSize, "Size of region render glitch-correncting sample set")
-	flag.StringVar(&args.storedPalette, "storedPalette", 
+	flag.StringVar(&args.storedPalette, "storedPalette",
 		"pretty", "Name of stored palette (pretty|redscale)")
 	flag.StringVAr(&args.numericalSystem, "numerics",
 		"auto", "Numerical system (auto|native|bigfloat)")
-	flag.BoolVar(&args.fixAspect, "fixAspect", 
+	flag.BoolVar(&args.fixAspect, "fixAspect",
 		true, "Resize plane window to fit image aspect ratio")
 	flag.Parse()
 
@@ -146,7 +143,7 @@ func extractRenderParameters(args commandLine) (libgodelbrot.RenderDescription, 
 		Renderer: mode,
 		Jobs: args.jobs,
 	}
-	
+
 	return description, nil
 }
 
