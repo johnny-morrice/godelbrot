@@ -12,5 +12,6 @@ func DrawUniform(context paint.DrawingContext, region RegionNumerics) {
 	color := context.Colors().Color(member)
 	uniform := image.NewUniform(color)
 	rect := region.Rect()
+
 	draw.Draw(context.Picture(), rect, uniform, image.ZP, draw.Src)
 }

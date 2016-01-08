@@ -14,17 +14,12 @@ type nativeSubregion struct {
 	children  []nativeRegion
 }
 
-type nativeMandelbrotThunk struct {
-	nativebase.NativeMandelbrotMember
-	evaluated bool
-}
-
 type nativeRegion struct {
-	topLeft     nativeMandelbrotThunk
-	topRight    nativeMandelbrotThunk
-	bottomLeft  nativeMandelbrotThunk
-	bottomRight nativeMandelbrotThunk
-	midPoint    nativeMandelbrotThunk
+	topLeft     nativebase.NativeMandelbrotMember
+	topRight    nativebase.NativeMandelbrotMember
+	bottomLeft  nativebase.NativeMandelbrotMember
+	bottomRight nativebase.NativeMandelbrotMember
+	midPoint    nativebase.NativeMandelbrotMember
 }
 
 func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
@@ -33,8 +28,8 @@ func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangl
 	return image.Rect(l, t, r, b)
 }
 
-func (nr *nativeRegion) thunks() []*nativeMandelbrotThunk {
-	return []*nativeMandelbrotThunk{
+func (nr *nativeRegion) points() []*nativebase.NativeMandelbrotMember {
+	return []*nativebase.NativeMandelbrotMember{
 		&nr.topLeft,
 		&nr.topRight,
 		&nr.bottomLeft,
@@ -60,11 +55,12 @@ func Make(app RenderApplication) NativeRegionNumerics {
 	parent := nativebase.Make(app)
 	planeMin := complex(parent.RealMin, parent.ImagMin)
 	planeMax := complex(parent.RealMax, parent.ImagMax)
+	divergeLimit := parent.SqrtDivergeLimit
 	return NativeRegionNumerics{
 		NativeBaseNumerics: parent,
 		RegionConfig: app.RegionConfig(),
 		SequenceNumerics: &sequence,
-		Region: createNativeRegion(planeMin, planeMax),
+		Region: createNativeRegion(planeMin, planeMax, divergeLimit),
 	}
 }
 
@@ -126,17 +122,6 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 	}
 }
 
-func (native *NativeRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	points := native.Region.thunks()
-	// Ensure points are all evaluated
-	for _, p := range points {
-		if !p.evaluated {
-			p.Mandelbrot(iterateLimit)
-			p.evaluated = true
-		}
-	}
-}
-
 // A glitch is possible when points are uniform near the set
 // Due to the shape of the set, a rectangular nativeRegion is not a good approximation
 // An anologous glitch happens when the entire nativeRegion is much larger than the set
@@ -174,7 +159,7 @@ func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamp
 	return false
 }
 
-func (native *NativeRegionNumerics) Split() {
+func (native *NativeRegionNumerics) Split(iterateLimit uint8) {
 	r := native.Region
 
 	topLeftPos := r.topLeft.C
@@ -193,15 +178,15 @@ func (native *NativeRegionNumerics) Split() {
 	topSectorMid := (top + midI) / 2.0
 	bottomSectorMid := (midI + bottom) / 2.0
 
-	topSideMid := native.createThunk(complex(midR, top))
-	bottomSideMid := native.createThunk(complex(midR, bottom))
-	leftSideMid := native.createThunk(complex(left, midI))
-	rightSideMid := native.createThunk(complex(right, midI))
+	topSideMid := native.createPoint(complex(midR, top), iterateLimit)
+	bottomSideMid := native.createPoint(complex(midR, bottom), iterateLimit)
+	leftSideMid := native.createPoint(complex(left, midI), iterateLimit)
+	rightSideMid := native.createPoint(complex(right, midI), iterateLimit)
 
-	topLeftMid := native.createThunk(complex(leftSectorMid, topSectorMid))
-	topRightMid := native.createThunk(complex(rightSectorMid, topSectorMid))
-	bottomLeftMid := native.createThunk(complex(leftSectorMid, bottomSectorMid))
-	bottomRightMid := native.createThunk(complex(rightSectorMid, bottomSectorMid))
+	topLeftMid := native.createPoint(complex(leftSectorMid, topSectorMid), iterateLimit)
+	topRightMid := native.createPoint(complex(rightSectorMid, topSectorMid), iterateLimit)
+	bottomLeftMid := native.createPoint(complex(leftSectorMid, bottomSectorMid), iterateLimit)
+	bottomRightMid := native.createPoint(complex(rightSectorMid, bottomSectorMid), iterateLimit)
 
 	tl := nativeRegion{
 		topLeft:     r.topLeft,
@@ -244,20 +229,20 @@ func (native *NativeRegionNumerics) Rect() image.Rectangle {
 }
 
 // Return MandelbrotMember
-// Does not check if the region's thunks have been evaluated
+// Does not check if the region's Points have been evaluated
 func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
 	return native.Region.topLeft
 }
 
-func (native *NativeRegionNumerics) createThunk(c complex128) nativeMandelbrotThunk {
-	return nativeMandelbrotThunk{
-		NativeMandelbrotMember: native.CreateMandelbrot(c),
-	}
+func (native *NativeRegionNumerics) createPoint(c complex128, iterateLimit uint8) nativebase.NativeMandelbrotMember {
+	point := native.CreateMandelbrot(c)
+	point.Mandelbrot(iterateLimit)
+	return point
 }
 
-func (native *NativeRegionNumerics) thunks() []nativeMandelbrotThunk {
+func (native *NativeRegionNumerics) Points() []nativebase.NativeMandelbrotMember {
 	region := native.Region
-	return []nativeMandelbrotThunk{
+	return []nativebase.NativeMandelbrotMember{
 		region.topLeft,
 		region.topRight,
 		region.bottomLeft,
@@ -266,14 +251,14 @@ func (native *NativeRegionNumerics) thunks() []nativeMandelbrotThunk {
 	}
 }
 
-func createNativeRegion(min complex128, max complex128) nativeRegion {
+func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nativeRegion {
 	left := real(min)
 	right := real(max)
 	top := imag(max)
 	bottom := imag(min)
 	mid := ((max - min) / 2) + min
 
-	points := []complex128{
+	coords := []complex128{
 		complex(left, top),
 		complex(right, top),
 		complex(left, bottom),
@@ -281,19 +266,17 @@ func createNativeRegion(min complex128, max complex128) nativeRegion {
 		mid,
 	}
 
-	thunks := make([]nativeMandelbrotThunk, len(points))
-	for i, c := range points {
-		thunks[i] = nativeMandelbrotThunk{
-			NativeMandelbrotMember: nativebase.NativeMandelbrotMember{C: c, SqrtDivergeLimit: 2.0},
-		}
+	points := make([]nativebase.NativeMandelbrotMember, len(coords))
+	for i, c := range coords {
+		points[i] = nativebase.NativeMandelbrotMember{C: c, SqrtDivergeLimit: sqrtDLimit}
 	}
 
 	region := nativeRegion{
-		topLeft: thunks[0],
-		topRight: thunks[1],
-		bottomLeft: thunks[2],
-		bottomRight: thunks[3],
-		midPoint: thunks[4],
+		topLeft: points[0],
+		topRight: points[1],
+		bottomLeft: points[2],
+		bottomRight: points[3],
+		midPoint: points[4],
 	}
 
 	return region

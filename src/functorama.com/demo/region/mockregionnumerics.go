@@ -58,7 +58,7 @@ func (mock *MockNumerics) EvaluateAllPoints(iterateLimit uint8) {
 	mock.TEvaluateAllPoints = true
 }
 
-func (mock *MockNumerics) Split() {
+func (mock *MockNumerics) Split(iterateLimit uint8) {
 	mock.TSplit = true
 }
 

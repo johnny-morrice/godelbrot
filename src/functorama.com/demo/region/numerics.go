@@ -11,8 +11,7 @@ import (
 type RegionNumerics interface {
     base.OpaqueProxyFlyweight
     Rect() image.Rectangle
-    EvaluateAllPoints(iterateLimit uint8)
-    Split()
+    Split(iterateLimit uint8)
     OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool
     MandelbrotPoints() []base.MandelbrotMember
     RegionMember() base.MandelbrotMember
@@ -45,10 +44,8 @@ func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelM
 // if the subdivision occurred.  The subdivision won't occur if the region is Uniform or in an area
 // where glitches are likely.
 func Subdivide(numerics RegionNumerics, iterateLimit uint8, glitchSamples uint) bool {
-    numerics.EvaluateAllPoints(iterateLimit)
-
     if !Uniform(numerics) || numerics.OnGlitchCurve(iterateLimit, glitchSamples) {
-        numerics.Split()
+        numerics.Split(iterateLimit)
         return true
     }
     return false

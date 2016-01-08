@@ -62,7 +62,6 @@ func (renderer RegionRenderStrategy) SubdivideRegions(whole RegionNumerics) ([]R
 		//
 		// A. The region can be so small that we divide no further
 		if Collapse(splitee, collapseBound) {
-
 			smallRegions = append(smallRegions, splitee)
 		} else {
 			// If the region is not too small, two things can happen
