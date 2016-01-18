@@ -69,7 +69,6 @@ func parseArguments() commandLine {
         bounds[i] = strconv.FormatFloat(num, 'e', -1, 64)
     }
 
-
     renderThreads := uint(runtime.NumCPU())
 
     flag.UintVar(&args.iterateLimit, "iterateLimit",
