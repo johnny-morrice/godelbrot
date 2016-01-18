@@ -1,7 +1,6 @@
 package sequence
 
 import (
-	"image"
 	"functorama.com/demo/base"
 	"functorama.com/demo/draw"
 )
@@ -9,7 +8,6 @@ import (
 // SequentialNumerics provides sequential (column-wise) rendering calculations
 type SequenceNumerics interface {
     Sequence(iterateLimit uint8) <-chan base.PixelMember
-    SubImage(rect image.Rectangle)
     Area() int
 }
 
