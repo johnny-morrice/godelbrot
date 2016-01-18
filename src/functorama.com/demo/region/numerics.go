@@ -27,9 +27,11 @@ type ProxySequence interface {
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential
 // (column-wise) manner
 func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, iterateLimit uint8) {
+    numerics.ClaimExtrinsics()
     smallNumerics := numerics.RegionSequence()
-    smallNumerics.ClaimExtrinsics()
-    sequence.ImageSequence(smallNumerics, iterateLimit, context)
+    smallNumerics.Extrinsically(func () {
+        sequence.ImageSequence(smallNumerics, iterateLimit, context)
+    })
 }
 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render

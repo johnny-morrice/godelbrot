@@ -17,6 +17,7 @@ const (
 )
 
 type MockNumerics struct {
+	TExtrinsically 			  bool
 	TClaimExtrinsics          bool
 	TRect                     bool
 	TEvaluateAllPoints        bool
@@ -34,6 +35,11 @@ type MockNumerics struct {
 	MockSequence			  *MockProxySequence
 
 	AppCollapseSize int
+}
+
+func (mock *MockNumerics) Extrinsically(f func()) {
+	mock.TExtrinsically = true
+	f()
 }
 
 func (mock *MockNumerics) ClaimExtrinsics() {
@@ -121,6 +127,12 @@ type MockProxySequence struct {
 	sequence.MockNumerics
 
 	TClaimExtrinsics bool
+	TExtrinsically bool
+}
+
+func (mock *MockProxySequence) Extrinsically(f func()) {
+	mock.TExtrinsically = true
+	f()
 }
 
 func (mock *MockProxySequence) ClaimExtrinsics() {
