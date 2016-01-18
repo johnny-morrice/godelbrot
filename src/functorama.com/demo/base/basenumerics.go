@@ -39,7 +39,7 @@ func (base *BaseNumerics) ImageHeight(height uint) {
 }
 
 // Change the drawing context to a sub-part of the image
-func (base *BaseNumerics) SubImage(rect image.Rectangle) {
+func (base *BaseNumerics) PictureSubImage(rect image.Rectangle) {
 	base.PicXMin = rect.Min.X
 	base.PicYMin = rect.Min.Y
 	base.PicXMax = rect.Max.X
