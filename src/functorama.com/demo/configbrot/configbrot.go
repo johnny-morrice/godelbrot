@@ -70,12 +70,7 @@ func parseArguments() commandLine {
     }
 
 
-    var renderThreads uint
-    if cpus := runtime.NumCPU(); cpus > 1 {
-        renderThreads = uint(cpus - 1)
-    } else {
-        renderThreads = 1
-    }
+    renderThreads := uint(runtime.NumCPU())
 
     flag.UintVar(&args.iterateLimit, "iterateLimit",
         uint(libgodelbrot.DefaultIterations), "Maximum number of iterations")
