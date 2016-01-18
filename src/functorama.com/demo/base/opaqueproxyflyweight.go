@@ -7,4 +7,5 @@ package base
 // extrinsic, without exposing the details to the client.
 type OpaqueProxyFlyweight interface {
 	ClaimExtrinsics()
+    Extrinsically(func())
 }
