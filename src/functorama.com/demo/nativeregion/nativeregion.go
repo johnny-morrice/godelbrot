@@ -68,6 +68,10 @@ func (native *NativeRegionNumerics) ClaimExtrinsics() {
 	// Region already present
 }
 
+func (native *NativeRegionNumerics) Extrinsically(f func()) {
+	f()
+}
+
 // Return the children of this region
 // This implementation does not create many new objects
 func (native *NativeRegionNumerics) Children() []region.RegionNumerics {
@@ -98,10 +102,11 @@ func (native *NativeRegionNumerics) RegionSequence() region.ProxySequence {
 }
 
 func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
-	return NativeSequenceProxy{
+	seq := NativeSequenceProxy{
 		LocalRegion:   native.Region,
 		NativeSequenceNumerics: native.SequenceNumerics,
 	}
+	return seq
 }
 
 func (native *NativeRegionNumerics) Proxy(region nativeRegion) NativeRegionProxy {
