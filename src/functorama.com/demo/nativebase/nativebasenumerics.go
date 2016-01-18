@@ -1,6 +1,7 @@
 package nativebase
 
 import (
+	"image"
 	"math"
 	"functorama.com/demo/base"
 )
@@ -94,6 +95,32 @@ func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	ry = int(math.Ceil(sy))
 
 	return
+}
+
+func (nbn *NativeBaseNumerics) PixelToPlane(i, j int) complex128 {
+	rUnit, iUnit := nbn.PixelSize()
+
+	// Scale
+	sr := float64(i) * rUnit
+	si := float64(j) * iUnit
+
+	// Translate
+	tr := nbn.RealMin + sr
+	ti := nbn.ImagMax - si
+
+	return complex(tr, ti)
+}
+
+func (nbn *NativeBaseNumerics) SubImage(rect image.Rectangle) {
+	min := nbn.PixelToPlane(rect.Min.X, rect.Min.Y)
+	max := nbn.PixelToPlane(rect.Max.X, rect.Max.Y)
+
+	nbn.PictureSubImage(rect)
+
+	nbn.RealMin = real(min)
+	nbn.ImagMin = imag(min)
+	nbn.RealMax = real(max)
+	nbn.ImagMax = imag(max)
 }
 
 type UnitQuery struct {

@@ -2,6 +2,7 @@ package nativebase
 
 import (
 	"testing"
+	"math"
 	"functorama.com/demo/base"
 )
 
@@ -95,6 +96,90 @@ func testMake(t *testing.T, helper aspectRatioFixHelper) {
 	if !mockOkay {
 		t.Error("Expected method not called on mock", mock)
 	}
+}
+
+func TestPixelToPlane(t *testing.T) {
+	const side = 100
+	const width = side
+	const height = side
+	const planeSide = 2.0
+	numerics := NativeBaseNumerics{
+		RealMin:     -1.0,
+		ImagMin:	 -1.0,
+		ImagMax:     1.0,
+		RealMax:     1.0,
+	}
+	numerics.ImageWidth(width)
+	numerics.ImageHeight(height)
+	uq := UnitQuery{width, height, planeSide, planeSide}
+	numerics.Runit, numerics.Iunit = uq.PixelUnits()
+
+	const qA = 0.1 + 0.1i
+
+	const qB = 0.1 - 0.1i
+
+	const qC = -0.1 - 0.1i
+
+	const qD = -0.1 + 0.1i
+
+	const origin complex128 = 0
+
+	const offset = complex(-1.0, 1.0)
+
+	const pixelPixAx int = 55
+	const pixelPixAY int = 45
+
+	const pixelPixBx int = 55
+	const pixelPixBy int = 55
+
+	const pixelPixCx int = 45
+	const pixelPixCy int = 55
+
+	const pixelPixDx int = 45
+	const pixelPixDy int = 45
+
+	const pixelOx int = 50
+	const pixelOy int = 50
+
+	const pixelOffsetX int = 0
+	const pixelOffsetY int = 0
+
+	points := []complex128{qA, qB, qC, qD, origin, offset}
+	pixelXs := []int{
+		pixelPixAx,
+		pixelPixBx,
+		pixelPixCx,
+		pixelPixDx,
+		pixelOx,
+		pixelOffsetX,
+	}
+	pixelYs := []int{
+		pixelPixAY,
+		pixelPixBy,
+		pixelPixCy,
+		pixelPixDy,
+		pixelOy,
+		pixelOffsetY,
+	}
+	for i, expect := range points {
+		x := pixelXs[i]
+		y := pixelYs[i]
+		actual := numerics.PixelToPlane(x, y)
+		if sigDiff(actual, expect) {
+			t.Error("Error at point", i,
+				"expected", expect, "but received", actual)
+		}
+	}
+}
+
+func sigDiff(c, q complex128) bool {
+	diff := c - q
+	rDiff := math.Abs(real(diff))
+	iDiff := math.Abs(imag(diff))
+
+	const sig = 0.0000001
+
+	return rDiff > sig || iDiff > sig
 }
 
 func TestPlaneToPixel(t *testing.T) {
