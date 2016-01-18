@@ -104,6 +104,10 @@ func (brn *BigRegionNumerics) ClaimExtrinsics() {
 	// We have our extrinsics right here
 }
 
+func (brn *BigRegionNumerics) Extrinsically(f func()) {
+	f()
+}
+
 func (brn *BigRegionNumerics) BigChildRegions() []bigRegion {
 	if brn.subregion.populated {
 		return brn.subregion.children
@@ -208,7 +212,7 @@ func (brn *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples ui
 }
 
 // Split divides the region into four smaller subregions.
-func (brn *BigRegionNumerics) Split() {
+func (brn *BigRegionNumerics) Split(iterateLimit uint8) {
 	r := brn.Region
 
 	topLeftPos := r.topLeft.cStore

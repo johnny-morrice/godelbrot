@@ -1,6 +1,7 @@
 package bigbase
 
 import (
+	"image"
 	"math"
 	"math/big"
 	"functorama.com/demo/base"
@@ -131,6 +132,11 @@ func (bbn *BigBaseNumerics) CreateMandelbrotMember(c *BigComplex) BigMandelbrotM
 		Prec: bbn.Precision,
 		SqrtDivergeLimit: &bbn.SqrtDivergeLimit,
 	}
+}
+
+// TODO
+func (bbn *BigBaseNumerics) SubImage(rect image.Rectangle) {
+
 }
 
 type UnitQuery struct {
