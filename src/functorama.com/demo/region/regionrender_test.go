@@ -104,7 +104,7 @@ func TestRender(t *testing.T) {
     	t.Error("Expected methods not called on paleete:", mockPalette)
     }
 
-    sequenceOkay := collapseSequence.TClaimExtrinsics && collapseSequence.TSequence
+    sequenceOkay := collapseSequence.TExtrinsically && collapseSequence.TSequence
     if !sequenceOkay {
     	t.Error("Expected methods not called on collapsed sequence numerics:", collapseSequence)
     }
@@ -143,7 +143,7 @@ func TestSubdivideRegions(t *testing.T) {
 
     mockOkay := mock.TClaimExtrinsics && mock.TRect
     mockOkay = mockOkay && mock.TMandelbrotPoints && mock.TSplit
-    mockOkay = mockOkay && mock.TEvaluateAllPoints && mock.TChildren
+    mockOkay = mockOkay && mock.TChildren
     if !mockOkay {
     	t.Error("Expected methods not called on inital region:", mock)
     }

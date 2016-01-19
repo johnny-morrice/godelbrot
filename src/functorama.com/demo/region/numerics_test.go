@@ -17,7 +17,7 @@ func TestRenderSequenceRegion(t *testing.T) {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
     }
 
-    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TSequence
+    sequenceOkay := mockSequence.TExtrinsically && mockSequence.TSequence
     if !sequenceOkay {
         t.Error("Expected methods not called on mockSequence:", mockSequence)
     }
@@ -35,7 +35,7 @@ func TestSequenceCollapse(t *testing.T) {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
     }
 
-    sequenceOkay := mockSequence.TClaimExtrinsics && mockSequence.TSequence
+    sequenceOkay := mockSequence.TExtrinsically && mockSequence.TSequence
     if !sequenceOkay {
         t.Error("Expected methods not called on mockSequence:", mockSequence)
     }
@@ -71,7 +71,7 @@ func TestSubdivide(t *testing.T) {
         t.Error("Split was called on uniform region")
     }
     // We expect the mandelbrot points to be examined for uniformity detection
-    if !(uniReg.TEvaluateAllPoints && uniReg.TMandelbrotPoints && uniReg.TOnGlitchCurve) {
+    if !(uniReg.TMandelbrotPoints && uniReg.TOnGlitchCurve) {
         t.Error("Expected methods were not called on uniform region:", uniReg)
     }
 
@@ -79,7 +79,7 @@ func TestSubdivide(t *testing.T) {
     if !actual[gliIndex] {
         t.Error("Expected positive Subdivide return for glitched region")
     }
-    if !(gliReg.TEvaluateAllPoints && gliReg.TMandelbrotPoints && gliReg.TOnGlitchCurve) {
+    if !(gliReg.TMandelbrotPoints && gliReg.TOnGlitchCurve) {
         t.Error("Expected methods were not called on glitched region")
     }
 
@@ -87,7 +87,7 @@ func TestSubdivide(t *testing.T) {
     if !actual[subIndex] {
         t.Error("Expected positive Subdivide return for subdivided region")
     }
-    if !(subReg.TSplit && subReg.TEvaluateAllPoints) {
+    if !subReg.TSplit {
         t.Error("Expected methods were not called on subdivided region:", subReg)
     }
 }

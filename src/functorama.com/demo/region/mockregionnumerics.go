@@ -20,7 +20,6 @@ type MockNumerics struct {
 	TExtrinsically 			  bool
 	TClaimExtrinsics          bool
 	TRect                     bool
-	TEvaluateAllPoints        bool
 	TSplit                    bool
 	TOnGlitchCurve            bool
 	TMandelbrotPoints         bool
@@ -58,10 +57,6 @@ func (mock *MockNumerics) Rect() image.Rectangle {
 
 func makeRect(size int) image.Rectangle {
 	return image.Rect(0, 0, size, size)
-}
-
-func (mock *MockNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	mock.TEvaluateAllPoints = true
 }
 
 func (mock *MockNumerics) Split(iterateLimit uint8) {

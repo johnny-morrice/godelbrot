@@ -38,8 +38,11 @@ func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, 
 // results rather than drawing them to the image.
 func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelMember {
     collapse := numerics.RegionSequence()
-    collapse.ClaimExtrinsics()
-    return sequence.Capture(collapse, iterateLimit)
+    var seq []base.PixelMember
+    collapse.Extrinsically(func () {
+        seq = sequence.Capture(collapse, iterateLimit)
+    })
+    return seq
 }
 
 // Subdivide takes a RegionNumerics and tries to split the region into subregions.  It returns true
