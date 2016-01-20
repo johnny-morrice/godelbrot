@@ -17,6 +17,7 @@ var _ sharedregion.SharedRegionNumerics = NativeSharedRegion{}
 
 func Make(app RenderApplication) NativeSharedRegion {
     sharedConfig := app.SharedRegionConfig()
+    // Add a job for the tracker
     jobs := sharedConfig.Jobs
     shared := NativeSharedRegion{
         prototypes: make([]*nativeregion.NativeRegionNumerics, jobs),
@@ -25,8 +26,9 @@ func Make(app RenderApplication) NativeSharedRegion {
     numerics := nativeregion.Make(app)
     for i := uint16(0); i < jobs; i++ {
         // Copy numerics
-        another := numerics
-        shared.prototypes[i] = &another
+        another := new(nativeregion.NativeRegionNumerics)
+        *another = numerics
+        shared.prototypes[i] = another
         shared.sequencePrototypes[i] = shared.prototypes[i].SequenceNumerics
     }
     initLocal := shared.prototypes[0]
