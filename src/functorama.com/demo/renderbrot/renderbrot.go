@@ -6,10 +6,13 @@ import (
     "io"
     "bytes"
     "log"
+    "runtime"
     "functorama.com/demo/libgodelbrot"
 )
 
 func main() {
+    runtime.GOMAXPROCS(runtime.NumCPU())
+
     var input io.Reader = os.Stdin
     var output io.Writer = os.Stdout
 
