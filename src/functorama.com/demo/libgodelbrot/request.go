@@ -76,7 +76,7 @@ type Request struct {
 }
 
 func DefaultRequest() *Request {
-    jobs := runtime.NumCPU() - 1
+    jobs := runtime.NumCPU() + 1
     return &Request{
         IterateLimit:   DefaultIterations,
         DivergeLimit:   DefaultDivergeLimit,
