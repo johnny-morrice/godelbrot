@@ -69,7 +69,7 @@ func parseArguments() commandLine {
         bounds[i] = strconv.FormatFloat(num, 'e', -1, 64)
     }
 
-    renderThreads := uint(runtime.NumCPU())
+    renderThreads := uint(runtime.NumCPU()) + 1
 
     flag.UintVar(&args.iterateLimit, "iterateLimit",
         uint(libgodelbrot.DefaultIterations), "Maximum number of iterations")
