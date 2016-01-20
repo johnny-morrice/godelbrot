@@ -6,7 +6,7 @@ import (
 
 const packageRoot = "functorama.com/demo"
 
-var toolkit = []string{
+var lib = []string{
     "base",
     "draw",
     "sequence",
@@ -44,7 +44,7 @@ var all []string
 // Group all packages in one slice
 func init() {
     subsystems := [][]string{
-        toolkit,
+        lib,
         nativeArithmetic,
         bigArithmetic,
         appBase,
@@ -57,7 +57,7 @@ func init() {
 
 func tasks(p *do.Project) {
     units := map[string][]string{
-        "toolkit": toolkit,
+        "lib": lib,
         "native": nativeArithmetic,
         "big": bigArithmetic,
         "appBase": appBase,
