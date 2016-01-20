@@ -27,6 +27,7 @@ type Worker struct {
 	InputChan  chan RenderInput
 	Output RenderOutput
 	WaitingChan chan bool
+	Close chan bool
 	SharedConfig     SharedRegionConfig
 	RegionConfig 	 region.RegionConfig
 	BaseConfig	base.BaseConfig
@@ -37,6 +38,7 @@ type WorkerFactory struct {
 	count uint16
 	regionConfig region.RegionConfig
 	sharedConfig SharedRegionConfig
+	baseConfig base.BaseConfig
 	output RenderOutput
 }
 
@@ -46,6 +48,7 @@ func NewWorkerFactory(app RenderApplication, outputChannels RenderOutput) *Worke
 		count: 0,
 		regionConfig: app.RegionConfig(),
 		sharedConfig: app.SharedRegionConfig(),
+		baseConfig: app.BaseConfig(),
 		output: outputChannels,
 	}
 }
@@ -55,8 +58,10 @@ func (factory *WorkerFactory) Build() *Worker {
 		WorkerId:   factory.count,
 		InputChan:  make(chan RenderInput),
 		WaitingChan: make(chan bool),
+		Close: make(chan bool),
 		SharedConfig:     factory.sharedConfig,
 		RegionConfig:	factory.regionConfig,
+		BaseConfig: factory.baseConfig,
 		Output: factory.output,
 	}
 	factory.count++
@@ -76,16 +81,14 @@ func (worker *Worker) Run() {
 			busy = false
 		}
 		select {
-		case input, ok := <-worker.InputChan:
-			if ok {
-				// Enter busy state
-				busy = true
-				worker.WaitingChan<- false
-				worker.Step(input.Region)
-			} else {
-				worker.closeChannels()
-				return
-			}
+		case input := <-worker.InputChan:
+			// Enter busy state
+			busy = true
+			worker.WaitingChan<- false
+			worker.Step(input.Region)
+		case <-worker.Close:
+			worker.closeChannels()
+			return
 		default:
 			continue
 		}
@@ -110,8 +113,8 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 		points := SharedSequenceCollapse(shared, worker.WorkerId, iterateLimit)
 		worker.Hold.Add(1)
 		go func() {
-			for member := range points {
-				worker.Output.Members<- member
+			for _, p := range points {
+				worker.Output.Members<- p
 			}
 			worker.Hold.Done()
 		}()
@@ -140,4 +143,5 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 func (worker *Worker) closeChannels() {
 	worker.Hold.Wait()
 	close(worker.WaitingChan)
+	close(worker.InputChan)
 }

@@ -2,6 +2,7 @@ package sharedregion
 
 import (
     "functorama.com/demo/base"
+    "functorama.com/demo/sequence"
 	"functorama.com/demo/region"
 )
 
@@ -25,9 +26,12 @@ type SharedRegionNumerics interface {
     SharedRegionSequence() SharedSequenceNumerics
 }
 
-func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16, iterateLimit uint8) <-chan base.PixelMember {
+func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16, iterateLimit uint8) []base.PixelMember {
     collapse := numerics.SharedRegionSequence()
     collapse.GrabWorkerPrototype(workerId)
-    collapse.ClaimExtrinsics()
-    return collapse.Sequence(iterateLimit)
+    var points []base.PixelMember
+    collapse.Extrinsically(func () {
+        points = sequence.Capture(collapse, iterateLimit)
+    })
+    return points
 }

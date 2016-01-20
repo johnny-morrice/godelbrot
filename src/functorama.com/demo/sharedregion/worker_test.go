@@ -39,10 +39,10 @@ func TestWorkerRun(t *testing.T) {
 	const uniformLength = 1
 
 	go func() {
-		worker.InputChan <- RenderInput{
+		worker.InputChan<- RenderInput{
 			Region: uniformer(),
 		}
-		close(worker.InputChan)
+		worker.Close<- true
 	}()
 
 	go func() {
@@ -75,11 +75,11 @@ func TestWorkerStep(t *testing.T) {
 		t.Error("Expected methods not called on collapse region:", coll)
 	}
 
-	if !(subd.TSplit && subd.TSharedChildren && subd.TEvaluateAllPoints) {
+	if !(subd.TSplit && subd.TSharedChildren) {
 		t.Error("Expected methods not called on subdivided region:", subd)
 	}
 
-	if !(uni.TOnGlitchCurve && uni.TEvaluateAllPoints)  {
+	if !(uni.TOnGlitchCurve)  {
 		t.Error("Expected methods not called on uniform region:", uni)
 	}
 
@@ -188,6 +188,7 @@ func newWorker() *Worker {
 	return &Worker{
 		InputChan:  make(chan RenderInput),
 		WaitingChan: make(chan bool),
+		Close: make(chan bool),
 		Output: RenderOutput{
 			UniformRegions: make(chan SharedRegionNumerics),
 			Children: make(chan SharedRegionNumerics),

@@ -10,6 +10,7 @@ import (
 
 func TestNewRenderTracker(t *testing.T) {
 	const jobCount = 5
+	const expectWorkers = jobCount - 1
 	mock := &MockRenderApplication{}
 	mock.SharedConfig.Jobs = uint16(jobCount)
 	mock.SharedFactory = &MockFactory{}
@@ -23,9 +24,10 @@ func TestNewRenderTracker(t *testing.T) {
 		t.Error("Expected tracker to be non-nil")
 	}
 
-	workerCount := len(tracker.workers)
-	if workerCount != jobCount {
-		t.Error("Expected", jobCount, "workers but received", workerCount)
+	actualWorkers := len(tracker.workers)
+	if actualWorkers != expectWorkers {
+		// Expect one less worker as one job is for the tracker
+		t.Error("Expected", expectWorkers, "workers but received", actualWorkers)
 	}
 }
 
@@ -80,6 +82,7 @@ func TestTrackerCirculate(t *testing.T) {
 		},
 		workersDone: make(chan bool),
 		schedule: make(chan chan<- RenderInput),
+		running: true,
 	}
 
 	expectedRegion := &MockNumerics{}
@@ -126,6 +129,7 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 			Children: make(chan SharedRegionNumerics),
 			Members: make(chan base.PixelMember),
 		},
+		running: true,
 	}
 
 	app := &MockRenderApplication{}
@@ -169,8 +173,6 @@ func TestTrackerScheduleWorkers(t *testing.T) {
 		t.Error("Expected", expectStateB,
 			"but received", stateB)
 	}
-
-	tracker.stopWorkers()
 }
 
 func TestTrackerDetectEnd(t *testing.T) {

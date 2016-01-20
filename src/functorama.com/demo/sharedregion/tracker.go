@@ -8,6 +8,7 @@ import (
 )
 
 type RenderTracker struct {
+	running bool
 	// Number of jobs
 	jobs uint16
 	workers []*Worker
@@ -44,21 +45,22 @@ func NewRenderTracker(app RenderApplication) *RenderTracker {
 	}
 
 	config := app.SharedRegionConfig()
-	iJobs := int(config.Jobs)
+	workCount := config.Jobs - 1
 	factory := NewWorkerFactory(app, output)
 
 	tracker := RenderTracker{
-		jobs: config.Jobs,
-		workers: make([]*Worker, config.Jobs),
+		jobs: workCount,
+		workers: make([]*Worker, workCount),
 		workersDone: make(chan bool),
 		stateChan: make(chan workerState),
+		schedule: make(chan chan<- RenderInput),
 		config:     config,
 		context:       app.DrawingContext(),
 		initialRegion: app.SharedRegionFactory().Build(),
 		workerOutput: output,
 	}
 
-	for i := 0; i < iJobs; i++ {
+	for i := uint16(0); i < workCount; i++ {
 		tracker.workers[i] = factory.Build()
 	}
 
@@ -128,16 +130,18 @@ func (tracker *RenderTracker) circulate()  {
 }
 
 func (tracker *RenderTracker) addWork(child SharedRegionNumerics) {
-	input := RenderInput{
-		Region: child,
-	}
 	// We need to feed back asynchronously
 	// otherwise we will block the workers
 	go func() {
-		inputChan := <-tracker.schedule
-		go func() {
-			inputChan<- input
-		}()
+		input := RenderInput{
+			Region: child,
+		}
+		if tracker.running {
+			inputChan := <-tracker.schedule
+			go func() {
+				inputChan<- input
+			}()
+		}
 	}()
 }
 
@@ -145,19 +149,21 @@ func (tracker *RenderTracker) scheduleWorkers() {
 	for i, worker := range tracker.workers {
 		go func(id int, slave *Worker) {
 			for ready := range slave.WaitingChan {
-				if ready {
-					tracker.schedule<- slave.InputChan
+				if tracker.running {
+					go func(r bool) {
+						if r {
+							tracker.schedule<- slave.InputChan
+						}
+					}(ready)
+					tracker.stateChan<- workerState{id, ready}
 				}
-				go func(slaveReady bool) {
-					tracker.stateChan<- workerState{id, slaveReady}
-				}(ready)
 			}
 		}(i, worker)
 	}
 }
 
 func (tracker *RenderTracker) detectEnd() {
-	workerWaiting := make([]bool, tracker.jobs)
+	workerWaiting := make([]bool, tracker.jobs )
 
 	for state := range tracker.stateChan {
 		workerWaiting[state.workerId] = state.waiting
@@ -187,19 +193,27 @@ func (tracker *RenderTracker) detectEnd() {
 
 func (tracker *RenderTracker) stopWorkers() {
 	for _, worker := range tracker.workers {
-		close(worker.InputChan)
+		worker.Close<- true
 	}
+}
+
+func (tracker *RenderTracker) shutdown() {
+	tracker.running = false
+	close(tracker.stateChan)
+	tracker.workerOutput.Close()
+	tracker.stopWorkers()
 }
 
 // Render the Mandelbrot set concurrently
 func (tracker *RenderTracker) Render() {
+	tracker.running = true
 	// Launch threads
 	for _, worker := range tracker.workers {
 		go worker.Run()
 	}
 
 	// Render fractal
-	go func() { tracker.workers[0].InputChan<- RenderInput{tracker.initialRegion} }()
+	go func() { tracker.workerOutput.Children<- tracker.initialRegion }()
 	go tracker.detectEnd()
 	go tracker.scheduleWorkers()
 
@@ -208,9 +222,5 @@ func (tracker *RenderTracker) Render() {
 
 	// Circulate output to input until the fractal is drawn
 	tracker.circulate()
-
-	close(tracker.stateChan)
-	tracker.workerOutput.Close()
-
-	tracker.stopWorkers()
+	tracker.shutdown()
 }
