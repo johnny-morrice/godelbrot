@@ -6,7 +6,7 @@ import (
     "functorama.com/demo/draw"
 )
 
-func TestNewSequenceRenderer(t *testing.T) {
+func TestMake(t *testing.T) {
     expectedPic := image.NewNRGBA(image.ZR)
     context := &draw.MockDrawingContext{
         Pic: expectedPic,
@@ -23,7 +23,7 @@ func TestNewSequenceRenderer(t *testing.T) {
     }
     mock.Context = context
     mock.Base.IterateLimit = 200
-    actualRenderer := NewSequenceRenderer(mock)
+    actualRenderer := Make(mock)
 
     if !(mock.TSequenceNumericsFactory && mock.TDrawingContext && mock.TBaseConfig) {
         t.Error("Expected methods not called on mock:", mock)
