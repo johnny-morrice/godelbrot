@@ -47,7 +47,6 @@ type commandLine struct {
     mode           string
     regionCollapse uint
     jobs  uint
-    storedPalette  string
     fixAspect      bool
     numerics string
     glitchSamples uint
@@ -97,8 +96,6 @@ func parseArguments() commandLine {
         libgodelbrot.DefaultGlitchSamples, "Size of region render glitch-correncting sample set")
     flag.UintVar(&args.precision, "prec",
         libgodelbrot.DefaultPrecision, "Precision for big.Float render mode")
-    flag.StringVar(&args.storedPalette, "storedPalette",
-        "pretty", "Name of stored palette (pretty|redscale)")
     flag.StringVar(&args.numerics, "numerics",
         "auto", "Numerical system (auto|native|bigfloat)")
     flag.BoolVar(&args.fixAspect, "fixAspect",
@@ -160,8 +157,6 @@ func extractRenderParameters(args commandLine) (*libgodelbrot.Request, error) {
         ImagMax: args.imagMax,
         ImageWidth: args.width,
         ImageHeight: args.height,
-        PaletteType: libgodelbrot.StoredPalette,
-        PaletteCode: args.storedPalette,
         FixAspect: args.fixAspect,
         Numerics: numerics,
         Renderer: renderer,
