@@ -35,8 +35,7 @@ var appBase = []string {
 var apps = []string{
     "configbrot",
     "renderbrot",
-    "godelbrot",
-    "webdelbrot",
+    "colorbrot",
 }
 
 var all []string
