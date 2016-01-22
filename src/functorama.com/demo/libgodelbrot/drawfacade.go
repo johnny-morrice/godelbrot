@@ -1,7 +1,6 @@
 package libgodelbrot
 
 import (
-    "log"
     "image"
     "functorama.com/demo/draw"
 )
@@ -45,27 +44,6 @@ func createImage(desc *Info) *image.NRGBA {
     return image.NewNRGBA(bounds)
 }
 
-func createStoredPalette(desc *Info) draw.Palette {
-    palettes := map[string]draw.PaletteFactory{
-        "redscale": draw.NewRedscalePalette,
-        "pretty":   draw.NewPrettyPalette,
-    }
-    code := desc.UserRequest.PaletteCode
-    found := palettes[code]
-    if found == nil {
-        log.Panic("Unknown palette:", code)
-    }
-    return found(desc.UserRequest.IterateLimit)
-}
-
 func createPalette(desc *Info) draw.Palette {
-    req := desc.UserRequest
-    // We are planning more types of palettes soon
-    switch req.PaletteType {
-    case StoredPalette:
-        return createStoredPalette(desc)
-    default:
-        log.Panic("Unknown palette kind:", req.PaletteType)
-    }
-    return nil
+    return draw.NewGrayscalePalette(desc.UserRequest.IterateLimit)
 }
