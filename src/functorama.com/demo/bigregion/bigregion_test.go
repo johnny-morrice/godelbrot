@@ -153,6 +153,8 @@ func TestRect(t *testing.T) {
 }
 
 func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
+	const iterlim = 255
+
 	initMin := bigbase.BigComplex{helper.left, helper.bottom}
 	initMax := bigbase.BigComplex{helper.right, helper.top}
 
@@ -183,7 +185,7 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	numerics.Region = subjectRegion
 	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
 	numerics.Precision = prec
-	numerics.Split()
+	numerics.Split(iterlim)
 	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {
