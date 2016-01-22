@@ -95,24 +95,6 @@ func TestMandelbrotPoints(t *testing.T) {
 	}
 }
 
-func TestEvaluateAllPoints(t *testing.T) {
-	numerics := NativeRegionNumerics{}
-	numerics.EvaluateAllPoints(1)
-	region := numerics.Region
-
-	okay := true
-	for _, thunk := range numerics.thunks() {
-		if !thunk.evaluated {
-			okay = false
-		}
-		break
-	}
-
-	if !okay {
-		t.Error("Expected all points to be evaluated, but region was:", region)
-	}
-}
-
 func TestRect(t *testing.T) {
 	const picSide = 2
 	const planeSide = 2.0
@@ -137,7 +119,7 @@ func TestRect(t *testing.T) {
 			ImagMin: bottom,
 			ImagMax: top,
 		},
-		Region:  createNativeRegion(min, max),
+		Region:  createNativeRegion(min, max, sqrtDLimit),
 	}
 
 	uq := nativebase.UnitQuery{picSide, picSide, planeSide, planeSide}
@@ -161,6 +143,7 @@ func TestRect(t *testing.T) {
 }
 
 func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
+	const iterlim = uint8(255)
 	initMin := complex(helper.left, helper.bottom)
 	initMax := complex(helper.right, helper.top)
 
@@ -176,34 +159,34 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 	bottomRightMin := complex(helper.midR, helper.bottom)
 	bottomRightMax := complex(helper.right, helper.midI)
 
-	subjectRegion := createNativeRegion(initMin, initMax)
+	subjectRegion := createNativeRegion(initMin, initMax, sqrtDLimit)
 
 	expected := []nativeRegion{
-		createNativeRegion(topLeftMin, topLeftMax),
-		createNativeRegion(topRightMin, topRightMax),
-		createNativeRegion(bottomLeftMin, bottomLeftMax),
-		createNativeRegion(bottomRightMin, bottomRightMax),
+		createNativeRegion(topLeftMin, topLeftMax, sqrtDLimit),
+		createNativeRegion(topRightMin, topRightMax, sqrtDLimit),
+		createNativeRegion(bottomLeftMin, bottomLeftMax, sqrtDLimit),
+		createNativeRegion(bottomRightMin, bottomRightMax, sqrtDLimit),
 	}
 
 	numerics := NativeRegionNumerics{
 		Region: subjectRegion,
 	}
-	numerics.SqrtDivergeLimit = 2.0
-	numerics.Split()
+	numerics.SqrtDivergeLimit = sqrtDLimit
+	numerics.Split(iterlim)
 	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {
 		actual := actualChildren[i]
-		exPoints := ex.thunks()
-		acPoints := actual.thunks()
+		exPoints := ex.points()
+		acPoints := actual.points()
 		fail := false
-		for j, expectThunk := range exPoints {
-			actThunk := acPoints[j]
-			if *expectThunk != *actThunk {
+		for j, e := range exPoints {
+			a := acPoints[j]
+			if e.C != a.C {
 				fail = true
-				t.Log("Region", i, "error at thunk", j,
-					"expected", expectThunk,
-					"but received", actThunk)
+				t.Log("Region", i, "error at point", j,
+					"expected", e,
+					"but received", a)
 			}
 		}
 		if fail {

@@ -7,12 +7,12 @@ import (
 	"functorama.com/demo/nativesequence"
 )
 
+const sqrtDLimit = float64(2.0)
+
 func TestNativeProxyRegionClaimExtrinsics(t *testing.T) {
 	native := NativeRegionProxy{
 		LocalRegion: nativeRegion{
-			topLeft: nativeMandelbrotThunk{
-				evaluated: true,
-			},
+			topLeft: nativebase.NativeMandelbrotMember{C: 1},
 		},
 		NativeRegionNumerics: &NativeRegionNumerics{},
 	}
@@ -58,7 +58,7 @@ func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
 		},
 	}
 	native := NativeSequenceProxy{
-		LocalRegion:   createNativeRegion(regMin, regMax),
+		LocalRegion:   createNativeRegion(regMin, regMax, sqrtDLimit),
 		NativeSequenceNumerics: &numerics,
 	}
 

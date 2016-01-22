@@ -55,11 +55,12 @@ func TestRegionGrabWorkerPrototypeParallel(t *testing.T) {
 func TestSharedChildren(t *testing.T) {
 	const jobCount = 1
 	const expectCount = 4
+	const iterlim = 255
 
 	app := makeApp(jobCount)
 	shared := Make(app)
 
-	shared.Split()
+	shared.Split(iterlim)
 
 	children := shared.SharedChildren()
 	actualCount := len(children)
