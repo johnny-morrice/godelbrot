@@ -11,7 +11,7 @@ func TestRenderSequenceRegion(t *testing.T) {
         MockSequence: mockSequence,
     }
     // Not inspecting contract re DrawingContext
-    RenderSequenceRegion(mockRegion, nil, iterateLimit)
+    RenderSequenceRegion(mockRegion, nil)
 
     if !mockRegion.TRegionSequence {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
@@ -30,7 +30,7 @@ func TestSequenceCollapse(t *testing.T) {
     mockRegion := &MockNumerics{
         MockSequence: mockSequence,
     }
-    SequenceCollapse(mockRegion, iterateLimit)
+    SequenceCollapse(mockRegion)
     if !mockRegion.TRegionSequence {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
     }
@@ -48,7 +48,6 @@ func TestSubdivide(t *testing.T) {
     // Collapsed regions shouldn't care about subdivision
     //collReg := MockNumerics{path: collapse}
     subReg := &MockNumerics{Path: SubdividePath}
-    gliReg := &MockNumerics{Path: GlitchPath}
 
     const (
         uniIndex = iota
@@ -56,11 +55,11 @@ func TestSubdivide(t *testing.T) {
         subIndex
         gliIndex
     )
-    regions := []RegionNumerics{uniReg, subReg, gliReg}
+    regions := []RegionNumerics{uniReg, subReg}
     actual := make([]bool, len(regions))
 
     for i, reg := range regions {
-        actual[i] = Subdivide(reg, iterateLimit, glitchSamples)
+        actual[i] = Subdivide(reg)
     }
 
     // Results for uniform region
@@ -71,16 +70,8 @@ func TestSubdivide(t *testing.T) {
         t.Error("Split was called on uniform region")
     }
     // We expect the mandelbrot points to be examined for uniformity detection
-    if !(uniReg.TMandelbrotPoints && uniReg.TOnGlitchCurve) {
+    if !(uniReg.TMandelbrotPoints) {
         t.Error("Expected methods were not called on uniform region:", uniReg)
-    }
-
-    // Results for glitch region
-    if !actual[gliIndex] {
-        t.Error("Expected positive Subdivide return for glitched region")
-    }
-    if !(gliReg.TMandelbrotPoints && gliReg.TOnGlitchCurve) {
-        t.Error("Expected methods were not called on glitched region")
     }
 
     // Results for subdividing region
@@ -96,10 +87,9 @@ func TestUniform(t *testing.T) {
     uniform := &MockNumerics{Path: UniformPath}
     collapse := &MockNumerics{Path: CollapsePath}
     subdivide := &MockNumerics{Path: SubdividePath}
-    glitch := &MockNumerics{Path: GlitchPath}
 
-    numerics := []RegionNumerics{uniform, glitch, collapse, subdivide}
-    expect := []bool{true, true, false, false}
+    numerics := []RegionNumerics{uniform, collapse, subdivide}
+    expect := []bool{true, false, false}
 
     for i, num := range numerics {
         actual := Uniform(num)
@@ -126,10 +116,9 @@ func TestCollapse(t *testing.T) {
     uniform := newMockNumerics(UniformPath, collapseSize)
     collapse := newMockNumerics(CollapsePath, collapseSize)
     subdivide := newMockNumerics(SubdividePath, collapseSize)
-    glitch := newMockNumerics(GlitchPath, collapseSize)
 
-    numerics := []RegionNumerics{uniform, glitch, subdivide, collapse}
-    expect := []bool{false, false, false, true}
+    numerics := []RegionNumerics{uniform, subdivide, collapse}
+    expect := []bool{false, false, true}
 
     for i, num := range numerics {
         actual := Collapse(num, collapseSize)

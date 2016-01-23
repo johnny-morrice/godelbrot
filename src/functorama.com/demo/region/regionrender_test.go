@@ -20,7 +20,6 @@ func TestNewRegionRenderer(t *testing.T) {
     expectedRenderer := RegionRenderStrategy{
     	factory: factory,
         context: context,
-        baseConfig: baseConfig,
         regionConfig: regionConfig,
     }
     mock := &MockRenderApplication{}
@@ -36,7 +35,7 @@ func TestNewRegionRenderer(t *testing.T) {
 	}
 
 	mockOkay := mock.TRegionNumericsFactory && mock.TDrawingContext
-	mockOkay = mockOkay && mock.TBaseConfig && mock.TRegionConfig
+	mockOkay = mockOkay && mock.TRegionConfig
 
 	if !mockOkay {
 		t.Error("Expected methods not called on mock")
@@ -69,12 +68,10 @@ func TestRender(t *testing.T) {
         AppCollapseSize: collapseSize,
     }
     factory := &MockFactory{Numerics: mockNumerics}
-    baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
     regionConfig := RegionConfig{CollapseSize: uint(collapseSize)}
     renderer := RegionRenderStrategy{
     	factory: factory,
         context: context,
-        baseConfig: baseConfig,
         regionConfig: regionConfig,
     }
 
@@ -120,10 +117,8 @@ func TestSubdivideRegions(t *testing.T) {
     	MockChildren: []*MockNumerics{uniform, collapse},
         AppCollapseSize: collapseSize,
     }
-    baseConfig := base.BaseConfig{IterateLimit: iterateLimit}
     regionConfig := RegionConfig{CollapseSize: collapseSize}
     renderer := RegionRenderStrategy{
-        baseConfig: baseConfig,
         regionConfig: regionConfig,
     }
 

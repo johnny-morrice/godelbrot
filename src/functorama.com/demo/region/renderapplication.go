@@ -22,6 +22,6 @@ type RenderApplication interface {
 }
 
 type RegionConfig struct {
-    GlitchSamples      uint
+    Samples      uint
     CollapseSize 	   uint
 }

@@ -9,7 +9,6 @@ import (
 type RegionRenderStrategy struct {
 	factory RegionNumericsFactory
 	context draw.DrawingContext
-	baseConfig base.BaseConfig
 	regionConfig RegionConfig
 }
 
@@ -17,7 +16,6 @@ func Make(app RenderApplication) *RegionRenderStrategy {
 	return &RegionRenderStrategy{
 		factory: app.RegionNumericsFactory(),
 		context: app.DrawingContext(),
-		baseConfig: app.BaseConfig(),
 		regionConfig: app.RegionConfig(),
 	}
 }
@@ -35,10 +33,9 @@ func (renderer RegionRenderStrategy) Render() (*image.NRGBA, error) {
 		DrawUniform(renderer.context, region)
 	}
 
-	iterateLimit := renderer.baseConfig.IterateLimit
 	// Add detail from the small regions next
 	for _, region := range smallRegions {
-		RenderSequenceRegion(region, renderer.context, iterateLimit)
+		RenderSequenceRegion(region, renderer.context)
 	}
 
 	return renderer.context.Picture(), nil
@@ -65,8 +62,7 @@ func (renderer RegionRenderStrategy) SubdivideRegions(whole RegionNumerics) ([]R
 		} else {
 			// If the region is not too small, two things can happen
 			// B. The region needs subdivided because it covers distinct parts of the plane
-			divided := Subdivide(splitee, renderer.baseConfig.IterateLimit,
-				renderer.regionConfig.GlitchSamples)
+			divided := Subdivide(splitee)
 			if divided {
 				splittingRegions = append(splittingRegions, splitee.Children()...)
 				// C. The region need not be divided

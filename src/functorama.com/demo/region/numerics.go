@@ -7,16 +7,20 @@ import (
     "functorama.com/demo/draw"
 )
 
+type Subdivider interface {
+    Rect() image.Rectangle
+    Split()
+    MandelbrotPoints() []base.MandelbrotMember
+    SampleDivs() (<-chan uint8, chan<- bool)
+    RegionMember() base.MandelbrotMember
+    RegionSequence() ProxySequence
+}
+
 // RegionNumerics provides rendering calculations for the "region" render strategy.
 type RegionNumerics interface {
     base.OpaqueProxyFlyweight
-    Rect() image.Rectangle
-    Split(iterateLimit uint8)
-    OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool
-    MandelbrotPoints() []base.MandelbrotMember
-    RegionMember() base.MandelbrotMember
-    Children() []RegionNumerics
-    RegionSequence() ProxySequence
+    Subdivider
+    Children() []RegionNumerics // Bad to include method in extended interface, but how else?
 }
 
 type ProxySequence interface {
@@ -26,21 +30,21 @@ type ProxySequence interface {
 
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential
 // (column-wise) manner
-func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext, iterateLimit uint8) {
+func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext) {
     numerics.ClaimExtrinsics()
     smallNumerics := numerics.RegionSequence()
     smallNumerics.Extrinsically(func () {
-        sequence.ImageSequence(smallNumerics, iterateLimit, context)
+        sequence.ImageSequence(smallNumerics, context)
     })
 }
 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render
 // results rather than drawing them to the image.
-func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelMember {
+func SequenceCollapse(numerics RegionNumerics) []base.PixelMember {
     collapse := numerics.RegionSequence()
     var seq []base.PixelMember
     collapse.Extrinsically(func () {
-        seq = sequence.Capture(collapse, iterateLimit)
+        seq = sequence.Capture(collapse)
     })
     return seq
 }
@@ -48,22 +52,22 @@ func SequenceCollapse(numerics RegionNumerics, iterateLimit uint8) []base.PixelM
 // Subdivide takes a RegionNumerics and tries to split the region into subregions.  It returns true
 // if the subdivision occurred.  The subdivision won't occur if the region is Uniform or in an area
 // where glitches are likely.
-func Subdivide(numerics RegionNumerics, iterateLimit uint8, glitchSamples uint) bool {
-    if !Uniform(numerics) || numerics.OnGlitchCurve(iterateLimit, glitchSamples) {
-        numerics.Split(iterateLimit)
+func Subdivide(numerics RegionNumerics) bool {
+    if !Uniform(numerics) {
+        numerics.Split()
         return true
     }
     return false
 }
 
 // Uniform returns true if the region has the same Mandelbrot escape value across its bounds.
-// Note this function performs no evaluation of membership.
 func Uniform(numerics RegionNumerics) bool {
     // If inverse divergence on all points is the same, no need to subdivide
-    points := numerics.MandelbrotPoints()
-    first := points[0].InverseDivergence()
-    for _, p := range points[1:] {
-        if p.InverseDivergence() != first {
+    idivs, done := numerics.SampleDivs()
+    first := <-idivs
+    for d := range idivs {
+        if d != first {
+            done<- true
             return false
         }
     }

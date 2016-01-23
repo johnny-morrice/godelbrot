@@ -13,7 +13,6 @@ const (
 	UniformPath = RegionType(iota)
 	CollapsePath
 	SubdividePath
-	GlitchPath
 )
 
 type MockNumerics struct {
@@ -21,11 +20,11 @@ type MockNumerics struct {
 	TClaimExtrinsics          bool
 	TRect                     bool
 	TSplit                    bool
-	TOnGlitchCurve            bool
 	TMandelbrotPoints         bool
 	TRegionMember             bool
 	TSubdivide                bool
 	TChildren                 bool
+	TSampleDivs				  bool
 	TRegionSequence bool
 
 	Path                      RegionType
@@ -34,6 +33,21 @@ type MockNumerics struct {
 	MockSequence			  *MockProxySequence
 
 	AppCollapseSize int
+}
+
+func (mock *MockNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
+	mock.TSampleDivs = true
+	done := make(chan bool, 1)
+	idivch := make(chan uint8, 1)
+
+	go func() {
+		for _, p := range mock.MandelbrotPoints() {
+			idivch<- p.InverseDivergence()
+		}
+		close(idivch)
+	}()
+
+	return idivch, done
 }
 
 func (mock *MockNumerics) Extrinsically(f func()) {
@@ -59,13 +73,8 @@ func makeRect(size int) image.Rectangle {
 	return image.Rect(0, 0, size, size)
 }
 
-func (mock *MockNumerics) Split(iterateLimit uint8) {
+func (mock *MockNumerics) Split() {
 	mock.TSplit = true
-}
-
-func (mock *MockNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	mock.TOnGlitchCurve = true
-	return mock.Path == GlitchPath
 }
 
 func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
@@ -83,8 +92,6 @@ func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
 		}
 		points[change] = base.BaseMandelbrot{InSet: false, InvDivergence: 20}
 	case UniformPath:
-		fallthrough
-	case GlitchPath:
 		for i := 0; i < pointCount; i++ {
 			points[i] = base.BaseMandelbrot{InSet: true, InvDivergence: 0}
 		}
