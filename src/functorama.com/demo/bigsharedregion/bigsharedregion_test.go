@@ -62,7 +62,7 @@ func TestSharedChildren(t *testing.T) {
 	app := makeApp(jobCount)
 	shared := Make(app)
 
-	shared.Split(iterlim)
+	shared.Split()
 
 	children := shared.SharedChildren()
 	actualCount := len(children)

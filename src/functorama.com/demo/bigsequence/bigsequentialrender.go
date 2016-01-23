@@ -27,14 +27,14 @@ func (bsn *BigSequenceNumerics) Area() int {
 }
 
 
-func (bsn *BigSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMember {
+func (bsn *BigSequenceNumerics) Sequence() <-chan base.PixelMember {
 	imageLeft, imageTop := bsn.PictureMin()
 	imageRight, imageBottom := bsn.PictureMax()
+	iterlim := bsn.IterateLimit
 
 	out := make(chan base.PixelMember)
 
 	go func() {
-		// Being explicit here to ensure we are making a copy
 		pos := bigbase.BigComplex{
 			R: bsn.RealMin,
 		}
@@ -45,7 +45,7 @@ func (bsn *BigSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMembe
 					C: &pos,
 					SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
 				}
-				member.Mandelbrot(iterLimit)
+				member.Mandelbrot(iterlim)
 				pos.I.Sub(&pos.I, &bsn.Iunit)
 			}
 			pos.R.Add(&pos.R, &bsn.Runit)

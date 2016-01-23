@@ -18,7 +18,10 @@ func (brnp BigRegionNumericsProxy) ClaimExtrinsics() {
 }
 
 func (brnp BigRegionNumericsProxy) Extrinsically(f func()) {
-    // TODO
+    old := brnp.BigRegionNumerics.Region
+    brnp.ClaimExtrinsics()
+    f()
+    brnp.BigRegionNumerics.Region = old
 }
 
 type BigSequenceNumericsProxy struct {
@@ -29,7 +32,9 @@ type BigSequenceNumericsProxy struct {
 var _ sequence.SequenceNumerics = BigSequenceNumericsProxy{}
 
 func (bsnp BigSequenceNumericsProxy) ClaimExtrinsics() {
-	bsnp.BigSequenceNumerics.SubImage(bsnp.LocalRegion.rect(&bsnp.BigSequenceNumerics.BigBaseNumerics))
+    base := bsnp.BigSequenceNumerics.BigBaseNumerics
+    rectangle := bsnp.LocalRegion.rect(&base)
+    bsnp.BigSequenceNumerics.SubImage(rectangle)
 }
 
 func (bsnp BigSequenceNumericsProxy) Extrinsically(f func()) {

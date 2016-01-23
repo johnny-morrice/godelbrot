@@ -163,56 +163,8 @@ func (brn *BigRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
 	}
 }
 
-// OnGlitchCurve returns true when a glitch has been detected in the region rendering process.
-// The region render optimization can result in serious inaccuracies in approximating the set.
-// These glitches manifest as a nasty artifact in the output image.  The cause of this is large
-// areas of the plane with  same with the same InverseDivergence value.  These include the
-// Mandelbrot set interior. Since regions are rectangular, we cannot well pick up on curves round
-// these areas. In these cases we must perform extra sampling to be sure that we have not hit a
-// glitch.
-func (brn *BigRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	r := brn.Region
-	member := brn.Region.topLeft
-	iDiv := member.InvDivergence
-	if iDiv == 0 || iDiv == 1 || member.InSet {
-		tl := r.topLeft.cStore
-		br := r.bottomRight.cStore
-
-		bigGlitch := brn.MakeBigFloat(float64(glitchSamples))
-
-		rUnit := brn.MakeBigFloat(0.0)
-		rUnit.Copy(br.Real())
-		rUnit.Sub(&rUnit, tl.Real())
-		rUnit.Quo(&rUnit, &bigGlitch)
-		iUnit := brn.MakeBigFloat(0.0)
-		iUnit.Copy(tl.Imag())
-		iUnit.Sub(&iUnit, br.Imag())
-		iUnit.Quo(&iUnit, &bigGlitch)
-
-		startI := *tl.Imag()
-		c := bigbase.BigComplex{R: *tl.Real()}
-		for i := uint(0); i < glitchSamples; i++ {
-			c.I = startI
-			for j := uint(0); j < glitchSamples; j++ {
-				checkMember := bigbase.BigMandelbrotMember{
-					C:            &c,
-					SqrtDivergeLimit: &brn.SqrtDivergeLimit,
-				}
-				checkMember.Mandelbrot(iterateLimit)
-				if member.InvDivergence != iDiv {
-					return true
-				}
-				c.I.Sub(&c.I, &iUnit)
-			}
-			c.R.Add(&c.R, &rUnit)
-		}
-	}
-
-	return false
-}
-
 // Split divides the region into four smaller subregions.
-func (brn *BigRegionNumerics) Split(iterateLimit uint8) {
+func (brn *BigRegionNumerics) Split() {
 	r := brn.Region
 
 	topLeftPos := r.topLeft.cStore
@@ -346,4 +298,11 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 		bottomRight: thunks[3],
 		midPoint: thunks[4],
 	}
+}
+
+func (brn *BigRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
+	done := make(chan bool, 1)
+	idivch := make(chan uint8, 1)
+
+	return idivch, done
 }

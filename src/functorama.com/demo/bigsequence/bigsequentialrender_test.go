@@ -22,7 +22,7 @@ func TestBigMandelbrotSequence(t *testing.T) {
 	app.UserMin = bigbase.MakeBigComplex(0.0, 0.0, prec)
 	app.UserMax = bigbase.MakeBigComplex(10.0, 10.0, prec)
 	numerics := Make(app)
-	out := numerics.Sequence(iterLimit)
+	out := numerics.Sequence()
 
 	const expectedCount = 100
 	actualArea := numerics.Area()

@@ -185,7 +185,7 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	numerics.Region = subjectRegion
 	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
 	numerics.Precision = prec
-	numerics.Split(iterlim)
+	numerics.Split()
 	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {
