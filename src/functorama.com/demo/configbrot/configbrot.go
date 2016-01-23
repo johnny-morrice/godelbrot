@@ -120,6 +120,7 @@ func newRequest(args commandLine) (*libgodelbrot.Request, error) {
         "rmax": func () {req.RealMax = user.RealMax},
         "imin": func () {req.ImagMin = user.ImagMin},
         "imax": func () {req.ImagMax = user.ImagMax},
+        "reconf": func() {},
     }
 
     flag.Visit(func (fl *flag.Flag) {
