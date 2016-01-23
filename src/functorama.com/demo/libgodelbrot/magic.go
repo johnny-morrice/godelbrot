@@ -55,4 +55,4 @@ const DefaultTinyImageArea uint = 40000
 const DefaultLowThreading uint16 = 2
 
 // Default sample size for region glitch-correction
-const DefaultGlitchSamples uint = 7
+const DefaultRegionSamples uint = 7

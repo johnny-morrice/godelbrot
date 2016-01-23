@@ -9,7 +9,7 @@ type Renderer interface {
     Render() (*image.NRGBA, error)
 }
 
-func renderer(desc *Info) (Renderer, error) {
+func MakeRenderer(desc *Info) (Renderer, error) {
     // Check that numerics modes are okay, but do not act on them
     switch desc.NumericsStrategy {
     case NativeNumericsMode:

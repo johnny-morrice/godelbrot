@@ -4,28 +4,129 @@ import (
     "math/big"
     "runtime"
     "strconv"
+    "encoding/json"
+    "io"
+    "bytes"
+    "fmt"
 )
 
-// Info completely describes the render process
-type Info struct {
+type NativeInfo struct {
     UserRequest Request
     // Describe the render strategy in use
     RenderStrategy RenderMode
     // Describe the numerics system in use
     NumericsStrategy NumericsMode
+    PaletteType PaletteKind
     Precision uint
+}
+
+type PaletteKind uint8
+
+const (
+    Grayscale = PaletteKind(iota)
+    Redscale
+    Pretty
+)
+
+type BigInfo struct {
     RealMin big.Float
     RealMax big.Float
     ImagMin big.Float
     ImagMax big.Float
 }
 
-// Available kinds of palettes
-type PaletteKind uint
+type SerialBigInfo struct {
+    RealMin string
+    RealMax string
+    ImagMin string
+    ImagMax string
+}
 
-const (
-    StoredPalette = PaletteKind(iota)
-)
+// Info completely describes the render process
+type Info struct {
+    NativeInfo
+    BigInfo
+}
+
+// UserInfo is a variant of Info that can be easily serialized
+type UserInfo struct {
+    NativeInfo
+    SerialBigInfo
+}
+
+func Friendly(desc *Info) *UserInfo {
+    userDesc := &UserInfo{}
+    userDesc.NativeInfo = desc.NativeInfo
+    userDesc.RealMin = emitBig(&desc.RealMin)
+    userDesc.RealMax = emitBig(&desc.RealMax)
+    userDesc.ImagMin = emitBig(&desc.ImagMin)
+    userDesc.ImagMax = emitBig(&desc.ImagMax)
+    return userDesc
+}
+
+func Unfriendly(userDesc *UserInfo) (*Info, error) {
+    desc := &Info{}
+    desc.NativeInfo = userDesc.NativeInfo
+
+    ubnds := []string{
+        userDesc.RealMin,
+        userDesc.RealMax,
+        userDesc.ImagMin,
+        userDesc.ImagMax,
+    }
+    bnds := make([]*big.Float, len(ubnds))
+
+    for i, u := range ubnds {
+        b, err := parseBig(u)
+        if err != nil {
+            return nil, fmt.Errorf("Error parsing bound: %v", err)
+        }
+        bnds[i] = b
+    }
+
+    desc.RealMin = *bnds[0]
+    desc.RealMax = *bnds[1]
+    desc.ImagMin = *bnds[2]
+    desc.ImagMax = *bnds[3]
+
+    return desc, nil
+}
+
+func ToJSON(desc *Info) ([]byte, error) {
+    userDesc := Friendly(desc)
+    return json.MarshalIndent(userDesc, "", "    ")
+}
+
+func FromJSON(format []byte) (*Info, error) {
+    userDesc := new(UserInfo)
+    err := json.Unmarshal(format, userDesc)
+    if err == nil {
+        desc, converr := Unfriendly(userDesc)
+        return desc, converr
+    } else {
+        return nil, err
+    }
+}
+
+func WriteInfo(w io.Writer, desc *Info) error {
+    text, jerr := ToJSON(desc)
+    if jerr != nil {
+        return jerr
+    }
+    _, werr := w.Write(text)
+    return werr
+}
+
+func ReadInfo(r io.Reader) (*Info, error) {
+    buff := bytes.Buffer{}
+    _, rerr := buff.ReadFrom(r)
+
+    if rerr != nil {
+        return nil, rerr
+    }
+
+    return FromJSON(buff.Bytes())
+}
 
 // Available render algorithms
 type RenderMode uint
@@ -59,7 +160,6 @@ type Request struct {
     ImagMax      string
     ImageWidth   uint
     ImageHeight  uint
-    PaletteType      PaletteKind
     PaletteCode      string
     FixAspect        bool
     // Render algorithm
@@ -70,7 +170,7 @@ type Request struct {
     // Numerical system
     Numerics NumericsMode
     // Number of samples taken when detecting region render glitches
-    GlitchSamples uint
+    RegionSamples uint
     // Number of bits for big.Float rendering
     Precision uint
 }
@@ -81,7 +181,7 @@ func DefaultRequest() *Request {
         IterateLimit:   DefaultIterations,
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
-        GlitchSamples:  DefaultGlitchSamples,
+        RegionSamples:  DefaultRegionSamples,
         Jobs:           uint16(jobs), // If this overflows, please send money to enable support
                                       // your ridiculous SPARC machine
         RealMin:        float2str(real(MandelbrotMin)),
@@ -90,8 +190,7 @@ func DefaultRequest() *Request {
         ImagMax:        float2str(imag(MandelbrotMax)),
         ImageHeight:    DefaultImageHeight,
         ImageWidth:     DefaultImageWidth,
-        PaletteType:    StoredPalette,
-        PaletteCode:    "pretty",
+        PaletteCode:    "grayscale",
     }
 }
 

@@ -43,7 +43,7 @@ func makeRegionFacade(desc *Info) *regionFacade {
     provider := &regionProvider{}
     provider.factory = &regionNumericsFactory{desc, baseApp, provider}
     provider.regionConfig = region.RegionConfig{
-        GlitchSamples: req.GlitchSamples,
+        Samples: req.RegionSamples,
         CollapseSize: req.RegionCollapse,
     }
 

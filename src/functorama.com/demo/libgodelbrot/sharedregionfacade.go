@@ -22,7 +22,7 @@ func makeSharedRegionFacade(desc *Info) *sharedRegionFacade {
     req := desc.UserRequest
     baseApp := makeBaseFacade(desc)
     regionConfig := region.RegionConfig{
-        GlitchSamples: req.GlitchSamples,
+        Samples: req.RegionSamples,
         CollapseSize: req.RegionCollapse,
     }
     sharedConfig := sharedregion.SharedRegionConfig{

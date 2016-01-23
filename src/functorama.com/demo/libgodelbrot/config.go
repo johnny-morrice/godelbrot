@@ -3,46 +3,40 @@ package libgodelbrot
 import (
     "math/big"
     "log"
-    "encoding/json"
+    "fmt"
 )
 
 // Object to initialize the godelbrot system
 type configurator Info
 
-func ToJSON(desc *Info) ([]byte, error) {
-    return json.MarshalIndent(desc, "", "    ")
-}
-
-func FromJSON(format []byte) (*Info, error) {
-    desc := new(Info)
-    err := json.Unmarshal(format, desc)
-    if err == nil {
-        desc.regenBounds()
-        return desc, nil
-    } else {
-        return nil, err
-    }
-}
-
-func (desc *Info) regenBounds() {
-    c := (*configurator)(desc)
-    c.parseUserCoords()
-    c.usePrec()
-}
-
 // InitializeContext examines the description, chooses a renderer, numerical system and palette.
-func configure(req *Request) *Info {
+func Configure(req *Request) (*Info, error) {
     c := &configurator{}
     c.UserRequest = *req
 
-    c.chooseNumerics()
-    c.chooseRenderStrategy()
+    nerr := c.chooseNumerics()
 
-    return (*Info)(c)
+    if nerr != nil {
+        return nil, nerr
+    }
+
+    rerr := c.chooseRenderStrategy()
+
+    if rerr != nil {
+        return nil, rerr
+    }
+
+    perr := c.choosePalette()
+
+    if perr != nil {
+        return nil, perr
+    }
+
+    return (*Info)(c), nil
 }
 
 // Initialize the render system
-func (c *configurator) chooseRenderStrategy() {
+func (c *configurator) chooseRenderStrategy() error {
     req := c.UserRequest
     switch req.Renderer {
     case AutoDetectRenderMode:
@@ -54,14 +48,21 @@ func (c *configurator) chooseRenderStrategy() {
     case SharedRegionRenderMode:
         c.useSharedRegionRenderer()
     default:
-        log.Panic("Unknown render mode:", req.Renderer)
+        return fmt.Errorf("Unknown render mode: %v", req.Renderer)
     }
+
+    return nil
 }
 
 // Initialize the numerics system
-func (c *configurator) chooseNumerics() {
+func (c *configurator) chooseNumerics() error {
     desc := c.UserRequest
-    c.parseUserCoords()
+    perr := c.parseUserCoords()
+
+    if perr != nil {
+        return perr
+    }
+
     switch desc.Numerics {
     case AutoDetectNumericsMode:
         c.chooseAccurateNumerics()
@@ -70,8 +71,10 @@ func (c *configurator) chooseNumerics() {
     case BigFloatNumericsMode:
         c.useBig()
     default:
-        log.Panic("Unknown numerics mode:", desc.Numerics)
+        return fmt.Errorf("Unknown numerics mode:", desc.Numerics)
     }
+
+    return nil
 }
 
 
@@ -117,7 +120,7 @@ func (c *configurator) useBig() {
     c.NumericsStrategy = BigFloatNumericsMode
 }
 
-func (c *configurator) parseUserCoords() {
+func (c *configurator) parseUserCoords() error {
     bigActions := []func(*big.Float){
         func(realMin *big.Float) { c.RealMin = *realMin },
         func(realMax *big.Float) { c.RealMax = *realMax },
@@ -139,13 +142,16 @@ func (c *configurator) parseUserCoords() {
         bigFloat, bigErr := parseBig(num)
 
         if bigErr != nil {
-            parsePanic(bigErr, inputNames[i])
+            return fmt.Errorf("Could not parse %v: %v", inputNames[i], bigErr)
         }
 
         // Handle parse results
         bigActions[i](bigFloat)
     }
+
+    return nil
 }
+
 
 // Choose an optimal strategy for rendering the image
 func (c *configurator) chooseFastRenderStrategy() {
@@ -187,4 +193,20 @@ func (c *configurator) useSharedRegionRenderer() {
 func (c *configurator) howManyBits() uint {
     // For now, always choose Native Arithmetic
     return 53
+}
+
+func (c *configurator) choosePalette() error {
+    code := c.UserRequest.PaletteCode
+    switch code {
+    case "pretty":
+        c.PaletteType = Pretty
+    case "redscale":
+        c.PaletteType = Redscale
+    case "grayscale":
+        c.PaletteType = Grayscale
+    default:
+        return fmt.Errorf("Invalid palette code: %v", code)
+    }
+
+    return nil
 }
