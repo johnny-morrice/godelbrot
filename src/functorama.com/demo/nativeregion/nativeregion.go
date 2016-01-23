@@ -229,10 +229,10 @@ func (native *NativeRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 }
 
 func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
-
 	complete := func (idiv uint8) bool {
 		select {
 		case <-done:
+			close(idivch)
 			return true
 		default:
 			idivch<- idiv
@@ -276,6 +276,7 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 			}
 		}
 	}
+	close(idivch)
 }
 
 func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nativeRegion {

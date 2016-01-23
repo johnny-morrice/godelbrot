@@ -65,13 +65,14 @@ func Uniform(numerics RegionNumerics) bool {
     // If inverse divergence on all points is the same, no need to subdivide
     idivs, done := numerics.SampleDivs()
     first := <-idivs
+    uni := true
     for d := range idivs {
-        if d != first {
+        if d != first && uni {
             done<- true
-            return false
+            uni = false
         }
     }
-    return true
+    return uni
 }
 
 // Collapse returns true if the region is below the necessary size for subdivision
