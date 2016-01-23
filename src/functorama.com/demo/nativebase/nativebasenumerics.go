@@ -19,6 +19,7 @@ type NativeBaseNumerics struct {
 	Iunit float64
 
 	SqrtDivergeLimit float64
+	IterateLimit uint8
 }
 
 func Make(app RenderApplication) NativeBaseNumerics {
@@ -59,6 +60,7 @@ func Make(app RenderApplication) NativeBaseNumerics {
 		ImagMax:      imag(planeMax),
 
 		SqrtDivergeLimit: math.Sqrt(config.DivergeLimit),
+		IterateLimit: config.IterateLimit,
 
 		Runit: rUnit,
 		Iunit: iUnit,

@@ -17,6 +17,7 @@ type BigBaseNumerics struct {
 	ImagMax big.Float
 
 	SqrtDivergeLimit big.Float
+	IterateLimit uint8
 
 	Runit big.Float
 	Iunit big.Float
@@ -87,6 +88,7 @@ func Make(app RenderApplication) BigBaseNumerics {
 		ImagMax:      top,
 
 		SqrtDivergeLimit: MakeBigFloat(fSqrtDiverge, prec),
+		IterateLimit: baseConfig.IterateLimit,
 
 		Runit:     rUnit,
 		Iunit:     iUnit,
