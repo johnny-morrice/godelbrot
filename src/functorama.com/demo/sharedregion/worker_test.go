@@ -79,10 +79,6 @@ func TestWorkerStep(t *testing.T) {
 		t.Error("Expected methods not called on subdivided region:", subd)
 	}
 
-	if !(uni.TOnGlitchCurve)  {
-		t.Error("Expected methods not called on uniform region:", uni)
-	}
-
 	workers := []*Worker{collapsed, subdivided, uniformed}
 
 	go func() {

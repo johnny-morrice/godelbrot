@@ -26,12 +26,12 @@ type SharedRegionNumerics interface {
     SharedRegionSequence() SharedSequenceNumerics
 }
 
-func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16, iterateLimit uint8) []base.PixelMember {
+func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16) []base.PixelMember {
     collapse := numerics.SharedRegionSequence()
     collapse.GrabWorkerPrototype(workerId)
     var points []base.PixelMember
     collapse.Extrinsically(func () {
-        points = sequence.Capture(collapse, iterateLimit)
+        points = sequence.Capture(collapse)
     })
     return points
 }

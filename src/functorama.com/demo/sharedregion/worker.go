@@ -30,7 +30,6 @@ type Worker struct {
 	Close chan bool
 	SharedConfig     SharedRegionConfig
 	RegionConfig 	 region.RegionConfig
-	BaseConfig	base.BaseConfig
 	Hold sync.WaitGroup
 }
 
@@ -48,7 +47,6 @@ func NewWorkerFactory(app RenderApplication, outputChannels RenderOutput) *Worke
 		count: 0,
 		regionConfig: app.RegionConfig(),
 		sharedConfig: app.SharedRegionConfig(),
-		baseConfig: app.BaseConfig(),
 		output: outputChannels,
 	}
 }
@@ -61,7 +59,6 @@ func (factory *WorkerFactory) Build() *Worker {
 		Close: make(chan bool),
 		SharedConfig:     factory.sharedConfig,
 		RegionConfig:	factory.regionConfig,
-		BaseConfig: factory.baseConfig,
 		Output: factory.output,
 	}
 	factory.count++
@@ -103,14 +100,11 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 	// We use proxies to share objects, so we've got to ensure we're using the correct local data
 	shared.ClaimExtrinsics()
 
-	baseConfig := worker.BaseConfig
 	regionConfig := worker.RegionConfig
-	iterateLimit := baseConfig.IterateLimit
-	glitchSamples := regionConfig.GlitchSamples
 	collapseBound := int(regionConfig.CollapseSize)
 
 	if region.Collapse(shared, collapseBound) {
-		points := SharedSequenceCollapse(shared, worker.WorkerId, iterateLimit)
+		points := SharedSequenceCollapse(shared, worker.WorkerId)
 		worker.Hold.Add(1)
 		go func() {
 			for _, p := range points {
@@ -121,7 +115,7 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 		return
 	}
 
-	if region.Subdivide(shared, iterateLimit, glitchSamples) {
+	if region.Subdivide(shared) {
 		children := shared.SharedChildren()
 		worker.Hold.Add(len(children))
 		for _, child := range children {
