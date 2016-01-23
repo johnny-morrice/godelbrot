@@ -14,7 +14,6 @@ func TestMake(t *testing.T) {
     expectedNumerics := &MockNumerics{}
     expectedRenderer := SequenceRenderStrategy{
         numerics: expectedNumerics,
-        iterateLimit: 200,
         context: context,
     }
     factory := &MockFactory{Numerics: expectedNumerics}
@@ -25,7 +24,7 @@ func TestMake(t *testing.T) {
     mock.Base.IterateLimit = 200
     actualRenderer := Make(mock)
 
-    if !(mock.TSequenceNumericsFactory && mock.TDrawingContext && mock.TBaseConfig) {
+    if !(mock.TSequenceNumericsFactory && mock.TDrawingContext) {
         t.Error("Expected methods not called on mock:", mock)
     }
 

@@ -16,7 +16,7 @@ type MockNumerics struct {
 // Check MockNumerics implements SequenceNumerics interface
 var _ SequenceNumerics = (*MockNumerics)(nil)
 
-func (mn *MockNumerics) Sequence(iterateLimit uint8) <-chan base.PixelMember {
+func (mn *MockNumerics) Sequence() <-chan base.PixelMember {
     mn.TSequence = true
 
     out := make(chan base.PixelMember)
@@ -27,7 +27,6 @@ func (mn *MockNumerics) Sequence(iterateLimit uint8) <-chan base.PixelMember {
     }
     close(out)
     }()
-
 
     return out
 }
