@@ -35,18 +35,18 @@ type commandLine struct {
 func parseArguments() commandLine {
     args := commandLine{}
 
-    components := []float64{
+    bnds := []float64{
         real(libgodelbrot.MandelbrotMin),
         imag(libgodelbrot.MandelbrotMin),
         real(libgodelbrot.MandelbrotMax),
         imag(libgodelbrot.MandelbrotMax),
     }
-    bounds := make([]string, len(components))
-    for i, num := range components {
-        bounds[i] = strconv.FormatFloat(num, 'e', -1, 64)
+    argbnds := make([]string, len(bnds))
+    for i, c := range bnds {
+        argbnds[i] = strconv.FormatFloat(c, 'e', -1, 64)
     }
 
-    renderThreads := uint(runtime.NumCPU()) + 1
+    jobs := uint(runtime.NumCPU()) + 1
 
     flag.UintVar(&args.iterateLimit, "iterlim",
         uint(libgodelbrot.DefaultIterations), "Maximum number of iterations")
@@ -57,19 +57,19 @@ func parseArguments() commandLine {
     flag.UintVar(&args.height, "height",
         libgodelbrot.DefaultImageHeight, "Height of output PNG")
     flag.StringVar(&args.realMin, "rmin",
-        bounds[0], "Leftmost position on complex plane")
+        argbnds[0], "Leftmost position on complex plane")
     flag.StringVar(&args.imagMin, "imin",
-        bounds[1], "Bottommost position on complex plane")
+        argbnds[1], "Bottommost position on complex plane")
     flag.StringVar(&args.realMax, "rmax",
-        bounds[2], "Rightmost position on complex plane")
+        argbnds[2], "Rightmost position on complex plane")
     flag.StringVar(&args.imagMax, "imax",
-        bounds[3], "Topmost position on complex plane")
+        argbnds[3], "Topmost position on complex plane")
     flag.StringVar(&args.mode, "render", "auto",
         "Render mode.  (auto|sequence|region|concurrent)")
     flag.UintVar(&args.regionCollapse, "collapse",
         libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
     flag.UintVar(&args.jobs, "jobs",
-        renderThreads, "Number of rendering threads in concurrent renderer")
+        jobs, "Number of rendering threads in concurrent renderer")
     flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
         libgodelbrot.DefaultRegionSamples, "Size of region sample set")
     flag.UintVar(&args.precision, "prec",
