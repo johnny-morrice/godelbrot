@@ -26,11 +26,12 @@ func (nsn *NativeSequenceNumerics) Area() int {
 	return nsn.area
 }
 
-func (nsn *NativeSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMember {
+func (nsn *NativeSequenceNumerics) Sequence() <-chan base.PixelMember {
 	imageLeft, imageTop := nsn.PictureMin()
 	imageRight, imageBottom := nsn.PictureMax()
 	rUnit, iUnit := nsn.PixelSize()
 	sqrtDl := nsn.SqrtDivergeLimit
+	iterlim := nsn.IterateLimit
 
 	out := make(chan base.PixelMember)
 
@@ -44,7 +45,7 @@ func (nsn *NativeSequenceNumerics) Sequence(iterLimit uint8) <-chan base.PixelMe
 					C: complex(x, y),
 					SqrtDivergeLimit: sqrtDl,
 				}
-				member.Mandelbrot(iterLimit)
+				member.Mandelbrot(iterlim)
 				out<- base.PixelMember{I: i, J: j, Member: member.BaseMandelbrot}
 				y -= iUnit
 			}

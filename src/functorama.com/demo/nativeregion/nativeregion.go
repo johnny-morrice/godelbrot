@@ -127,44 +127,7 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
 	}
 }
 
-// A glitch is possible when points are uniform near the set
-// Due to the shape of the set, a rectangular nativeRegion is not a good approximation
-// An anologous glitch happens when the entire nativeRegion is much larger than the set
-// We handle both these cases here
-func (native *NativeRegionNumerics) OnGlitchCurve(iterateLimit uint8, glitchSamples uint) bool {
-	r := native.Region
-	tlMember := r.topLeft
-	iDiv := tlMember.InvDivergence
-	if iDiv == 0 || iDiv == 1 || tlMember.InSet {
-		sqrtDLimit := native.SqrtDivergeLimit
-		glitchSamplesF := float64(glitchSamples)
-		tl := tlMember.C
-		br := r.bottomRight.C
-		w := real(br) - real(tl)
-		h := imag(tl) - imag(br)
-		vUnit := h / glitchSamplesF
-		hUnit := w / glitchSamplesF
-		x := real(tl)
-		for i := uint(0); i < glitchSamples; i++ {
-			y := imag(tl)
-			for j := uint(0); j < glitchSamples; j++ {
-				checkMember := nativebase.NativeMandelbrotMember{
-					C: complex(x, y),
-					SqrtDivergeLimit: sqrtDLimit,
-				}
-				checkMember.Mandelbrot(iterateLimit)
-				if checkMember.InvDivergence != iDiv {
-					return true
-				}
-				y -= vUnit
-			}
-			x += hUnit
-		}
-	}
-	return false
-}
-
-func (native *NativeRegionNumerics) Split(iterateLimit uint8) {
+func (native *NativeRegionNumerics) Split() {
 	r := native.Region
 
 	topLeftPos := r.topLeft.C
@@ -183,15 +146,15 @@ func (native *NativeRegionNumerics) Split(iterateLimit uint8) {
 	topSectorMid := (top + midI) / 2.0
 	bottomSectorMid := (midI + bottom) / 2.0
 
-	topSideMid := native.createPoint(complex(midR, top), iterateLimit)
-	bottomSideMid := native.createPoint(complex(midR, bottom), iterateLimit)
-	leftSideMid := native.createPoint(complex(left, midI), iterateLimit)
-	rightSideMid := native.createPoint(complex(right, midI), iterateLimit)
+	topSideMid := native.createPoint(complex(midR, top))
+	bottomSideMid := native.createPoint(complex(midR, bottom))
+	leftSideMid := native.createPoint(complex(left, midI))
+	rightSideMid := native.createPoint(complex(right, midI))
 
-	topLeftMid := native.createPoint(complex(leftSectorMid, topSectorMid), iterateLimit)
-	topRightMid := native.createPoint(complex(rightSectorMid, topSectorMid), iterateLimit)
-	bottomLeftMid := native.createPoint(complex(leftSectorMid, bottomSectorMid), iterateLimit)
-	bottomRightMid := native.createPoint(complex(rightSectorMid, bottomSectorMid), iterateLimit)
+	topLeftMid := native.createPoint(complex(leftSectorMid, topSectorMid))
+	topRightMid := native.createPoint(complex(rightSectorMid, topSectorMid))
+	bottomLeftMid := native.createPoint(complex(leftSectorMid, bottomSectorMid))
+	bottomRightMid := native.createPoint(complex(rightSectorMid, bottomSectorMid))
 
 	tl := nativeRegion{
 		topLeft:     r.topLeft,
@@ -239,9 +202,9 @@ func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
 	return native.Region.topLeft
 }
 
-func (native *NativeRegionNumerics) createPoint(c complex128, iterateLimit uint8) nativebase.NativeMandelbrotMember {
+func (native *NativeRegionNumerics) createPoint(c complex128) nativebase.NativeMandelbrotMember {
 	point := native.CreateMandelbrot(c)
-	point.Mandelbrot(iterateLimit)
+	point.Mandelbrot(native.IterateLimit)
 	return point
 }
 
@@ -253,6 +216,65 @@ func (native *NativeRegionNumerics) Points() []nativebase.NativeMandelbrotMember
 		region.bottomLeft,
 		region.bottomRight,
 		region.midPoint,
+	}
+}
+
+func (native *NativeRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
+	done := make(chan bool, 1)
+	idivch := make(chan uint8)
+
+	go native.sample(idivch, done)
+
+	return idivch, done
+}
+
+func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
+
+	complete := func (idiv uint8) bool {
+		select {
+		case <-done:
+			return true
+		default:
+			idivch<- idiv
+			return false
+		}
+	}
+
+	eval := func (r, i float64) uint8 {
+		p := native.createPoint(complex(r, i))
+		return p.InvDivergence
+	}
+
+	// Provide the samples we already have
+	for _, p := range native.Points() {
+		if complete(p.InvDivergence) {
+			return
+		}
+	}
+
+	// Generate samples
+	tl := native.Region.topLeft.C
+	br := native.Region.bottomRight.C
+	count := native.Samples
+	fCount := float64(count)
+	rmin := real(tl)
+	rmax := real(br)
+	imin := imag(br)
+	imax := imag(tl)
+	width := rmax - rmin
+	height := imax - imin
+	rUnit := width / fCount
+	iUnit := height / fCount
+	rdown := rmax
+	idown := imax
+	for i := uint(0); i < count; i++ {
+		rdown -= rUnit
+		for j := uint(0); j < count; j++ {
+			idown -= iUnit
+			if complete(eval(rdown, idown)) {
+				return
+			}
+		}
 	}
 }
 

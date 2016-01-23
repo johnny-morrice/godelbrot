@@ -172,7 +172,7 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 		Region: subjectRegion,
 	}
 	numerics.SqrtDivergeLimit = sqrtDLimit
-	numerics.Split(iterlim)
+	numerics.Split()
 	actualChildren := numerics.subregion.children
 
 	for i, ex := range expected {

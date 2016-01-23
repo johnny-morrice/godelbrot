@@ -21,7 +21,7 @@ func TestSequence(t *testing.T) {
 	app.PlaneMin = complex(0.0, 0.0)
 	app.PlaneMax = complex(10.0, 10.0)
 	numerics := Make(app)
-	out := numerics.Sequence(iterateLimit)
+	out := numerics.Sequence()
 
 	const expectedCount = 100
 	actualArea := numerics.Area()
