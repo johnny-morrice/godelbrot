@@ -182,14 +182,14 @@ func DefaultRequest() *Request {
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
         RegionSamples:  DefaultRegionSamples,
-        Jobs:           uint16(jobs), // If this overflows, please send money to enable support
-                                      // your ridiculous SPARC machine
+        Jobs:           uint16(jobs),
         RealMin:        float2str(real(MandelbrotMin)),
         ImagMin:        float2str(imag(MandelbrotMin)),
         RealMax:        float2str(real(MandelbrotMax)),
         ImagMax:        float2str(imag(MandelbrotMax)),
         ImageHeight:    DefaultImageHeight,
         ImageWidth:     DefaultImageWidth,
+        FixAspect:      true,
         PaletteCode:    "grayscale",
     }
 }
