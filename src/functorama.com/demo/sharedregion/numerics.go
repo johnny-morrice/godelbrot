@@ -27,6 +27,7 @@ type SharedRegionNumerics interface {
 }
 
 func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16) []base.PixelMember {
+    numerics.GrabWorkerPrototype(workerId)
     collapse := numerics.SharedRegionSequence()
     collapse.GrabWorkerPrototype(workerId)
     var points []base.PixelMember
