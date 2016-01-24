@@ -22,36 +22,30 @@ func Make(app bigbase.RenderApplication) BigSequenceNumerics {
 	}
 }
 
-func (bsn *BigSequenceNumerics) Area() int {
-	return bsn.area
-}
-
-
-func (bsn *BigSequenceNumerics) Sequence() <-chan base.PixelMember {
+func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 	imageLeft, imageTop := bsn.PictureMin()
 	imageRight, imageBottom := bsn.PictureMax()
 	iterlim := bsn.IterateLimit
 
-	out := make(chan base.PixelMember)
+	area := (imageRight - imageLeft) * (imageBottom - imageTop)
+	out := make([]base.PixelMember, area)
 
-	go func() {
-		pos := bigbase.BigComplex{
-			R: bsn.RealMin,
-		}
-		for i := imageLeft; i < imageRight; i++ {
-			pos.I = bsn.ImagMax
-			for j := imageTop; j < imageBottom; j++ {
-				member := bigbase.BigMandelbrotMember{
-					C: &pos,
-					SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
-				}
-				member.Mandelbrot(iterlim)
-				pos.I.Sub(&pos.I, &bsn.Iunit)
+	pos := bigbase.BigComplex{
+		R: bsn.RealMin,
+	}
+	for i := imageLeft; i < imageRight; i++ {
+		pos.I = bsn.ImagMax
+		for j := imageTop; j < imageBottom; j++ {
+			member := bigbase.BigMandelbrotMember{
+				C: &pos,
+				SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
 			}
-			pos.R.Add(&pos.R, &bsn.Runit)
+			member.Mandelbrot(iterlim)
+			pos.I.Sub(&pos.I, &bsn.Iunit)
+			// Add to slice maybe?
 		}
-		close(out)
-	}()
+		pos.R.Add(&pos.R, &bsn.Runit)
+	}
 
 	return out
 }
