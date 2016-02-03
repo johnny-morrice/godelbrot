@@ -34,6 +34,8 @@ func Make(app RenderApplication) NativeSharedRegion {
         seq := &nativesequence.NativeSequenceNumerics{}
         *seq = seqorig
         shared.sequencePrototypes[i] = seq
+
+        shared.prototypes[i].SequenceNumerics = seq
     }
     initLocal := shared.prototypes[0]
     shared.NativeRegionProxy = nativeregion.NativeRegionProxy{
@@ -50,20 +52,20 @@ func (shared NativeSharedRegion) GrabWorkerPrototype(workerId uint16) {
 }
 
 func (shared NativeSharedRegion) SharedChildren() []sharedregion.SharedRegionNumerics {
-    localRegions := shared.NativeChildRegions()
-    sharedChildren := make([]sharedregion.SharedRegionNumerics, len(localRegions))
-    myCore := shared.NativeRegionNumerics
-    for i, child := range localRegions {
-        sharedChildren[i] = NativeSharedRegion{
+    smallreg := shared.NativeChildRegions()
+    children := make([]sharedregion.SharedRegionNumerics, len(smallreg))
+    regnum := shared.NativeRegionNumerics
+    for i, r := range smallreg {
+        children[i] = NativeSharedRegion{
             NativeRegionProxy: nativeregion.NativeRegionProxy{
-                LocalRegion: child,
-                NativeRegionNumerics: myCore,
+                LocalRegion: r,
+                NativeRegionNumerics: regnum,
             },
             prototypes: shared.prototypes,
             sequencePrototypes: shared.sequencePrototypes,
         }
     }
-    return sharedChildren
+    return children
 }
 
 func (shared NativeSharedRegion) SharedRegionSequence() sharedregion.SharedSequenceNumerics {

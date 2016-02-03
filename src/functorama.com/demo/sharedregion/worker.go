@@ -37,15 +37,13 @@ type Worker struct {
 	WorkerId   uint16
 	InputChan  chan SharedRegionNumerics
 	Output RenderOutput
-	SharedConfig     SharedRegionConfig
-	RegionConfig 	 region.RegionConfig
 	Hold sync.WaitGroup
+	sizelim int
 }
 
 type WorkerFactory struct {
 	count uint16
 	regionConfig region.RegionConfig
-	sharedConfig SharedRegionConfig
 	baseConfig base.BaseConfig
 	output RenderOutput
 }
@@ -55,7 +53,6 @@ func NewWorkerFactory(app RenderApplication, outputChannels RenderOutput) *Worke
 	return &WorkerFactory{
 		count: 0,
 		regionConfig: app.RegionConfig(),
-		sharedConfig: app.SharedRegionConfig(),
 		output: outputChannels,
 	}
 }
@@ -64,8 +61,7 @@ func (factory *WorkerFactory) Build() *Worker {
 	worker := &Worker{
 		WorkerId:   factory.count,
 		InputChan:  make(chan SharedRegionNumerics),
-		SharedConfig:     factory.sharedConfig,
-		RegionConfig:	factory.regionConfig,
+		sizelim:	int(factory.regionConfig.CollapseSize),
 		Output: factory.output,
 	}
 	factory.count++
@@ -80,32 +76,27 @@ func (worker *Worker) Run() {
 }
 
 // A single Render step
-func (worker *Worker) Step(shared SharedRegionNumerics) {
-	// We are in a worker, so we must be sure that we have our own copy of the context
-	shared.GrabWorkerPrototype(worker.WorkerId)
-	// We use proxies to share objects, so we've got to ensure we're using the correct local data
-	shared.ClaimExtrinsics()
+func (worker *Worker) Step(reg SharedRegionNumerics) {
+	reg.GrabWorkerPrototype(worker.WorkerId)
+	reg.ClaimExtrinsics()
 
-	regionConfig := worker.RegionConfig
-	collapseBound := int(regionConfig.CollapseSize)
-
-	if region.Collapse(shared, collapseBound) {
-		points := SharedSequenceCollapse(shared, worker.WorkerId)
+	if region.Collapse(reg, worker.sizelim) {
+		px := SharedSequenceCollapse(reg, worker.WorkerId)
 		worker.Hold.Add(1)
 		go func() {
-			pixels := WorkerPixelOut{Id: worker.WorkerId, Points: points}
-			worker.Output.Members<- pixels
+			out := WorkerPixelOut{Id: worker.WorkerId, Points: px}
+			worker.Output.Members<- out
 			worker.Hold.Done()
 		}()
 		return
 	}
 
-	if region.Subdivide(shared) {
-		children := shared.SharedChildren()
+	if region.Subdivide(reg) {
+		children := reg.SharedChildren()
 		worker.Hold.Add(1)
 		go func() {
-			reg := WorkerChildrenOut{Id: worker.WorkerId, Children: children}
-			worker.Output.Children<- reg
+			out := WorkerChildrenOut{Id: worker.WorkerId, Children: children}
+			worker.Output.Children<- out
 			worker.Hold.Done()
 		}()
 		return
@@ -113,8 +104,8 @@ func (worker *Worker) Step(shared SharedRegionNumerics) {
 
 	worker.Hold.Add(1)
 	go func() {
-		reg := WorkerRegionOut{Id: worker.WorkerId, Region: shared}
-		worker.Output.UniformRegions<- reg
+		out := WorkerRegionOut{Id: worker.WorkerId, Region: reg}
+		worker.Output.UniformRegions<- out
 		worker.Hold.Done()
 	}()
 }

@@ -97,15 +97,15 @@ func (tracker *RenderTracker) syncDrawing() <-chan drawPacket {
 }
 
 // draw to the image
-func (tracker *RenderTracker) draw(packets <-chan drawPacket) {
-	for packet := range packets {
-		if packet.isRegion {
-			packet.uniform.GrabWorkerPrototype(tracker.jobs)
-			packet.uniform.ClaimExtrinsics()
-			region.DrawUniform(tracker.context, packet.uniform)
+func (tracker *RenderTracker) draw(pkt <-chan drawPacket) {
+	for p := range pkt {
+		if p.isRegion {
+			p.uniform.GrabWorkerPrototype(tracker.jobs)
+			p.uniform.ClaimExtrinsics()
+			region.DrawUniform(tracker.context, p.uniform)
 		} else {
-			for _, p := range packet.points {
-				draw.DrawPoint(tracker.context, p)
+			for _, px := range p.points {
+				draw.DrawPoint(tracker.context, px)
 			}
 		}
 	}
@@ -123,6 +123,7 @@ func (tracker *RenderTracker) circulate() {
 			next := tracker.workers[worker]
 			next.InputChan<- child
 
+			// Round Robin
 			worker++
 			worker %= tracker.jobs
 		}
@@ -173,8 +174,8 @@ func (tracker *RenderTracker) Render() {
 	tracker.processing[wid]++
 	tracker.workers[wid].InputChan<- tracker.initialRegion
 	go tracker.circulate()
-	packets := tracker.syncDrawing()
-	go tracker.draw(packets)
+	pkts := tracker.syncDrawing()
+	go tracker.draw(pkts)
 
 	tracker.wait()
 	tracker.shutdown()

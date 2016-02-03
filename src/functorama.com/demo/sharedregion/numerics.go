@@ -26,13 +26,14 @@ type SharedRegionNumerics interface {
     SharedRegionSequence() SharedSequenceNumerics
 }
 
-func SharedSequenceCollapse(numerics SharedRegionNumerics, workerId uint16) []base.PixelMember {
-    numerics.GrabWorkerPrototype(workerId)
-    collapse := numerics.SharedRegionSequence()
-    collapse.GrabWorkerPrototype(workerId)
-    var points []base.PixelMember
-    collapse.Extrinsically(func () {
-        points = sequence.Capture(collapse)
+func SharedSequenceCollapse(reg SharedRegionNumerics, wid uint16) []base.PixelMember {
+    reg.GrabWorkerPrototype(wid)
+    reg.ClaimExtrinsics()
+    seq := reg.SharedRegionSequence()
+    seq.GrabWorkerPrototype(wid)
+    var px []base.PixelMember
+    seq.Extrinsically(func () {
+        px = sequence.Capture(seq)
     })
-    return points
+    return px
 }
