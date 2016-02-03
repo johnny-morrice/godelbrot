@@ -13,10 +13,10 @@ type BaseNumerics struct {
 }
 
 func Make(app RenderApplication) BaseNumerics {
-	width, height := app.PictureDimensions()
+	w, h := app.PictureDimensions()
 	base := BaseNumerics{}
-	base.ImageWidth(width)
-	base.ImageHeight(height)
+	base.ImageWidth(w)
+	base.ImageHeight(h)
 	return base
 }
 
