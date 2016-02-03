@@ -36,8 +36,6 @@ func (proxy NativeSequenceProxy) ClaimExtrinsics() {
 }
 
 func (proxy NativeSequenceProxy) Extrinsically(f func()) {
-	xmin, ymin := proxy.PictureMin()
-	xmax, ymax := proxy.PictureMax()
 	cmin := complex(proxy.RealMin, proxy.ImagMin)
 	cmax := complex(proxy.RealMax, proxy.ImagMax)
 
@@ -49,6 +47,5 @@ func (proxy NativeSequenceProxy) Extrinsically(f func()) {
 	proxy.ImagMax = imag(cmax)
 
 	// Should we cache this somewhere?  New object?
-	proxy.ImageWidth(uint(xmax - xmin))
-	proxy.ImageHeight(uint(ymax - ymin))
+	proxy.RestorePicBounds()
 }
