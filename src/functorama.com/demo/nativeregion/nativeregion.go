@@ -117,14 +117,12 @@ func (native *NativeRegionNumerics) Proxy(region nativeRegion) NativeRegionProxy
 }
 
 func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
-	r := native.Region
-	return []base.MandelbrotMember{
-		r.topLeft,
-		r.topRight,
-		r.bottomLeft,
-		r.bottomRight,
-		r.midPoint,
+	ps := native.Points()
+	base := make([]base.MandelbrotMember, len(ps))
+	for i, p := range ps {
+		base[i] = p.MandelbrotMember
 	}
+	return base
 }
 
 func (native *NativeRegionNumerics) Split() {
@@ -199,7 +197,7 @@ func (native *NativeRegionNumerics) Rect() image.Rectangle {
 // Return MandelbrotMember
 // Does not check if the region's Points have been evaluated
 func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
-	return native.Region.topLeft
+	return native.Region.topLeft.MandelbrotMember
 }
 
 func (native *NativeRegionNumerics) createPoint(c complex128) nativebase.NativeMandelbrotMember {
@@ -242,12 +240,12 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 
 	eval := func (r, i float64) uint8 {
 		p := native.createPoint(complex(r, i))
-		return p.InvDivergence
+		return p.InvDiv
 	}
 
 	// Provide the samples we already have
 	for _, p := range native.Points() {
-		if complete(p.InvDivergence) {
+		if complete(p.InvDiv) {
 			return
 		}
 	}

@@ -33,6 +33,7 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 	pos := bigbase.BigComplex{
 		R: bsn.RealMin,
 	}
+	count := 0
 	for i := imageLeft; i < imageRight; i++ {
 		pos.I = bsn.ImagMax
 		for j := imageTop; j < imageBottom; j++ {
@@ -41,8 +42,10 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 				SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
 			}
 			member.Mandelbrot(iterlim)
+			out[count] = base.PixelMember{I: i, J: j, Member: member.MandelbrotMember}
+
 			pos.I.Sub(&pos.I, &bsn.Iunit)
-			// Add to slice maybe?
+			count++
 		}
 		pos.R.Add(&pos.R, &bsn.Runit)
 	}

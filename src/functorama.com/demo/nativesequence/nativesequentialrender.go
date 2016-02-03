@@ -39,7 +39,7 @@ func (nsn *NativeSequenceNumerics) Sequence() []base.PixelMember {
 				SqrtDivergeLimit: sqrtDl,
 			}
 			member.Mandelbrot(iterlim)
-			out[count] = base.PixelMember{I: i, J: j, Member: member.BaseMandelbrot}
+			out[count] = base.PixelMember{I: i, J: j, Member: member.MandelbrotMember}
 			y -= iUnit
 			count++
 		}

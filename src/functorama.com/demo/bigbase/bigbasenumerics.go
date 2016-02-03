@@ -128,7 +128,7 @@ func (bbn *BigBaseNumerics) PlaneToPixel(c *BigComplex) (rx int, ry int) {
 	return
 }
 
-func (bbn *BigBaseNumerics) CreateMandelbrotMember(c *BigComplex) BigMandelbrotMember {
+func (bbn *BigBaseNumerics) MakeMember(c *BigComplex) BigMandelbrotMember {
 	return BigMandelbrotMember{
 		C: c,
 		Prec: bbn.Precision,

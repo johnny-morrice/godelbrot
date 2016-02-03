@@ -5,7 +5,7 @@ import (
 )
 
 type NativeMandelbrotMember struct {
-	base.BaseMandelbrot
+	base.MandelbrotMember
 	C complex128
 	SqrtDivergeLimit float64
 }
@@ -20,7 +20,7 @@ func (member *NativeMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	}
 
 	member.InSet = i >= iterateLimit
-	member.InvDivergence = i
+	member.InvDiv = i
 }
 
 func withinMandLimit(z complex128, limit float64) bool {

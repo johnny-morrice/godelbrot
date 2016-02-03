@@ -6,13 +6,11 @@ import (
 )
 
 type BigMandelbrotMember struct {
-	base.BaseMandelbrot
+	base.MandelbrotMember
 	C                *BigComplex
 	SqrtDivergeLimit *big.Float
 	Prec uint
 }
-
-var _ base.MandelbrotMember = (*BigMandelbrotMember)(nil)
 
 func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	z := MakeBigComplex(0.0, 0.0, member.Prec)
@@ -37,7 +35,7 @@ func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	}
 
 	member.InSet = i >= iterateLimit
-	member.InvDivergence = i
+	member.InvDiv = i
 }
 
 func withinMandLimit(z *BigComplex, limit *big.Float) bool {
