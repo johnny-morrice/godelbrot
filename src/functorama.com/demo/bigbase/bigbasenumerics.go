@@ -63,14 +63,14 @@ func Make(app RenderApplication) BigBaseNumerics {
 			taller := MakeBigFloat(0.0, prec)
 			taller.Quo(&planeWidth, &pictureAspect)
 			bottom.Sub(&top, &taller)
-			planeWidth.Sub(&top, &bottom)
+			planeHeight.Sub(&top, &bottom)
 		} else if thindicator == -1 {
 			// If the plane aspect is less than the image aspect
 			// Then the plane is too thin, and must be made fatter
 			fatter := MakeBigFloat(0.0, prec)
 			fatter.Mul(&planeHeight, &pictureAspect)
 			right.Add(&left, &fatter)
-			planeHeight.Sub(&right, &left)
+			planeWidth.Sub(&right, &left)
 		}
 	}
 
