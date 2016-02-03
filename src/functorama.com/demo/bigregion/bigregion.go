@@ -156,23 +156,19 @@ func (brn *BigRegionNumerics) Split() {
 	rightSideMid := brn.MakeMember(&bigbase.BigComplex{*right, *midI})
 
 	leftSectorMid := brn.MakeBigFloat(0.0)
-	leftSectorMid.Copy(left)
-	leftSectorMid.Add(&leftSectorMid, midR)
+	leftSectorMid.Add(left, midR)
 	leftSectorMid.Quo(&leftSectorMid, &bigTwo)
 
 	rightSectorMid := brn.MakeBigFloat(0.0)
-	rightSectorMid.Copy(right)
-	rightSectorMid.Add(&rightSectorMid, midR)
+	rightSectorMid.Add(right, midR)
 	rightSectorMid.Quo(&rightSectorMid, &bigTwo)
 
 	topSectorMid := brn.MakeBigFloat(0.0)
-	topSectorMid.Copy(top)
-	topSectorMid.Add(&topSectorMid, midI)
+	topSectorMid.Add(top, midI)
 	topSectorMid.Quo(&topSectorMid, &bigTwo)
 
 	bottomSectorMid := brn.MakeBigFloat(0.0)
-	bottomSectorMid.Copy(bottom)
-	bottomSectorMid.Add(&bottomSectorMid, midI)
+	bottomSectorMid.Add(bottom, midI)
 	bottomSectorMid.Quo(&bottomSectorMid, &bigTwo)
 
 	tl := bigRegion{
