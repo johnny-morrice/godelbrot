@@ -30,40 +30,40 @@ type ProxySequence interface {
 
 // RenderSequentialRegion takes a RegionNumerics but renders the region in a sequential
 // (column-wise) manner
-func RenderSequenceRegion(numerics RegionNumerics, context draw.DrawingContext) {
-    numerics.ClaimExtrinsics()
-    smallNumerics := numerics.RegionSequence()
-    smallNumerics.Extrinsically(func () {
-        sequence.ImageSequence(smallNumerics, context)
+func RenderSequenceRegion(reg RegionNumerics, ctx draw.DrawingContext) {
+    reg.ClaimExtrinsics()
+    seq := reg.RegionSequence()
+    seq.Extrinsically(func () {
+        sequence.ImageSequence(seq, ctx)
     })
 }
 
 // SequenceCollapse is analogous to RenderSequentialRegion, but it returns the Mandelbrot render
 // results rather than drawing them to the image.
-func SequenceCollapse(numerics RegionNumerics) []base.PixelMember {
-    collapse := numerics.RegionSequence()
-    var seq []base.PixelMember
-    collapse.Extrinsically(func () {
-        seq = sequence.Capture(collapse)
+func SequenceCollapse(num RegionNumerics) []base.PixelMember {
+    seq := num.RegionSequence()
+    var pix []base.PixelMember
+    seq.Extrinsically(func () {
+        pix = sequence.Capture(seq)
     })
-    return seq
+    return pix
 }
 
 // Subdivide takes a RegionNumerics and tries to split the region into subregions.  It returns true
 // if the subdivision occurred.  The subdivision won't occur if the region is Uniform or in an area
 // where glitches are likely.
-func Subdivide(numerics RegionNumerics) bool {
-    if !Uniform(numerics) {
-        numerics.Split()
+func Subdivide(reg RegionNumerics) bool {
+    if !Uniform(reg) {
+        reg.Split()
         return true
     }
     return false
 }
 
 // Uniform returns true if the region has the same Mandelbrot escape value across its bounds.
-func Uniform(numerics RegionNumerics) bool {
+func Uniform(reg RegionNumerics) bool {
     // If inverse divergence on all points is the same, no need to subdivide
-    idivs, done := numerics.SampleDivs()
+    idivs, done := reg.SampleDivs()
     first := <-idivs
     uni := true
     for d := range idivs {
@@ -76,7 +76,7 @@ func Uniform(numerics RegionNumerics) bool {
 }
 
 // Collapse returns true if the region is below the necessary size for subdivision
-func Collapse(split RegionNumerics, collapseSize int) bool {
-    rect := split.Rect()
-    return rect.Dx() <= collapseSize || rect.Dy() <= collapseSize
+func Collapse(reg RegionNumerics, sizelim int) bool {
+    rect := reg.Rect()
+    return rect.Dx() <= sizelim || rect.Dy() <= sizelim
 }
