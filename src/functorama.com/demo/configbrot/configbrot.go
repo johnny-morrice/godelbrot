@@ -65,7 +65,7 @@ func parseArguments() commandLine {
     flag.StringVar(&args.imagMax, "imax",
         argbnds[3], "Topmost position on complex plane")
     flag.StringVar(&args.mode, "render", "auto",
-        "Render mode.  (auto|sequence|region|concurrent)")
+        "Render mode.  (auto|sequence|region)")
     flag.UintVar(&args.regionCollapse, "collapse",
         libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
     flag.UintVar(&args.jobs, "jobs",
@@ -169,8 +169,6 @@ func userReq(args commandLine) (*libgodelbrot.Request, error) {
         renderer = libgodelbrot.SequenceRenderMode
     case "region":
         renderer = libgodelbrot.RegionRenderMode
-    case "concurrent":
-        renderer = libgodelbrot.SharedRegionRenderMode
     default:
         return nil, fmt.Errorf("Unknown render mode: %v", args.mode)
     }

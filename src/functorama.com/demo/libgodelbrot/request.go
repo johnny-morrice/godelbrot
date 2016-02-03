@@ -2,7 +2,6 @@ package libgodelbrot
 
 import (
     "math/big"
-    "runtime"
     "strconv"
     "encoding/json"
     "io"
@@ -135,7 +134,6 @@ const (
     AutoDetectRenderMode       = RenderMode(iota)
     RegionRenderMode
     SequenceRenderMode
-    SharedRegionRenderMode
 )
 
 // Available numeric systems
@@ -176,13 +174,11 @@ type Request struct {
 }
 
 func DefaultRequest() *Request {
-    jobs := runtime.NumCPU() + 1
     return &Request{
         IterateLimit:   DefaultIterations,
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
         RegionSamples:  DefaultRegionSamples,
-        Jobs:           uint16(jobs),
         RealMin:        float2str(real(MandelbrotMin)),
         ImagMin:        float2str(imag(MandelbrotMin)),
         RealMax:        float2str(real(MandelbrotMax)),
@@ -191,6 +187,7 @@ func DefaultRequest() *Request {
         ImageWidth:     DefaultImageWidth,
         FixAspect:      true,
         PaletteCode:    "grayscale",
+        Jobs: 1,
     }
 }
 

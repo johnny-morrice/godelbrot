@@ -24,8 +24,6 @@ func MakeRenderer(desc *Info) (Renderer, error) {
         renderer = makeSequenceFacade(desc)
     case RegionRenderMode:
         renderer = makeRegionFacade(desc)
-    case SharedRegionRenderMode:
-        renderer = makeSharedRegionFacade(desc)
     default:
         return nil, fmt.Errorf("Invalid RenderStrategy: %v", desc.RenderStrategy)
     }

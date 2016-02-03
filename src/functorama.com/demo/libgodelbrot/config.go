@@ -45,8 +45,6 @@ func (c *configurator) chooseRenderStrategy() error {
         c.useSequenceRenderer()
     case RegionRenderMode:
         c.useRegionRenderer()
-    case SharedRegionRenderMode:
-        c.useSharedRegionRenderer()
     default:
         return fmt.Errorf("Unknown render mode: %v", req.Renderer)
     }
@@ -69,6 +67,7 @@ func (c *configurator) chooseNumerics() error {
     case NativeNumericsMode:
         c.useNative()
     case BigFloatNumericsMode:
+        c.selectUserPrec()
         c.useBig()
     default:
         return fmt.Errorf("Unknown numerics mode:", desc.Numerics)
@@ -77,12 +76,22 @@ func (c *configurator) chooseNumerics() error {
     return nil
 }
 
+func (c *configurator) selectUserPrec() uint {
+    userPrec := c.UserRequest.Precision
+    if userPrec > 0 {
+        c.Precision = userPrec
+    }
+    return userPrec
+}
 
 func (c *configurator) chooseAccurateNumerics() {
     // 53 bits precision is available to 64 bit floats
     const prec64 uint = 53
 
-    prec := c.howManyBits()
+    prec := c.selectUserPrec()
+    if prec < 1 {
+        prec = c.howManyBits()
+    }
     if prec > prec64 {
         c.useBig()
         c.setPrec(prec)
@@ -168,13 +177,8 @@ func (c *configurator) chooseFastRenderStrategy() {
         // Use `SequenceRenderStrategy' when
         // We have native arithmetic and the image is tiny
         c.useSequenceRenderer()
-    } else if req.Jobs <= DefaultLowThreading {
-        // Use `RegionRenderStrategy' when
-        // the number of jobs is small
-        c.useRegionRenderer()
     } else {
-        // Use `ConcurrentRegionRenderStrategy' otherwise
-        c.useSharedRegionRenderer()
+        c.useRegionRenderer()
     }
 }
 
@@ -184,10 +188,6 @@ func (c *configurator) useSequenceRenderer() {
 
 func (c *configurator) useRegionRenderer() {
     c.RenderStrategy = RegionRenderMode
-}
-
-func (c *configurator) useSharedRegionRenderer() {
-    c.RenderStrategy = SharedRegionRenderMode
 }
 
 func (c *configurator) howManyBits() uint {

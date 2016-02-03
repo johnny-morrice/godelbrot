@@ -51,8 +51,5 @@ const DefaultBase int = 10
 // What we consider to be a tiny image area, by default
 const DefaultTinyImageArea uint = 40000
 
-// What we consider to be a small number of render jobs
-const DefaultLowThreading uint16 = 2
-
 // Default sample size for region glitch-correction
 const DefaultRegionSamples uint = 7
