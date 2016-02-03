@@ -3,7 +3,6 @@ package bigregion
 import (
 	"log"
 	"image"
-	"math/big"
 	"functorama.com/demo/base"
 	"functorama.com/demo/region"
 	"functorama.com/demo/bigbase"
@@ -15,28 +14,12 @@ type bigSubregion struct {
 	children  []bigRegion
 }
 
-type bigMandelbrotThunk struct {
-	bigbase.BigMandelbrotMember
-	evaluated bool
-	cStore bigbase.BigComplex
-}
-
 type bigRegion struct {
-	topLeft     bigMandelbrotThunk
-	topRight    bigMandelbrotThunk
-	bottomLeft  bigMandelbrotThunk
-	bottomRight bigMandelbrotThunk
-	midPoint    bigMandelbrotThunk
-}
-
-func (br *bigRegion) thunks() []*bigMandelbrotThunk {
-	return []*bigMandelbrotThunk{
-		&br.topLeft,
-		&br.topRight,
-		&br.bottomLeft,
-		&br.bottomRight,
-		&br.midPoint,
-	}
+	topLeft     bigbase.BigMandelbrotMember
+	topRight    bigbase.BigMandelbrotMember
+	bottomLeft  bigbase.BigMandelbrotMember
+	bottomRight bigbase.BigMandelbrotMember
+	midPoint    bigbase.BigMandelbrotMember
 }
 
 // Rect return a rectangle representing the position and dimensions of the region on the output
@@ -59,21 +42,12 @@ func (brn *BigRegionNumerics) createRelativeRegion(min *bigbase.BigComplex, max 
 	midI.Sub(top, bottom)
 
 	return bigRegion{
-		topLeft:     brn.createBigThunk(left, top),
-		topRight:    brn.createBigThunk(right, top),
-		bottomLeft:  brn.createBigThunk(bottom, left),
-		bottomRight: brn.createBigThunk(bottom, right),
-		midPoint:    brn.createBigThunk(&midR, &midI),
+		topLeft:     brn.MakeMember(&bigbase.BigComplex{*left, *top}),
+		topRight:    brn.MakeMember(&bigbase.BigComplex{*right, *top}),
+		bottomLeft:  brn.MakeMember(&bigbase.BigComplex{*bottom, *left}),
+		bottomRight: brn.MakeMember(&bigbase.BigComplex{*bottom, *right}),
+		midPoint:    brn.MakeMember(&bigbase.BigComplex{midR, midI}),
 	}
-}
-
-func (brn *BigRegionNumerics) createBigThunk(r *big.Float, i *big.Float) bigMandelbrotThunk {
-	thunk := bigMandelbrotThunk{
-		cStore: bigbase.BigComplex{*r, *i},
-	}
-	thunk.BigMandelbrotMember.C = &thunk.cStore
-	thunk.BigMandelbrotMember.SqrtDivergeLimit = &brn.SqrtDivergeLimit
-	return thunk
 }
 
 // BigRegionNumerics is implementation of RegionNumerics that uses big.Float bignums for arbitrary
@@ -140,26 +114,22 @@ func (brn *BigRegionNumerics) RegionSequence() region.ProxySequence {
 
 // MandelbrotPoints returns the corners of this region and its midpoint
 func (brn *BigRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
-	r := brn.Region
-	return []base.MandelbrotMember{
-		r.topLeft,
-		r.topRight,
-		r.bottomLeft,
-		r.bottomRight,
-		r.midPoint,
+	ps := brn.Points()
+	base := make([]base.MandelbrotMember, len(ps))
+	for i, p := range ps {
+		base[i] = p.MandelbrotMember
 	}
+	return base
 }
 
-// EvaluateAllPoints runs the Mandelbrot function on all this region's points
-func (brn *BigRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
-	thunks := brn.Region.thunks()
-
-	// Ensure points are all evaluated
-	for _, p := range thunks {
-		if !p.evaluated {
-			p.Mandelbrot(iterateLimit)
-			p.evaluated = true
-		}
+func (brn *BigRegionNumerics) Points() []bigbase.BigMandelbrotMember {
+	r := brn.Region
+	return []bigbase.BigMandelbrotMember{
+		r.topLeft,
+		r.topRight,
+		r.midPoint,
+		r.bottomLeft,
+		r.bottomRight,
 	}
 }
 
@@ -167,9 +137,9 @@ func (brn *BigRegionNumerics) EvaluateAllPoints(iterateLimit uint8) {
 func (brn *BigRegionNumerics) Split() {
 	r := brn.Region
 
-	topLeftPos := r.topLeft.cStore
-	bottomRightPos := r.bottomRight.cStore
-	midPos := r.midPoint.cStore
+	topLeftPos := r.topLeft.C
+	bottomRightPos := r.bottomRight.C
+	midPos := r.midPoint.C
 
 	left := topLeftPos.Real()
 	right := bottomRightPos.Real()
@@ -180,10 +150,10 @@ func (brn *BigRegionNumerics) Split() {
 
 	bigTwo := brn.MakeBigFloat(2.0)
 
-	topSideMid := brn.createBigThunk(midR, top)
-	bottomSideMid := brn.createBigThunk(midR, bottom)
-	leftSideMid := brn.createBigThunk(left, midI)
-	rightSideMid := brn.createBigThunk(right, midI)
+	topSideMid := brn.MakeMember(&bigbase.BigComplex{*midR, *top})
+	bottomSideMid := brn.MakeMember(&bigbase.BigComplex{*midR, *bottom})
+	leftSideMid := brn.MakeMember(&bigbase.BigComplex{*left, *midI})
+	rightSideMid := brn.MakeMember(&bigbase.BigComplex{*right, *midI})
 
 	leftSectorMid := brn.MakeBigFloat(0.0)
 	leftSectorMid.Copy(left)
@@ -210,28 +180,28 @@ func (brn *BigRegionNumerics) Split() {
 		topRight:    topSideMid,
 		bottomLeft:  leftSideMid,
 		bottomRight: r.midPoint,
-		midPoint:    brn.createBigThunk(&leftSectorMid, &topSectorMid),
+		midPoint:    brn.MakeMember(&bigbase.BigComplex{leftSectorMid, topSectorMid}),
 	}
 	tr := bigRegion{
 		topLeft:     topSideMid,
 		topRight:    r.topRight,
 		bottomLeft:  r.midPoint,
 		bottomRight: rightSideMid,
-		midPoint:    brn.createBigThunk(&rightSectorMid, &topSectorMid),
+		midPoint:    brn.MakeMember(&bigbase.BigComplex{rightSectorMid, topSectorMid}),
 	}
 	bl := bigRegion{
 		topLeft:     leftSideMid,
 		topRight:    r.midPoint,
 		bottomLeft:  r.bottomLeft,
 		bottomRight: bottomSideMid,
-		midPoint:    brn.createBigThunk(&leftSectorMid, &bottomSectorMid),
+		midPoint:    brn.MakeMember(&bigbase.BigComplex{leftSectorMid, bottomSectorMid}),
 	}
 	br := bigRegion{
 		topLeft:     r.midPoint,
 		topRight:    rightSideMid,
 		bottomLeft:  bottomSideMid,
 		bottomRight: r.bottomRight,
-		midPoint:    brn.createBigThunk(&rightSectorMid, &bottomSectorMid),
+		midPoint:    brn.MakeMember(&bigbase.BigComplex{rightSectorMid, bottomSectorMid}),
 	}
 
 	brn.subregion = bigSubregion{
@@ -242,7 +212,7 @@ func (brn *BigRegionNumerics) Split() {
 
 // RegionMember returns one MandelbrotMember from the Region
 func (brn *BigRegionNumerics) RegionMember() base.MandelbrotMember {
-	return brn.Region.topLeft.BigMandelbrotMember
+	return brn.Region.topLeft.MandelbrotMember
 }
 
 // proxyNumerics quickly creates a new *NativeRegionNumerics context
@@ -255,6 +225,14 @@ func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNume
 
 func (brn *BigRegionNumerics) Rect() image.Rectangle {
 	return brn.Region.rect(&brn.BigBaseNumerics)
+}
+
+// TODO
+func (brn *BigRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
+	done := make(chan bool, 1)
+	idivch := make(chan uint8, 1)
+
+	return idivch, done
 }
 
 func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
@@ -282,13 +260,12 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 		bigbase.BigComplex{midR, midI}, // midpoint is not technically a corner
 	}
 
-	thunks := make([]bigMandelbrotThunk, len(corners))
+	thunks := make([]bigbase.BigMandelbrotMember, len(corners))
 
 	for i, c := range corners {
-		thunks[i] = bigMandelbrotThunk{
-			cStore: c,
+		thunks[i] = bigbase.BigMandelbrotMember{
+			C: &c,
 		}
-		thunks[i].C = &thunks[i].cStore
 	}
 
 	return bigRegion{
@@ -298,11 +275,4 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 		bottomRight: thunks[3],
 		midPoint: thunks[4],
 	}
-}
-
-func (brn *BigRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
-	done := make(chan bool, 1)
-	idivch := make(chan uint8, 1)
-
-	return idivch, done
 }
