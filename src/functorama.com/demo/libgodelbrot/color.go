@@ -19,8 +19,8 @@ func Recolor(desc *Info, gray image.Image) *image.NRGBA {
         for y := bnd.Min.Y; y < bnd.Max.Y; y++ {
             bigdiv, _, _, _ := gray.At(x, y).RGBA()
             invdiv := uint8(bigdiv >> 8)
-            member := base.BaseMandelbrot{
-                InvDivergence: invdiv,
+            member := base.MandelbrotMember{
+                InvDiv: invdiv,
                 InSet: invdiv == iterlim,
             }
             col := palette.Color(member)
