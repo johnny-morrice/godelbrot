@@ -42,7 +42,7 @@ func (mock *MockNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 
 	go func() {
 		for _, p := range mock.MandelbrotPoints() {
-			idivch<- p.InverseDivergence()
+			idivch<- p.InvDiv
 		}
 		close(idivch)
 	}()
@@ -88,12 +88,12 @@ func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
 	case CollapsePath:
 		const change = pointCount - 1
 		for i := 0; i < change; i++ {
-			points[i] = base.BaseMandelbrot{InSet: true, InvDivergence: 0}
+			points[i] = base.MandelbrotMember{InSet: true, InvDiv: 0}
 		}
-		points[change] = base.BaseMandelbrot{InSet: false, InvDivergence: 20}
+		points[change] = base.MandelbrotMember{InSet: false, InvDiv: 20}
 	case UniformPath:
 		for i := 0; i < pointCount; i++ {
-			points[i] = base.BaseMandelbrot{InSet: true, InvDivergence: 0}
+			points[i] = base.MandelbrotMember{InSet: true, InvDiv: 0}
 		}
 	default:
 		panic(fmt.Sprintf("Unknown mock path:", mock.Path))
@@ -103,7 +103,7 @@ func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
 
 func (mock *MockNumerics) RegionMember() base.MandelbrotMember {
 	mock.TRegionMember = true
-	return base.BaseMandelbrot{InSet: true, InvDivergence: 0}
+	return base.MandelbrotMember{InSet: true, InvDiv: 0}
 }
 
 func (mock *MockNumerics) Subdivide() bool {
