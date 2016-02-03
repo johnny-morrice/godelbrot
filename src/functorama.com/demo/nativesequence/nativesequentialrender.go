@@ -8,7 +8,6 @@ import (
 
 type NativeSequenceNumerics struct {
 	nativebase.NativeBaseNumerics
-	lastArea int
 }
 
 // Check we implement interface
@@ -21,20 +20,20 @@ func Make(app nativebase.RenderApplication) NativeSequenceNumerics {
 }
 
 func (nsn *NativeSequenceNumerics) Sequence() []base.PixelMember {
-	imageLeft, imageTop := nsn.PictureMin()
-	imageRight, imageBottom := nsn.PictureMax()
+	ileft, itop := nsn.PictureMin()
+	iright, ibott := nsn.PictureMax()
 	rUnit, iUnit := nsn.PixelSize()
 	sqrtDl := nsn.SqrtDivergeLimit
 	iterlim := nsn.IterateLimit
 
-	area := (imageRight - imageLeft) * (imageBottom - imageTop)
+	area := (iright - ileft) * (ibott - itop)
 	out := make([]base.PixelMember, area)
 
 	count := 0
 	x := nsn.RealMin
-	for i := imageLeft; i < imageRight; i++ {
+	for i := ileft; i < iright; i++ {
 		y := nsn.ImagMax
-		for j := imageTop; j < imageBottom; j++ {
+		for j := itop; j < ibott; j++ {
 			member := nativebase.NativeMandelbrotMember{
 				C: complex(x, y),
 				SqrtDivergeLimit: sqrtDl,
