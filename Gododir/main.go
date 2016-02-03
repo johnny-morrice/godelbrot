@@ -11,21 +11,18 @@ var lib = []string{
     "draw",
     "sequence",
     "region",
-    "sharedregion",
 }
 
 var nativeArithmetic = []string{
     "nativebase",
     "nativesequence",
     "nativeregion",
-    "nativesharedregion",
 }
 
 var bigArithmetic = []string{
    "bigbase",
    "bigsequence",
    "bigregion",
-   "bigsharedregion",
 }
 
 var appBase = []string {
@@ -73,7 +70,7 @@ func tasks(p *do.Project) {
 
 func buildFeatures(p *do.Project, subsystem string, components []string) {
     var componentsInstall do.S
-    var componentsTest do.P
+    var componentsTest do.S
     for _, module := range components {
         install := installTaskName(module)
         test := testTaskName(module)
