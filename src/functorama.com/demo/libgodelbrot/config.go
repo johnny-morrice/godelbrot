@@ -66,8 +66,11 @@ func (c *configurator) chooseNumerics() error {
         c.chooseAccurateNumerics()
     case NativeNumericsMode:
         c.useNative()
+        c.Precision = 53
+        c.usePrec()
     case BigFloatNumericsMode:
         c.selectUserPrec()
+        c.usePrec()
         c.useBig()
     default:
         return fmt.Errorf("Unknown numerics mode:", desc.Numerics)
@@ -92,18 +95,13 @@ func (c *configurator) chooseAccurateNumerics() {
     if prec < 1 {
         prec = c.howManyBits()
     }
+    c.Precision = prec
+    c.usePrec()
     if prec > prec64 {
         c.useBig()
-        c.setPrec(prec)
     } else {
         c.useNative()
-        c.setPrec(prec64)
     }
-}
-
-func (c *configurator) setPrec(bits uint) {
-    c.Precision = bits
-    c.usePrec()
 }
 
 func (c *configurator) usePrec() {

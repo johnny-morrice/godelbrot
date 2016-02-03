@@ -80,6 +80,7 @@ func Unfriendly(userDesc *UserInfo) (*Info, error) {
         if err != nil {
             return nil, fmt.Errorf("Error parsing bound: %v", err)
         }
+        b.SetPrec(userDesc.Precision)
         bnds[i] = b
     }
 
