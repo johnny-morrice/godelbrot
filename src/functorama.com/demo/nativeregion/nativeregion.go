@@ -93,7 +93,7 @@ func (native *NativeRegionNumerics) NativeChildRegions() []nativeRegion {
 	if native.subregion.populated {
 		return native.subregion.children
 	}
-	log.Panic("Region asked to provide non-existent children")
+	log.Panic("No children")
 	return nil
 }
 
