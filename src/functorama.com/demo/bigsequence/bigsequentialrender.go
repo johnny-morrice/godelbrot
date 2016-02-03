@@ -23,24 +23,25 @@ func Make(app bigbase.RenderApplication) BigSequenceNumerics {
 }
 
 func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
-	imageLeft, imageTop := bsn.PictureMin()
-	imageRight, imageBottom := bsn.PictureMax()
+	ileft, itop := bsn.PictureMin()
+	iright, ibott := bsn.PictureMax()
 	iterlim := bsn.IterateLimit
 
-	area := (imageRight - imageLeft) * (imageBottom - imageTop)
+	area := (iright - ileft) * (ibott - itop)
 	out := make([]base.PixelMember, area)
 
 	pos := bigbase.BigComplex{
 		R: bsn.RealMin,
 	}
 	count := 0
-	for i := imageLeft; i < imageRight; i++ {
+	member := bigbase.BigMandelbrotMember{
+		SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
+		Prec: bsn.Precision,
+	}
+	for i := ileft; i < iright; i++ {
 		pos.I = bsn.ImagMax
-		for j := imageTop; j < imageBottom; j++ {
-			member := bigbase.BigMandelbrotMember{
-				C: &pos,
-				SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
-			}
+		for j := itop; j < ibott; j++ {
+			member.C = &pos
 			member.Mandelbrot(iterlim)
 			out[count] = base.PixelMember{I: i, J: j, Member: member.MandelbrotMember}
 

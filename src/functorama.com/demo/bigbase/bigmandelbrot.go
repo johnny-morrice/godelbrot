@@ -19,17 +19,13 @@ func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 	ab := MakeBigFloat(0.0, member.Prec)
 	i := uint8(0)
 	for ; i < iterateLimit && withinMandLimit(&z, member.SqrtDivergeLimit); i++ {
-		aa.Set(z.Real())
-		aa.Mul(&aa, &aa)
+		aa.Mul(z.Real(), z.Real())
 
-		bb.Set(z.Imag())
-		bb.Mul(&bb, &bb)
+		bb.Mul(z.Imag(), z.Imag())
+		ab.Mul(z.Real(), z.Imag())
 
-		ab.Set(z.Real())
-		ab.Mul(&ab, z.Imag())
-
-		z.R = *aa.Sub(&aa, &bb)
-		z.I = *ab.Add(&ab, &ab)
+		z.R.Copy(aa.Sub(&aa, &bb))
+		z.I.Copy(ab.Add(&ab, &ab))
 
 		z.Add(&z, member.C)
 	}
@@ -40,8 +36,7 @@ func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
 
 func withinMandLimit(z *BigComplex, limit *big.Float) bool {
 	// Approximate cmplx.Abs
-	negLimit := big.Float{}
-	negLimit.SetPrec(limit.Prec())
+	negLimit := MakeBigFloat(0.0, limit.Prec())
 	negLimit.Neg(limit)
 
 	r := z.Real()
@@ -55,4 +50,10 @@ func withinMandLimit(z *BigComplex, limit *big.Float) bool {
 	within := rLimCmp == -1 && rNegLimCmp == 1
 	within = within && iLimCmp == -1 && iNegLimCmp == 1
 	return within
+}
+
+func nativec(c BigComplex) complex128 {
+	fr, _ := c.Real().Float64()
+	fi, _ := c.Imag().Float64()
+	return complex(fr, fi)
 }
