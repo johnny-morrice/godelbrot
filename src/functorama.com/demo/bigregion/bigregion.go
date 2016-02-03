@@ -3,6 +3,7 @@ package bigregion
 import (
 	"log"
 	"image"
+	"math/big"
 	"functorama.com/demo/base"
 	"functorama.com/demo/region"
 	"functorama.com/demo/bigbase"
@@ -211,7 +212,6 @@ func (brn *BigRegionNumerics) RegionMember() base.MandelbrotMember {
 	return brn.Region.topLeft.MandelbrotMember
 }
 
-// proxyNumerics quickly creates a new *NativeRegionNumerics context
 func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNumerics {
 	return BigRegionNumericsProxy{
 		BigRegionNumerics: brn,
@@ -228,7 +228,67 @@ func (brn *BigRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 	done := make(chan bool, 1)
 	idivch := make(chan uint8, 1)
 
+	go brn.sample(idivch, done)
+
 	return idivch, done
+}
+
+func (brn *BigRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
+	complete := func (idiv uint8) bool {
+		select {
+		case <-done:
+			close(idivch)
+			return true
+		default:
+			idivch<- idiv
+			return false
+		}
+	}
+
+	eval := func (r, i *big.Float) uint8 {
+		p := brn.MakeMember(&bigbase.BigComplex{*r, *i})
+		p.Mandelbrot(brn.IterateLimit)
+		return p.InvDiv
+	}
+
+	// Provide the samples we already have
+	for _, p := range brn.Points() {
+		if complete(p.InvDiv) {
+			return
+		}
+	}
+
+	// Generate samples
+	tl := brn.Region.topLeft.C
+	br := brn.Region.bottomRight.C
+	count := brn.Samples
+	fCount := brn.MakeBigFloat(float64(count))
+	rmin := tl.Real()
+	rmax := br.Real()
+	imin := br.Imag()
+	imax := tl.Imag()
+	width := brn.MakeBigFloat(0.0)
+	width.Sub(rmax, rmin)
+	height := brn.MakeBigFloat(0.0)
+	height.Sub(imax, imin)
+	rUnit := brn.MakeBigFloat(0.0)
+	rUnit.Quo(&width, &fCount)
+	iUnit := brn.MakeBigFloat(0.0)
+	iUnit.Quo(&height, &fCount)
+	rdown := brn.MakeBigFloat(0.0)
+	rdown.Copy(rmax)
+	idown := brn.MakeBigFloat(0.0)
+	idown.Copy(imax)
+	for i := uint(0); i < count; i++ {
+		rdown.Sub(&rdown, &rUnit)
+		for j := uint(0); j < count; j++ {
+			idown.Sub(&idown, &iUnit)
+			if complete(eval(&rdown, &idown)) {
+				return
+			}
+		}
+	}
+	close(idivch)
 }
 
 func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
