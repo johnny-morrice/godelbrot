@@ -2,8 +2,8 @@ package nativeregion
 
 import (
 	"testing"
-	"functorama.com/demo/base"
-	"functorama.com/demo/nativebase"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/nativebase"
 )
 
 func TestRegionSplitPos(t *testing.T) {

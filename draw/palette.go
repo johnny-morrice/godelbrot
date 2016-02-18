@@ -2,7 +2,7 @@ package draw
 
 import (
 	"image/color"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 type Palette interface {

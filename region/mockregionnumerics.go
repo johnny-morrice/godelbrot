@@ -3,8 +3,8 @@ package region
 import (
 	"fmt"
 	"image"
-	"functorama.com/demo/base"
-	"functorama.com/demo/sequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/sequence"
 )
 
 type RegionType uint

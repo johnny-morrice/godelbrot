@@ -3,7 +3,7 @@ package region
 import (
     "image"
     "testing"
-    "functorama.com/demo/draw"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 func TestDrawUniform(t *testing.T) {

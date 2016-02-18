@@ -2,9 +2,9 @@ package bigregion
 
 import (
 	"testing"
-	"functorama.com/demo/base"
-	"functorama.com/demo/bigbase"
-	"functorama.com/demo/bigsequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/bigbase"
+	"github.com/johnny-morrice/godelbrot/bigsequence"
 )
 
 func TestBigProxyRegionClaimExtrinsics(t *testing.T) {

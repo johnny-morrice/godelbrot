@@ -3,10 +3,10 @@ package nativeregion
 import (
 	"log"
 	"image"
-	"functorama.com/demo/base"
-	"functorama.com/demo/nativebase"
-	"functorama.com/demo/nativesequence"
-	"functorama.com/demo/region"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/nativebase"
+	"github.com/johnny-morrice/godelbrot/nativesequence"
+	"github.com/johnny-morrice/godelbrot/region"
 )
 
 type nativeSubregion struct {

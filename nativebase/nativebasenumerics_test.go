@@ -3,7 +3,7 @@ package nativebase
 import (
 	"testing"
 	"math"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 // Three paths through Make

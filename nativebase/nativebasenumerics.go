@@ -3,7 +3,7 @@ package nativebase
 import (
 	"image"
 	"math"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 // Basis for all native numerics

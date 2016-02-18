@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "functorama.com/demo/base"
+    "github.com/johnny-morrice/godelbrot/base"
 )
 
 type baseFacade struct {

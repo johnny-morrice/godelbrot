@@ -1,9 +1,9 @@
 package bigsequence
 
 import (
-	"functorama.com/demo/base"
-	"functorama.com/demo/bigbase"
-	"functorama.com/demo/sequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/bigbase"
+	"github.com/johnny-morrice/godelbrot/sequence"
 )
 
 type BigSequenceNumerics struct {

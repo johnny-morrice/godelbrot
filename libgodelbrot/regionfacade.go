@@ -3,9 +3,9 @@ package libgodelbrot
 import (
     "log"
     "image"
-    "functorama.com/demo/region"
-    "functorama.com/demo/nativeregion"
-    "functorama.com/demo/bigregion"
+    "github.com/johnny-morrice/godelbrot/region"
+    "github.com/johnny-morrice/godelbrot/nativeregion"
+    "github.com/johnny-morrice/godelbrot/bigregion"
 )
 
 type regionProvider struct {

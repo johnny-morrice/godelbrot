@@ -1,8 +1,8 @@
 package nativeregion
 
 import (
-    "functorama.com/demo/region"
-	"functorama.com/demo/nativesequence"
+    "github.com/johnny-morrice/godelbrot/region"
+	"github.com/johnny-morrice/godelbrot/nativesequence"
 )
 
 type NativeRegionProxy struct {

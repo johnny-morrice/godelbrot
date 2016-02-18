@@ -2,7 +2,7 @@ package libgodelbrot
 
 import (
     "math/big"
-    "functorama.com/demo/bigbase"
+    "github.com/johnny-morrice/godelbrot/bigbase"
 )
 
 // There are three different kinds of magic number in this program:

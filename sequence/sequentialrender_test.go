@@ -3,7 +3,7 @@ package sequence
 import (
     "testing"
     "image"
-    "functorama.com/demo/draw"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 func TestMake(t *testing.T) {

@@ -7,7 +7,7 @@ import (
     "runtime"
     "strconv"
     "os"
-    "functorama.com/demo/libgodelbrot"
+    "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
 // Structure representing our command line arguments

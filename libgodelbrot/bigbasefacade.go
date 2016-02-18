@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "functorama.com/demo/bigbase"
+    "github.com/johnny-morrice/godelbrot/bigbase"
 )
 
 type bigCoords struct {

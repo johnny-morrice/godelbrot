@@ -2,8 +2,8 @@ package region
 
 import (
 	"image"
-	"functorama.com/demo/base"
-	"functorama.com/demo/draw"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/draw"
 )
 
 type RegionRenderStrategy struct {

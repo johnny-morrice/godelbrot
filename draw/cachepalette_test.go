@@ -3,7 +3,7 @@ package draw
 import (
 	"image/color"
 	"testing"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 func TestColor(t *testing.T) {

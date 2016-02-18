@@ -1,9 +1,9 @@
 package nativesequence
 
 import (
-	"functorama.com/demo/base"
-	"functorama.com/demo/nativebase"
-	"functorama.com/demo/sequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/nativebase"
+	"github.com/johnny-morrice/godelbrot/sequence"
 )
 
 type NativeSequenceNumerics struct {

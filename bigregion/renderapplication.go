@@ -1,9 +1,9 @@
 package bigregion
 
 import (
-    "functorama.com/demo/base"
-    "functorama.com/demo/bigbase"
-    "functorama.com/demo/region"
+    "github.com/johnny-morrice/godelbrot/base"
+    "github.com/johnny-morrice/godelbrot/bigbase"
+    "github.com/johnny-morrice/godelbrot/region"
 )
 
 type RenderApplication interface {

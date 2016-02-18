@@ -6,7 +6,7 @@ import (
     "io"
     "log"
     "runtime"
-    "functorama.com/demo/libgodelbrot"
+    "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
 func main() {

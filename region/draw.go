@@ -3,7 +3,7 @@ package region
 import(
 	"image"
 	"image/draw"
-	paint "functorama.com/demo/draw"
+	paint "github.com/johnny-morrice/godelbrot/draw"
 )
 
 // DrawUniform draws a rectangle of uniform colour on to the image.

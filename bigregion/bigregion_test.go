@@ -3,7 +3,7 @@ package bigregion
 import (
 	"math/big"
 	"testing"
-	"functorama.com/demo/bigbase"
+	"github.com/johnny-morrice/godelbrot/bigbase"
 )
 
 const prec = 53

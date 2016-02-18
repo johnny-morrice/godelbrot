@@ -5,7 +5,7 @@ import (
     "flag"
     "os"
     "image/png"
-    "functorama.com/demo/libgodelbrot"
+    "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
 type commandLine struct {

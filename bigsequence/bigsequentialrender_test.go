@@ -2,8 +2,8 @@ package bigsequence
 
 import (
 	"testing"
-	"functorama.com/demo/base"
-	"functorama.com/demo/bigbase"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/bigbase"
 )
 
 func TestBigMandelbrotSequence(t *testing.T) {

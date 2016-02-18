@@ -2,7 +2,7 @@ package sequence
 
 import (
     "testing"
-    "functorama.com/demo/draw"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 func TestImageSequence(t *testing.T) {

@@ -2,9 +2,9 @@ package nativeregion
 
 import (
 	"testing"
-	"functorama.com/demo/base"
-	"functorama.com/demo/nativebase"
-	"functorama.com/demo/nativesequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/nativebase"
+	"github.com/johnny-morrice/godelbrot/nativesequence"
 )
 
 const sqrtDLimit = float64(2.0)

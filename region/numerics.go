@@ -2,9 +2,9 @@ package region
 
 import (
     "image"
-    "functorama.com/demo/base"
-    "functorama.com/demo/sequence"
-    "functorama.com/demo/draw"
+    "github.com/johnny-morrice/godelbrot/base"
+    "github.com/johnny-morrice/godelbrot/sequence"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 type Subdivider interface {

@@ -4,7 +4,7 @@ import (
     do "gopkg.in/godo.v2"
 )
 
-const packageRoot = "functorama.com/demo"
+const packageRoot = "github.com/johnny-morrice/godelbrot"
 
 var lib = []string{
     "base",

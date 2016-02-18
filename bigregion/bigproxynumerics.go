@@ -1,10 +1,10 @@
 package bigregion
 
 import (
-    "functorama.com/demo/sequence"
-    "functorama.com/demo/region"
-    "functorama.com/demo/bigsequence"
-    "functorama.com/demo/bigbase"
+    "github.com/johnny-morrice/godelbrot/sequence"
+    "github.com/johnny-morrice/godelbrot/region"
+    "github.com/johnny-morrice/godelbrot/bigsequence"
+    "github.com/johnny-morrice/godelbrot/bigbase"
 )
 
 type BigRegionNumericsProxy struct {

@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "functorama.com/demo/bigregion"
+    "github.com/johnny-morrice/godelbrot/bigregion"
 )
 
 type bigRegionFacade struct {

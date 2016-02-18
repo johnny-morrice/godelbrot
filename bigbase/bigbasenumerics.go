@@ -4,7 +4,7 @@ import (
 	"image"
 	"math"
 	"math/big"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 // Basis for all big.Float numerics

@@ -3,7 +3,7 @@ package libgodelbrot
 import (
     "image"
     "log"
-    "functorama.com/demo/draw"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 type drawFacade struct {

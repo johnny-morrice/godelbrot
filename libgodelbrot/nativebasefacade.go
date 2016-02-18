@@ -2,7 +2,7 @@ package libgodelbrot
 
 import (
     "math/big"
-    "functorama.com/demo/nativebase"
+    "github.com/johnny-morrice/godelbrot/nativebase"
 )
 
 type nativeCoords struct {

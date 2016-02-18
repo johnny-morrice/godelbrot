@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "functorama.com/demo/nativeregion"
+    "github.com/johnny-morrice/godelbrot/nativeregion"
 )
 
 type nativeRegionFacade struct {

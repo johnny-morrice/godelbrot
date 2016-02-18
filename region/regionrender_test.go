@@ -3,8 +3,8 @@ package region
 import (
 	"testing"
 	"image"
-	"functorama.com/demo/base"
-	"functorama.com/demo/draw"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/draw"
 )
 
 func TestNewRegionRenderer(t *testing.T) {

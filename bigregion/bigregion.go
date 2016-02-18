@@ -4,10 +4,10 @@ import (
 	"log"
 	"image"
 	"math/big"
-	"functorama.com/demo/base"
-	"functorama.com/demo/region"
-	"functorama.com/demo/bigbase"
-	"functorama.com/demo/bigsequence"
+	"github.com/johnny-morrice/godelbrot/base"
+	"github.com/johnny-morrice/godelbrot/region"
+	"github.com/johnny-morrice/godelbrot/bigbase"
+	"github.com/johnny-morrice/godelbrot/bigsequence"
 )
 
 type bigSubregion struct {

@@ -1,9 +1,9 @@
 package bigregion
 
 import (
-    "functorama.com/demo/bigbase"
-    "functorama.com/demo/region"
-    "functorama.com/demo/base"
+    "github.com/johnny-morrice/godelbrot/bigbase"
+    "github.com/johnny-morrice/godelbrot/region"
+    "github.com/johnny-morrice/godelbrot/base"
 )
 
 type MockRenderApplication struct {

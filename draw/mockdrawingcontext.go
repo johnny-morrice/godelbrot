@@ -3,7 +3,7 @@ package draw
 import (
     "image"
     "image/color"
-    "functorama.com/demo/base"
+    "github.com/johnny-morrice/godelbrot/base"
 )
 
 type MockDrawingContext struct {

@@ -2,7 +2,7 @@ package sequence
 
 import (
     "image"
-    "functorama.com/demo/base"
+    "github.com/johnny-morrice/godelbrot/base"
 )
 
 type MockNumerics struct {

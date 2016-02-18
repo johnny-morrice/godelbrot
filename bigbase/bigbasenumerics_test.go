@@ -2,7 +2,7 @@ package bigbase
 
 import (
 	"testing"
-	"functorama.com/demo/base"
+	"github.com/johnny-morrice/godelbrot/base"
 )
 
 // Three paths through Make
