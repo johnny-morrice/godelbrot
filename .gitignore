@@ -1,8 +1,2 @@
-bin
-pkg
-mandelbrot.png
-*.out
-libgodelbrot.test
-src/github.com
-*.memprof
-*.cpuprof
+Gododir/*
+!Gododir/main.go
