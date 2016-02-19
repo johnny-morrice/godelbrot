@@ -4,14 +4,6 @@
 
 A Fancy Unix-style Mandelbrot set explorer in Go
 
-## Dependencies
-
-godelbrot has no dependencies outside of the go compiler, and its standard
-library.
-
-The godelbrot developers are using go 1.4, mostly because godebug does not
-support 1.5 at the date of publication.
-
 ## Get it
 
     $ go get github.com/johnny-morrice/godelbrot/renderbrot
