@@ -2,7 +2,7 @@
 
 ## Summary
 
-A Fancy Unix-style Mandelbrot set explorer in Go.
+A Unix-style Mandelbrot set explorer in Go.
 
 ## Features
 
