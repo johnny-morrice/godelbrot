@@ -2,7 +2,7 @@
 
 ## Summary
 
-A web-based, multithreaded Mandelbrot set explorer in Go
+An efficient, Unix-style Mandelbrot set explorer in Go
 
 Check out a running instance on:
 
@@ -10,43 +10,27 @@ http://mandelbrot.functorama.com/
 
 ## Dependencies
 
-godelbrot has no dependencies outside of the go compiler, and its standard 
+godelbrot has no dependencies outside of the go compiler, and its standard
 library.
 
 The godelbrot developers are using go 1.4, mostly because godebug does not
 support 1.5 at the date of publication.
 
-## Usage
+## Get it
 
-This package has been hacked up quickly, and we haven't made it go-gettable yet.
+    $ go get github.com/johnny-morrice/godelbrot/renderbrot
+    $ go get github.com/johnny-morrice/godelbrot/configbrot
+    $ go get github.com/johnny-morrice/godelbrot/colorbrot
 
-Wide distribution isn't a priority till we reach our development goals (more on 
-them to come!)
+## Use it
 
-To get started with the command line tool, clone this repository and then
+    $ configbrot | renderbrot > mandelbrot.png
 
-    $ export GOPATH=/path/to/godelbrot
-    $ cd /path/to/godelbrot
-    $ go install functorama.com/demo/godelbrot
-    $ bin/godelbrot
+configbrot generates configuration files and supports a range of options.  Try
 
-To run the web app
+    $ configbrot -help
 
-    $ export GOPATH=/path/to/godelbrot
-    $ cd /path/to/godelbrot
-    $ go install functorama.com/demo/webdelbrot
-    $ bin/webdelbrot
-
-Now point your browser to localhost:8080 and you should see the fractal.  Note
-the --addr argument allows you to specify the interface.
-
-Both applications have a set of command line options.  Try --help.
-
-## Web app controls
-
-Left click to begin highlighting zoom region.  Left click again to zoom.
-
-Middle quick or "q" to cancel zoom selection.
+colorbrot is provided as a convenience for those who may like to recolour the output.
 
 ## Credits
 
