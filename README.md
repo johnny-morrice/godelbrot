@@ -4,6 +4,13 @@
 
 A Fancy Unix-style Mandelbrot set explorer in Go.
 
+## Features
+
+* Designed as Unix toolkit of orthogonal command-line apps
+* Subdividing regions algorithm
+* Configuration file generation tool (configbrot)
+* Arbitrary precision mode (and extensible internals)
+
 ## Get it
 
     $ go get github.com/johnny-morrice/godelbrot/renderbrot
