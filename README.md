@@ -2,11 +2,7 @@
 
 ## Summary
 
-An efficient, Unix-style Mandelbrot set explorer in Go
-
-Check out a running instance on:
-
-http://mandelbrot.functorama.com/
+A Fancy Unix-style Mandelbrot set explorer in Go
 
 ## Dependencies
 
