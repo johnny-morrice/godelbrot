@@ -2,7 +2,7 @@
 
 ## Summary
 
-A Fancy Unix-style Mandelbrot set explorer in Go
+A Fancy Unix-style Mandelbrot set explorer in Go.
 
 ## Get it
 
@@ -35,3 +35,7 @@ https://github.com/johnny-morrice
 **Gavin Leech**
 
 https://github.com/technicalities
+
+## License
+
+We use an MIT style license.  See LICENSE.txt for terms of use and distribution.
