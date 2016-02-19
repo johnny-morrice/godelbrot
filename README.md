@@ -20,6 +20,10 @@ configbrot generates configuration files and supports a range of options.  Try
 
 colorbrot is provided as a convenience for those who may like to recolour the output.
 
+## You might also like
+
+Webdelbrot is a web front-end for Godelbrot.  Check out http://github.com/johnny-morrice/webdelbrot
+
 ## Credits
 
 **John Morrice**
