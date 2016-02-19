@@ -29,7 +29,9 @@ colorbrot is provided as a convenience for those who may like to recolour the ou
 
 ## You might also like
 
-Webdelbrot is a web front-end for Godelbrot.  Check out http://github.com/johnny-morrice/webdelbrot
+Webdelbrot is a web front-end for Godelbrot.  
+
+http://github.com/johnny-morrice/webdelbrot
 
 ## Credits
 
