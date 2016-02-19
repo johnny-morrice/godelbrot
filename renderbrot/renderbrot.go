@@ -5,23 +5,20 @@ import (
     "os"
     "io"
     "log"
-    "runtime"
-    "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
 func main() {
-    runtime.GOMAXPROCS(runtime.NumCPU())
-
     var input io.Reader = os.Stdin
     var output io.Writer = os.Stdout
 
-    desc, readErr := libgodelbrot.ReadInfo(input)
+    desc, readErr := lib.ReadInfo(input)
 
     if readErr != nil {
         log.Fatal("Error reading info: ", readErr)
     }
 
-    picture, renderErr := libgodelbrot.Render(desc)
+    picture, renderErr := lib.Render(desc)
 
     if renderErr != nil {
         log.Fatal("Render errror:", renderErr)

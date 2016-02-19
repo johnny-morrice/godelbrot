@@ -4,7 +4,6 @@ import (
     "fmt"
     "flag"
     "log"
-    "runtime"
     "strconv"
     "os"
     "github.com/johnny-morrice/godelbrot/libgodelbrot"
@@ -46,8 +45,6 @@ func parseArguments() commandLine {
         argbnds[i] = strconv.FormatFloat(c, 'e', -1, 64)
     }
 
-    jobs := uint(runtime.NumCPU()) + 1
-
     flag.UintVar(&args.iterateLimit, "iterlim",
         uint(libgodelbrot.DefaultIterations), "Maximum number of iterations")
     flag.Float64Var(&args.divergeLimit, "divlim",
@@ -68,8 +65,6 @@ func parseArguments() commandLine {
         "Render mode.  (auto|sequence|region)")
     flag.UintVar(&args.regionCollapse, "collapse",
         libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
-    flag.UintVar(&args.jobs, "jobs",
-        jobs, "Number of rendering threads in concurrent renderer")
     flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
         libgodelbrot.DefaultRegionSamples, "Size of region sample set")
     flag.UintVar(&args.precision, "prec",
@@ -186,7 +181,6 @@ func userReq(args commandLine) (*libgodelbrot.Request, error) {
     req.FixAspect = args.fixAspect
     req.Renderer = renderer
     req.Numerics = numerics
-    req.Jobs = uint16(args.jobs)
     req.RegionCollapse = args.regionCollapse
     req.RegionSamples = args.glitchSamples
     req.Precision = args.precision
@@ -195,25 +189,22 @@ func userReq(args commandLine) (*libgodelbrot.Request, error) {
 }
 
 func main() {
-    // Set number of cores
-    runtime.GOMAXPROCS(runtime.NumCPU())
-
     output := os.Stdout
 
     args := parseArguments()
     req, inerr := newRequest(args)
     if inerr != nil {
-        log.Fatal("Error forming request:", inerr)
+        log.Fatal("Error forming request: ", inerr)
     }
 
     desc, gerr := libgodelbrot.Configure(req)
 
     if gerr != nil {
-        log.Fatal("Error configuring Info:", gerr)
+        log.Fatal("Error configuring Info: ", gerr)
     }
 
     outerr := libgodelbrot.WriteInfo(output, desc)
     if outerr != nil {
-        log.Fatal("Error writing Info:", outerr)
+        log.Fatal("Error writing Info: ", outerr)
     }
 }
