@@ -24,15 +24,15 @@ func TestBigMandelbrotSanity(t *testing.T) {
 	originMember.Mandelbrot(iterateLimit)
 	nonMember.Mandelbrot(iterateLimit)
 
-	if !originMember.SetMember() {
+	if !originMember.InSet {
 		t.Error("Expected origin to be in Mandelbrot set")
 	}
 
-	if nonMember.SetMember() {
+	if nonMember.InSet {
 		t.Error("Expected ", nonMember, " to be outside Mandelbrot set")
 	}
 
-	if nonMember.InverseDivergence() >= iterateLimit {
+	if nonMember.InvDiv >= iterateLimit {
 		t.Error("Expected negativeMembership to have InvDivergence below IterateLimit")
 	}
 }
