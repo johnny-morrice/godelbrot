@@ -24,21 +24,7 @@ func TestSequence(t *testing.T) {
 	out := numerics.Sequence()
 
 	const expectedCount = 100
-	actualArea := numerics.Area()
-
-	if expectedCount != actualArea {
-		t.Error("Expected area of", expectedCount,
-			"but received", actualArea)
-	}
-
-	members := make([]base.PixelMember, actualArea)
-
-	i := 0
-	for point := range out {
-		members[i] = point
-		i++
-	}
-	actualCount := len(members)
+	actualCount := len(out)
 
 	if expectedCount != actualCount {
 		t.Error("Expected", expectedCount, "members but there were", actualCount)
