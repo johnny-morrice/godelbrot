@@ -109,8 +109,9 @@ func TestPixelToPlane(t *testing.T) {
 		ImagMax:     1.0,
 		RealMax:     1.0,
 	}
-	numerics.ImageWidth(width)
-	numerics.ImageHeight(height)
+	numerics.WholeWidth = width
+	numerics.WholeHeight = height
+	numerics.RestorePicBounds()
 	uq := UnitQuery{width, height, planeSide, planeSide}
 	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
@@ -193,8 +194,9 @@ func TestPlaneToPixel(t *testing.T) {
 		ImagMax:     1.0,
 		RealMax:     1.0,
 	}
-	numerics.ImageWidth(width)
-	numerics.ImageHeight(height)
+	numerics.WholeWidth = width
+	numerics.WholeHeight = height
+	numerics.RestorePicBounds()
 	uq := UnitQuery{width, height, planeSide, planeSide}
 	numerics.Runit, numerics.Iunit = uq.PixelUnits()
 
