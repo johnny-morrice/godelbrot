@@ -67,8 +67,8 @@ func Make(app RenderApplication) NativeBaseNumerics {
 	}
 }
 
-func (nbn *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeMandelbrotMember {
-	return NativeMandelbrotMember{
+func (nbn *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeEscapeValue {
+	return NativeEscapeValue{
 		C: c,
 		SqrtDivergeLimit: nbn.SqrtDivergeLimit,
 	}

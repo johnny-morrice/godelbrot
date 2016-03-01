@@ -4,13 +4,13 @@ import (
 	"github.com/johnny-morrice/godelbrot/base"
 )
 
-type NativeMandelbrotMember struct {
-	base.MandelbrotMember
+type NativeEscapeValue struct {
+	base.EscapeValue
 	C complex128
 	SqrtDivergeLimit float64
 }
 
-func (member *NativeMandelbrotMember) Mandelbrot(iterateLimit uint8) {
+func (member *NativeEscapeValue) Mandelbrot(iterateLimit uint8) {
 	var z complex128 = 0
 	sqrtDl := member.SqrtDivergeLimit
 	c := member.C

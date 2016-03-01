@@ -27,7 +27,7 @@ func NewCachePalette(iterateLimit uint8, member color.NRGBA, cacher Cacher) Cach
 }
 
 // CachePalette implements Palette
-func (palette CachePalette) Color(member base.MandelbrotMember) color.NRGBA {
+func (palette CachePalette) Color(member base.EscapeValue) color.NRGBA {
 	if member.InSet {
 		return palette.memberColor
 	} else {

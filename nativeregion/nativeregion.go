@@ -15,11 +15,11 @@ type nativeSubregion struct {
 }
 
 type nativeRegion struct {
-	topLeft     nativebase.NativeMandelbrotMember
-	topRight    nativebase.NativeMandelbrotMember
-	bottomLeft  nativebase.NativeMandelbrotMember
-	bottomRight nativebase.NativeMandelbrotMember
-	midPoint    nativebase.NativeMandelbrotMember
+	topLeft     nativebase.NativeEscapeValue
+	topRight    nativebase.NativeEscapeValue
+	bottomLeft  nativebase.NativeEscapeValue
+	bottomRight nativebase.NativeEscapeValue
+	midPoint    nativebase.NativeEscapeValue
 }
 
 func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
@@ -28,8 +28,8 @@ func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangl
 	return image.Rect(l, t, r, b)
 }
 
-func (nr *nativeRegion) points() []*nativebase.NativeMandelbrotMember {
-	return []*nativebase.NativeMandelbrotMember{
+func (nr *nativeRegion) points() []*nativebase.NativeEscapeValue {
+	return []*nativebase.NativeEscapeValue{
 		&nr.topLeft,
 		&nr.topRight,
 		&nr.bottomLeft,
@@ -116,11 +116,11 @@ func (native *NativeRegionNumerics) Proxy(region nativeRegion) NativeRegionProxy
 	}
 }
 
-func (native *NativeRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
+func (native *NativeRegionNumerics) MandelbrotPoints() []base.EscapeValue {
 	ps := native.Points()
-	base := make([]base.MandelbrotMember, len(ps))
+	base := make([]base.EscapeValue, len(ps))
 	for i, p := range ps {
-		base[i] = p.MandelbrotMember
+		base[i] = p.EscapeValue
 	}
 	return base
 }
@@ -194,21 +194,21 @@ func (native *NativeRegionNumerics) Rect() image.Rectangle {
 	return native.Region.rect(&base)
 }
 
-// Return MandelbrotMember
+// Return EscapeValue
 // Does not check if the region's Points have been evaluated
-func (native *NativeRegionNumerics) RegionMember() base.MandelbrotMember {
-	return native.Region.topLeft.MandelbrotMember
+func (native *NativeRegionNumerics) RegionMember() base.EscapeValue {
+	return native.Region.topLeft.EscapeValue
 }
 
-func (native *NativeRegionNumerics) createPoint(c complex128) nativebase.NativeMandelbrotMember {
+func (native *NativeRegionNumerics) createPoint(c complex128) nativebase.NativeEscapeValue {
 	point := native.CreateMandelbrot(c)
 	point.Mandelbrot(native.IterateLimit)
 	return point
 }
 
-func (native *NativeRegionNumerics) Points() []nativebase.NativeMandelbrotMember {
+func (native *NativeRegionNumerics) Points() []nativebase.NativeEscapeValue {
 	region := native.Region
-	return []nativebase.NativeMandelbrotMember{
+	return []nativebase.NativeEscapeValue{
 		region.topLeft,
 		region.topRight,
 		region.bottomLeft,
@@ -292,9 +292,9 @@ func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nati
 		mid,
 	}
 
-	points := make([]nativebase.NativeMandelbrotMember, len(coords))
+	points := make([]nativebase.NativeEscapeValue, len(coords))
 	for i, c := range coords {
-		points[i] = nativebase.NativeMandelbrotMember{C: c, SqrtDivergeLimit: sqrtDLimit}
+		points[i] = nativebase.NativeEscapeValue{C: c, SqrtDivergeLimit: sqrtDLimit}
 	}
 
 	region := nativeRegion{

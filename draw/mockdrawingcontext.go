@@ -38,7 +38,7 @@ type MockPalette struct {
     Col color.NRGBA
 }
 
-func (mock *MockPalette) Color(point base.MandelbrotMember) color.NRGBA {
+func (mock *MockPalette) Color(point base.EscapeValue) color.NRGBA {
     mock.TColor = true
     return mock.Col
 }

@@ -12,7 +12,7 @@ const sqrtDLimit = float64(2.0)
 func TestNativeProxyRegionClaimExtrinsics(t *testing.T) {
 	native := NativeRegionProxy{
 		LocalRegion: nativeRegion{
-			topLeft: nativebase.NativeMandelbrotMember{C: 1},
+			topLeft: nativebase.NativeEscapeValue{C: 1},
 		},
 		NativeRegionNumerics: &NativeRegionNumerics{},
 	}

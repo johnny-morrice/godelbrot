@@ -34,12 +34,12 @@ func (nsn *NativeSequenceNumerics) Sequence() []base.PixelMember {
 	for i := ileft; i < iright; i++ {
 		y := nsn.ImagMax
 		for j := itop; j < ibott; j++ {
-			member := nativebase.NativeMandelbrotMember{
+			member := nativebase.NativeEscapeValue{
 				C: complex(x, y),
 				SqrtDivergeLimit: sqrtDl,
 			}
 			member.Mandelbrot(iterlim)
-			out[count] = base.PixelMember{I: i, J: j, Member: member.MandelbrotMember}
+			out[count] = base.PixelMember{I: i, J: j, Member: member.EscapeValue}
 			y -= iUnit
 			count++
 		}

@@ -6,7 +6,7 @@ import (
 )
 
 type Palette interface {
-	Color(point base.MandelbrotMember) color.NRGBA
+	Color(point base.EscapeValue) color.NRGBA
 }
 
 type PaletteFactory func(interateLimit uint8) Palette

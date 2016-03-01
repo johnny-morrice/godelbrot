@@ -10,9 +10,9 @@ import (
 type Subdivider interface {
     Rect() image.Rectangle
     Split()
-    MandelbrotPoints() []base.MandelbrotMember
+    MandelbrotPoints() []base.EscapeValue
     SampleDivs() (<-chan uint8, chan<- bool)
-    RegionMember() base.MandelbrotMember
+    RegionMember() base.EscapeValue
     RegionSequence() ProxySequence
 }
 

@@ -34,7 +34,7 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 		R: bsn.RealMin,
 	}
 	count := 0
-	member := bigbase.BigMandelbrotMember{
+	member := bigbase.BigEscapeValue{
 		SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
 		Prec: bsn.Precision,
 	}
@@ -43,7 +43,7 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 		for j := itop; j < ibott; j++ {
 			member.C = &pos
 			member.Mandelbrot(iterlim)
-			out[count] = base.PixelMember{I: i, J: j, Member: member.MandelbrotMember}
+			out[count] = base.PixelMember{I: i, J: j, Member: member.EscapeValue}
 
 			pos.I.Sub(&pos.I, &bsn.Iunit)
 			count++

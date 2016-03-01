@@ -1,13 +1,13 @@
 package base
 
-type MandelbrotMember struct {
+type EscapeValue struct {
 	InvDiv uint8
 	InSet         bool
 }
 
-// PixelMember is a MandelbrotMember associated with a pixel
+// PixelMember is a EscapeValue associated with a pixel
 type PixelMember struct {
     I      int
     J      int
-    Member MandelbrotMember
+    Member EscapeValue
 }

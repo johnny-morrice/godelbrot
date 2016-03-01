@@ -16,15 +16,15 @@ type bigSubregion struct {
 }
 
 type bigRegion struct {
-	topLeft     bigbase.BigMandelbrotMember
-	topRight    bigbase.BigMandelbrotMember
-	bottomLeft  bigbase.BigMandelbrotMember
-	bottomRight bigbase.BigMandelbrotMember
-	midPoint    bigbase.BigMandelbrotMember
+	topLeft     bigbase.BigEscapeValue
+	topRight    bigbase.BigEscapeValue
+	bottomLeft  bigbase.BigEscapeValue
+	bottomRight bigbase.BigEscapeValue
+	midPoint    bigbase.BigEscapeValue
 }
 
-func (br *bigRegion) points() []bigbase.BigMandelbrotMember {
-	return []bigbase.BigMandelbrotMember{
+func (br *bigRegion) points() []bigbase.BigEscapeValue {
+	return []bigbase.BigEscapeValue{
 		br.topLeft,
 		br.topRight,
 		br.midPoint,
@@ -124,16 +124,16 @@ func (brn *BigRegionNumerics) RegionSequence() region.ProxySequence {
 }
 
 // MandelbrotPoints returns the corners of this region and its midpoint
-func (brn *BigRegionNumerics) MandelbrotPoints() []base.MandelbrotMember {
+func (brn *BigRegionNumerics) MandelbrotPoints() []base.EscapeValue {
 	ps := brn.Points()
-	base := make([]base.MandelbrotMember, len(ps))
+	base := make([]base.EscapeValue, len(ps))
 	for i, p := range ps {
-		base[i] = p.MandelbrotMember
+		base[i] = p.EscapeValue
 	}
 	return base
 }
 
-func (brn *BigRegionNumerics) Points() []bigbase.BigMandelbrotMember {
+func (brn *BigRegionNumerics) Points() []bigbase.BigEscapeValue {
 	return brn.Region.points()
 }
 
@@ -215,9 +215,9 @@ func (brn *BigRegionNumerics) Split() {
 	}
 }
 
-// RegionMember returns one MandelbrotMember from the Region
-func (brn *BigRegionNumerics) RegionMember() base.MandelbrotMember {
-	return brn.Region.topLeft.MandelbrotMember
+// RegionMember returns one EscapeValue from the Region
+func (brn *BigRegionNumerics) RegionMember() base.EscapeValue {
+	return brn.Region.topLeft.EscapeValue
 }
 
 func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNumerics {
@@ -323,10 +323,10 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 		bigbase.BigComplex{midR, midI}, // midpoint is not technically a corner
 	}
 
-	points := make([]bigbase.BigMandelbrotMember, len(coords))
+	points := make([]bigbase.BigEscapeValue, len(coords))
 
 	for i, c := range coords {
-		p := bigbase.BigMandelbrotMember{}
+		p := bigbase.BigEscapeValue{}
 		z := bigbase.MakeBigComplex(0.0, 0.0, prec)
 		z.R.Copy(c.Real())
 		z.I.Copy(c.Imag())

@@ -11,7 +11,7 @@ func TestDrawPoint(t *testing.T) {
 		Pic: image.NewNRGBA(image.ZR),
 		Col:  NewRedscalePalette(255),
 	}
-	pixel := base.PixelMember{1, 2, base.MandelbrotMember{}}
+	pixel := base.PixelMember{1, 2, base.EscapeValue{}}
 	DrawPoint(mockDraw, pixel)
 
 	if !(mockDraw.TPicture && mockDraw.TColors) {

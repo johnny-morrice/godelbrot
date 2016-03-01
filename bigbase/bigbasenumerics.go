@@ -128,8 +128,8 @@ func (bbn *BigBaseNumerics) PlaneToPixel(c *BigComplex) (rx int, ry int) {
 	return
 }
 
-func (bbn *BigBaseNumerics) MakeMember(c *BigComplex) BigMandelbrotMember {
-	return BigMandelbrotMember{
+func (bbn *BigBaseNumerics) MakeMember(c *BigComplex) BigEscapeValue {
+	return BigEscapeValue{
 		C: c,
 		Prec: bbn.Precision,
 		SqrtDivergeLimit: &bbn.SqrtDivergeLimit,

@@ -77,23 +77,23 @@ func (mock *MockNumerics) Split() {
 	mock.TSplit = true
 }
 
-func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
+func (mock *MockNumerics) MandelbrotPoints() []base.EscapeValue {
 	mock.TMandelbrotPoints = true
 
 	const pointCount = 5
-	points := make([]base.MandelbrotMember, pointCount)
+	points := make([]base.EscapeValue, pointCount)
 	switch mock.Path {
 	case SubdividePath:
 		fallthrough
 	case CollapsePath:
 		const change = pointCount - 1
 		for i := 0; i < change; i++ {
-			points[i] = base.MandelbrotMember{InSet: true, InvDiv: 0}
+			points[i] = base.EscapeValue{InSet: true, InvDiv: 0}
 		}
-		points[change] = base.MandelbrotMember{InSet: false, InvDiv: 20}
+		points[change] = base.EscapeValue{InSet: false, InvDiv: 20}
 	case UniformPath:
 		for i := 0; i < pointCount; i++ {
-			points[i] = base.MandelbrotMember{InSet: true, InvDiv: 0}
+			points[i] = base.EscapeValue{InSet: true, InvDiv: 0}
 		}
 	default:
 		panic(fmt.Sprintf("Unknown mock path:", mock.Path))
@@ -101,9 +101,9 @@ func (mock *MockNumerics) MandelbrotPoints() []base.MandelbrotMember {
 	return points
 }
 
-func (mock *MockNumerics) RegionMember() base.MandelbrotMember {
+func (mock *MockNumerics) RegionMember() base.EscapeValue {
 	mock.TRegionMember = true
-	return base.MandelbrotMember{InSet: true, InvDiv: 0}
+	return base.EscapeValue{InSet: true, InvDiv: 0}
 }
 
 func (mock *MockNumerics) Subdivide() bool {

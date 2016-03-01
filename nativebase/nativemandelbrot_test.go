@@ -10,8 +10,8 @@ func TestMandelbrotSanity(t *testing.T) {
 	const iterateLimit uint8 = 255
 	const sqrtDivergeLimit float64 = 2
 
-	originMember := NativeMandelbrotMember{C: origin, SqrtDivergeLimit: sqrtDivergeLimit}
-	nonMember := NativeMandelbrotMember{C: non, SqrtDivergeLimit: sqrtDivergeLimit}
+	originMember := NativeEscapeValue{C: origin, SqrtDivergeLimit: sqrtDivergeLimit}
+	nonMember := NativeEscapeValue{C: non, SqrtDivergeLimit: sqrtDivergeLimit}
 
 	originMember.Mandelbrot(iterateLimit)
 	nonMember.Mandelbrot(iterateLimit)

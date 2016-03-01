@@ -5,14 +5,14 @@ import (
 	"github.com/johnny-morrice/godelbrot/base"
 )
 
-type BigMandelbrotMember struct {
-	base.MandelbrotMember
+type BigEscapeValue struct {
+	base.EscapeValue
 	C                *BigComplex
 	SqrtDivergeLimit *big.Float
 	Prec uint
 }
 
-func (member *BigMandelbrotMember) Mandelbrot(iterateLimit uint8) {
+func (member *BigEscapeValue) Mandelbrot(iterateLimit uint8) {
 	z := MakeBigComplex(0.0, 0.0, member.Prec)
 	aa := MakeBigFloat(0.0, member.Prec)
 	bb := MakeBigFloat(0.0, member.Prec)

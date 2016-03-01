@@ -10,12 +10,12 @@ func TestBigMandelbrotSanity(t *testing.T) {
 	sqrtDL := MakeBigFloat(2.0, testPrec)
 	const iterateLimit uint8 = 255
 
-	originMember := BigMandelbrotMember{
+	originMember := BigEscapeValue{
 		C: &origin,
 		SqrtDivergeLimit: &sqrtDL,
 		Prec: testPrec,
 	}
-	nonMember := BigMandelbrotMember{
+	nonMember := BigEscapeValue{
 		C: &non,
 		SqrtDivergeLimit: &sqrtDL,
 		Prec: testPrec,
