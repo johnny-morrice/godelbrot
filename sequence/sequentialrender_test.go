@@ -39,14 +39,14 @@ func TestMake(t *testing.T) {
 }
 
 func TestStrategyRender(t *testing.T) {
+    const ilimit = 255
     if testing.Short() {
         t.Skip("Skipping test in short mode")
     }
 
     expectedPic := image.NewNRGBA(image.ZR)
-    context := &draw.MockDrawingContext{
-        Pic: expectedPic,
-    }
+    context := draw.NewMockDrawingContext(ilimit)
+    context.Pic = expectedPic
     numerics := &MockNumerics{}
 
     renderer := SequenceRenderStrategy{
