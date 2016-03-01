@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestAutoConf(t *testing.T) {
-	info, noErr := AutoConf(DefaultRequest())
+func TestConfigure(t *testing.T) {
+	info, noErr := Configure(DefaultRequest())
 
 	if info == nil {
 		t.Error("RenderContext created from default description should not be nil")
@@ -15,7 +15,7 @@ func TestAutoConf(t *testing.T) {
 		t.Error("There should be no error from constructing the default RenderContext")
 	}
 
-	noInfo, realErr := AutoConf(&Request{})
+	noInfo, realErr := Configure(&Request{})
 
 	if realErr == nil {
 		t.Error("Expect error after trying to create context from no description")

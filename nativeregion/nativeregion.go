@@ -282,7 +282,7 @@ func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nati
 	right := real(max)
 	top := imag(max)
 	bottom := imag(min)
-	mid := ((max - min) / 2) + min
+	mid := (max + min) / 2
 
 	coords := []complex128{
 		complex(left, top),
