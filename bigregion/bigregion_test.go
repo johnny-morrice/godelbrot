@@ -97,30 +97,6 @@ func TestMandelbrotPoints(t *testing.T) {
 	}
 }
 
-func TestEvaluateAllPoints(t *testing.T) {
-	const iterLimit = 1
-	numerics := BigRegionNumerics{}
-	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
-
-	for _, thunk := range numerics.Region.thunks() {
-		thunk.C = &thunk.cStore
-		thunk.SqrtDivergeLimit = &numerics.SqrtDivergeLimit
-	}
-
-	numerics.EvaluateAllPoints(iterLimit)
-	region := numerics.Region
-
-	okay := region.topLeft.evaluated
-	okay = okay && region.topRight.evaluated
-	okay = okay && region.bottomLeft.evaluated
-	okay = okay && region.bottomRight.evaluated
-	okay = okay && region.midPoint.evaluated
-
-	if !okay {
-		t.Error("Expected all points to be evaluated, but region was:", region)
-	}
-}
-
 func TestRect(t *testing.T) {
 	left := -1.0
 	bottom := -1.0
@@ -172,8 +148,6 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 
 	subjectRegion := createBigRegion(initMin, initMax)
 
-	t.Log("Subject middle:", bigbase.DbgC(subjectRegion.midPoint.cStore))
-
 	expected := []bigRegion{
 		createBigRegion(topLeftMin, topLeftMax),
 		createBigRegion(topRightMin, topRightMax),
@@ -188,21 +162,20 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	numerics.Split()
 	actualChildren := numerics.subregion.children
 
-	for i, ex := range expected {
-		actual := actualChildren[i]
-		exPoints := ex.thunks()
-		acPoints := actual.thunks()
+	for i, expectReg := range expected {
+		actReg := actualChildren[i]
+		exPoints := expectReg.points()
+		acPoints := actReg.points()
 
 		fail := false
-		for j, expectThunk := range exPoints {
-			actThunk := acPoints[j]
-			okay := bigbase.BigComplexEq(&expectThunk.cStore, &actThunk.cStore)
-			okay = okay && bigbase.BigComplexEq(expectThunk.C, actThunk.C)
+		for j, ep := range exPoints {
+			ap := acPoints[j]
+			okay := bigbase.BigComplexEq(ep.C, ap.C)
 			if !okay {
 				fail = true
-				t.Log("Region", i, "error at thunk", j,
-					"\nexpected\t", bigbase.DbgC(expectThunk.cStore),
-					"\nbut received\t", bigbase.DbgC(actThunk.cStore))
+				t.Log("Region", i, "error at point", j,
+					"\nexpected\t", bigbase.DbgC(*ep.C),
+					"\nbut received\t", bigbase.DbgC(*ap.C))
 			}
 		}
 		if fail {

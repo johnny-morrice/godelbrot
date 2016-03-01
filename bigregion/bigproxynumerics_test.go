@@ -8,13 +8,13 @@ import (
 )
 
 func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
+	const prec = 53
+	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
+	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
+
 	big := BigRegionNumericsProxy{}
 	big.BigRegionNumerics = &BigRegionNumerics{}
-	big.LocalRegion = bigRegion{
-		topLeft: bigMandelbrotThunk{
-			evaluated: true,
-		},
-	}
+	big.LocalRegion = createBigRegion(min, max)
 
 	big.ClaimExtrinsics()
 
@@ -25,13 +25,16 @@ func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
 }
 
 func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
+	const picW = 100
+	const picH = 100
+
 	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
 	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
 	region := createBigRegion(min, max)
 
 	app := &bigbase.MockRenderApplication{}
-	app.PictureWidth = 100
-	app.PictureHeight = 100
+	app.PictureWidth = picW
+	app.PictureHeight = picH
 	app.UserMin = bigbase.MakeBigComplex(-2.0, -2.0, prec)
 	app.UserMax = bigbase.MakeBigComplex(2.0, 2.0, prec)
 
@@ -45,6 +48,8 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 	bsnp.ClaimExtrinsics()
 
 	expect := base.BaseNumerics{
+		WholeWidth: picW,
+		WholeHeight: picH,
 		PicXMin: 25,
 		PicXMax: 75,
 		PicYMin: 25,
@@ -58,14 +63,14 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 	}
 }
 
-// Regions are considered equal on basis of cStore value
+// regionEq returns true when its inputs have the same locations in space
 func regionEq(areg, breg bigRegion) bool {
-	aths := areg.thunks()
-	bths := breg.thunks()
+	aths := areg.points()
+	bths := breg.points()
 
 	for i, a := range(aths) {
 		b := bths[i]
-		if !bigbase.BigComplexEq(&a.cStore, &b.cStore) {
+		if !bigbase.BigComplexEq(a.C, b.C) {
 			return false
 		}
 	}

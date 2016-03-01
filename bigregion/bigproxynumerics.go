@@ -14,15 +14,15 @@ type BigRegionNumericsProxy struct {
 
 var _ region.RegionNumerics = BigRegionNumericsProxy{}
 
-func (brnp BigRegionNumericsProxy) ClaimExtrinsics() {
-	brnp.BigRegionNumerics.Region = brnp.LocalRegion
+func (proxy BigRegionNumericsProxy) ClaimExtrinsics() {
+	proxy.BigRegionNumerics.Region = proxy.LocalRegion
 }
 
-func (brnp BigRegionNumericsProxy) Extrinsically(f func()) {
-    old := brnp.BigRegionNumerics.Region
-    brnp.ClaimExtrinsics()
+func (proxy BigRegionNumericsProxy) Extrinsically(f func()) {
+    old := proxy.BigRegionNumerics.Region
+    proxy.ClaimExtrinsics()
     f()
-    brnp.BigRegionNumerics.Region = old
+    proxy.BigRegionNumerics.Region = old
 }
 
 type BigSequenceNumericsProxy struct {
@@ -33,23 +33,23 @@ type BigSequenceNumericsProxy struct {
 var _ sequence.SequenceNumerics = BigSequenceNumericsProxy{}
 
 // TODO remove method.  Use Extrinsically instead.
-func (bsnp BigSequenceNumericsProxy) ClaimExtrinsics() {
-    base := bsnp.BigSequenceNumerics.BigBaseNumerics
-    rectangle := bsnp.LocalRegion.rect(&base)
-    bsnp.BigSequenceNumerics.SubImage(rectangle)
+func (proxy BigSequenceNumericsProxy) ClaimExtrinsics() {
+    base := proxy.BigSequenceNumerics.BigBaseNumerics
+    rectangle := proxy.LocalRegion.rect(&base)
+    proxy.BigSequenceNumerics.SubImage(rectangle)
 }
 
-func (bsnp BigSequenceNumericsProxy) Extrinsically(f func()) {
-    cmin := bigbase.BigComplex{bsnp.RealMin, bsnp.ImagMin}
-    cmax := bigbase.BigComplex{bsnp.RealMax, bsnp.ImagMax}
+func (proxy BigSequenceNumericsProxy) Extrinsically(f func()) {
+    cmin := bigbase.BigComplex{proxy.RealMin, proxy.ImagMin}
+    cmax := bigbase.BigComplex{proxy.RealMax, proxy.ImagMax}
 
-    bsnp.ClaimExtrinsics()
+    proxy.ClaimExtrinsics()
     f()
-    bsnp.RealMin = cmin.R
-    bsnp.ImagMin = cmin.I
-    bsnp.RealMax = cmax.R
-    bsnp.ImagMax = cmax.I
+    proxy.RealMin = cmin.R
+    proxy.ImagMin = cmin.I
+    proxy.RealMax = cmax.R
+    proxy.ImagMax = cmax.I
 
     // Should we cache this somewhere?  New object?
-    bsnp.RestorePicBounds()
+    proxy.RestorePicBounds()
 }
