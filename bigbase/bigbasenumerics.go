@@ -136,9 +136,41 @@ func (bbn *BigBaseNumerics) MakeMember(c *BigComplex) BigMandelbrotMember {
 	}
 }
 
-// TODO
 func (bbn *BigBaseNumerics) SubImage(rect image.Rectangle) {
+	min := bbn.PixelToPlane(rect.Min.X, rect.Min.Y)
+	max := bbn.PixelToPlane(rect.Max.X, rect.Max.Y)
 
+	bbn.PictureSubImage(rect)
+
+	bbn.RealMin = min.R
+	bbn.ImagMin = min.I
+	bbn.RealMax = max.R
+	bbn.ImagMax = max.I
+}
+
+func (bbn *BigBaseNumerics) PixelToPlane(i, j int) BigComplex {
+	rUnit, iUnit := bbn.PixelSize()
+
+	x := bbn.MakeBigFloat(float64(i))
+	y := bbn.MakeBigFloat(float64(j))
+
+	// Scale
+	re := bbn.MakeBigFloat(0.0)
+	re.Mul(&x, &rUnit)
+
+	im := bbn.MakeBigFloat(0.0)
+	im.Mul(&y, &iUnit)
+
+	// Translate
+	re.Add(&re, &bbn.RealMin)
+	im.Sub(&bbn.ImagMax, &im)
+
+	return BigComplex{re, im}
+}
+
+// Size on the plane of 1px
+func (bbn *BigBaseNumerics) PixelSize() (big.Float, big.Float) {
+	return bbn.Runit, bbn.Iunit
 }
 
 type UnitQuery struct {
