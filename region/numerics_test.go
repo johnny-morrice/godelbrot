@@ -2,6 +2,7 @@ package region
 
 import (
     "testing"
+    "github.com/johnny-morrice/godelbrot/draw"
 )
 
 func TestRenderSequenceRegion(t *testing.T) {
@@ -11,7 +12,8 @@ func TestRenderSequenceRegion(t *testing.T) {
         MockSequence: mockSequence,
     }
     // Not inspecting contract re DrawingContext
-    RenderSequenceRegion(mockRegion, nil)
+    context := draw.NewMockDrawingContext(iterateLimit)
+    RenderSequenceRegion(mockRegion, context)
 
     if !mockRegion.TRegionSequence {
         t.Error("Expected methods not called on mockRegion:", mockRegion)
