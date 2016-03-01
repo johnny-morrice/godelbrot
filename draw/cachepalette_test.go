@@ -14,7 +14,7 @@ func TestColor(t *testing.T) {
 	white := color.NRGBA{255, 255, 255, 255}
 	palette := NewCachePalette(iterLimit, white, cacher)
 
-	inSet := base.BaseMandelbrot{InSet: true}
+	inSet := base.MandelbrotMember{InSet: true}
 
 	actualInSet := palette.Color(inSet)
 	if white != actualInSet {
@@ -23,7 +23,7 @@ func TestColor(t *testing.T) {
 
 	for i := uint8(0); i < iterLimit; i++ {
 		expect := color.NRGBA{i, i, i, 255}
-		member := base.BaseMandelbrot{InvDivergence: i}
+		member := base.MandelbrotMember{InvDiv: i}
 		actual := palette.Color(member)
 
 		if expect != actual {
