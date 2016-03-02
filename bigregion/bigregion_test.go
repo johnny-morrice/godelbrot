@@ -3,7 +3,11 @@ package bigregion
 import (
 	"math/big"
 	"testing"
+	"github.com/johnny-morrice/godelbrot/base"
 	"github.com/johnny-morrice/godelbrot/bigbase"
+	"github.com/johnny-morrice/godelbrot/region"
+	"github.com/johnny-morrice/godelbrot/nativeregion"
+	"github.com/johnny-morrice/godelbrot/nativebase"
 )
 
 const prec = 53
@@ -191,4 +195,93 @@ type bigRegionSplitHelper struct {
 	top    big.Float
 	midR   big.Float
 	midI   big.Float
+}
+
+type fRegFactory func() region.RegionNumerics
+
+var _ region.RegionNumericsFactory = fRegFactory(func () region.RegionNumerics { return nil })
+
+func (f fRegFactory) Build() region.RegionNumerics {
+	return f()
+}
+
+func TestSampleDivs(t *testing.T) {
+	const pWidth = 100
+	const pHeight = 100
+	const iLimit = 255
+	const dLimit = 1.42
+	const maxRegSz = 10
+	const samples = 100
+	const natMin = complex(-2.0, -2.0)
+	const natMax = complex(2.0, 2.0)
+	const prec = 53
+
+	bigMin := bigbase.MakeBigComplex(real(natMin), imag(natMax), prec)
+	bigMax := bigbase.MakeBigComplex(real(natMax), imag(natMax), prec)
+
+	mockBase := base.MockRenderApplication{}
+	mockBase.PictureWidth = pWidth
+	mockBase.PictureHeight = pHeight
+	mockBase.Base.IterateLimit = iLimit
+	mockBase.Base.DivergeLimit = dLimit
+	mockBase.Base.FixAspect = true
+
+	regConfig := region.RegionConfig{}
+	regConfig.CollapseSize = maxRegSz
+	regConfig.Samples = samples
+
+	bigCoords := bigbase.MockBigCoordProvider{}
+	bigCoords.UserMin = bigMin
+	bigCoords.UserMax = bigMax
+	bigCoords.Prec = prec
+
+	bigProvider := region.MockRegionProvider{}
+	bigProvider.RegConfig = regConfig
+	bigProvider.RegionFactory = fRegFactory(func () region.RegionNumerics {
+		app := &MockRenderApplication{}
+		app.MockRegionProvider = bigProvider
+		app.MockRenderApplication = mockBase
+		app.MockBigCoordProvider = bigCoords
+		bignums := Make(app)
+		return &bignums
+	})
+
+	nativeCoords := nativebase.MockNativeCoordProvider{}
+	nativeCoords.PlaneMin = natMin
+	nativeCoords.PlaneMax = natMax
+
+	nativeProvider := region.MockRegionProvider{}
+	nativeProvider.RegConfig = regConfig
+	nativeProvider.RegionFactory = fRegFactory(func () region.RegionNumerics {
+		app := &nativeregion.MockRenderApplication{}
+		app.MockNativeCoordProvider = nativeCoords
+		app.MockRegionProvider = nativeProvider
+		app.MockRenderApplication = mockBase
+		natnums := nativeregion.Make(app)
+		return &natnums
+	})
+
+	bReg := bigProvider.RegionFactory.Build()
+	nReg := bigProvider.RegionFactory.Build()
+
+	bich, _ := bReg.SampleDivs()
+	nich, _ := nReg.SampleDivs()
+	bs := slurp(bich)
+	ns := slurp(nich)
+
+	for i, bInvDiv := range bs {
+		nInvDiv := ns[i]
+		if bInvDiv != nInvDiv {
+			t.Error("Mismatch InvDiv at sample ", i,
+				"native was", nInvDiv, "but big was", bInvDiv)
+		}
+	}
+}
+
+func slurp(idivch <-chan uint8) []uint8 {
+	out := []uint8{}
+	for idiv := range idivch {
+		out = append(out, idiv)
+	}
+	return out
 }
