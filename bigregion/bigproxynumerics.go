@@ -1,6 +1,7 @@
 package bigregion
 
 import (
+    "math/big"
     "github.com/johnny-morrice/godelbrot/sequence"
     "github.com/johnny-morrice/godelbrot/region"
     "github.com/johnny-morrice/godelbrot/bigsequence"
@@ -42,6 +43,23 @@ func (proxy BigSequenceNumericsProxy) ClaimExtrinsics() {
 func (proxy BigSequenceNumericsProxy) Extrinsically(f func()) {
     cmin := bigbase.BigComplex{proxy.RealMin, proxy.ImagMin}
     cmax := bigbase.BigComplex{proxy.RealMax, proxy.ImagMax}
+
+    orig := []*big.Float{
+        &cmin.R,
+        &cmin.I,
+        &cmax.R,
+        &cmax.I,
+    }
+    copy := make([]*big.Float, len(orig))
+    for i, bound := range orig {
+        cp := big.NewFloat(0.0)
+        cp.Copy(bound)
+        copy[i] = cp
+    }
+    proxy.RealMin = *copy[0]
+    proxy.ImagMin = *copy[1]
+    proxy.RealMax = *copy[2]
+    proxy.ImagMax = *copy[3]
 
     proxy.ClaimExtrinsics()
     f()
