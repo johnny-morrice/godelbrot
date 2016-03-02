@@ -9,12 +9,17 @@ import (
 
 func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
 	const prec = 53
-	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
-	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
+	const ilim = 255
+	parent := bigbase.BigBaseNumerics{}
+	parent.IterateLimit = ilim
+	parent.Precision = prec
+	parent.SqrtDivergeLimit = parent.MakeBigFloat(2.0)
+	min := parent.MakeBigComplex(-1.0, -1.0)
+	max := parent.MakeBigComplex(1.0, 1.0)
 
 	big := BigRegionNumericsProxy{}
 	big.BigRegionNumerics = &BigRegionNumerics{}
-	big.LocalRegion = createBigRegion(min, max)
+	big.LocalRegion = createBigRegion(parent, min, max)
 
 	big.ClaimExtrinsics()
 
@@ -28,17 +33,18 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 	const picW = 100
 	const picH = 100
 
-	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
-	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
-	region := createBigRegion(min, max)
-
 	app := &bigbase.MockRenderApplication{}
 	app.PictureWidth = picW
 	app.PictureHeight = picH
 	app.UserMin = bigbase.MakeBigComplex(-2.0, -2.0, prec)
 	app.UserMax = bigbase.MakeBigComplex(2.0, 2.0, prec)
+	app.Prec = prec
 
 	numerics := bigsequence.Make(app)
+
+	min := bigbase.MakeBigComplex(-1.0, -1.0, prec)
+	max := bigbase.MakeBigComplex(1.0, 1.0, prec)
+	region := createBigRegion(numerics.BigBaseNumerics, min, max)
 
 	bsnp := BigSequenceNumericsProxy{
 		BigSequenceNumerics: &numerics,

@@ -41,26 +41,6 @@ func (br *bigRegion) rect(base *bigbase.BigBaseNumerics) image.Rectangle {
 	return image.Rect(l, t, r, b)
 }
 
-func (brn *BigRegionNumerics) createRelativeRegion(min *bigbase.BigComplex, max *bigbase.BigComplex) bigRegion {
-	left := min.Real()
-	right := max.Real()
-	bottom := min.Imag()
-	top := max.Imag()
-
-	midR := brn.MakeBigFloat(0.0)
-	midR.Sub(right, left)
-	midI := brn.MakeBigFloat(0.0)
-	midI.Sub(top, bottom)
-
-	return bigRegion{
-		topLeft:     brn.MakeMember(&bigbase.BigComplex{*left, *top}),
-		topRight:    brn.MakeMember(&bigbase.BigComplex{*right, *top}),
-		bottomLeft:  brn.MakeMember(&bigbase.BigComplex{*bottom, *left}),
-		bottomRight: brn.MakeMember(&bigbase.BigComplex{*bottom, *right}),
-		midPoint:    brn.MakeMember(&bigbase.BigComplex{midR, midI}),
-	}
-}
-
 // BigRegionNumerics is implementation of RegionNumerics that uses big.Float bignums for arbitrary
 // accuracy.
 type BigRegionNumerics struct {
@@ -77,12 +57,13 @@ func Make(app RenderApplication) BigRegionNumerics {
 	parent := bigbase.Make(app)
 	planeMin := bigbase.BigComplex{parent.RealMin, parent.ImagMin}
 	planeMax := bigbase.BigComplex{parent.RealMax, parent.ImagMax}
-	return BigRegionNumerics{
+	reg := BigRegionNumerics{
 		BigBaseNumerics: parent,
 		RegionConfig: app.RegionConfig(),
 		SequenceNumerics: &sequence,
-		Region: createBigRegion(planeMin, planeMax),
+		Region: createBigRegion(parent, planeMin, planeMax),
 	}
+	return reg
 }
 
 func (brn *BigRegionNumerics) ClaimExtrinsics() {
@@ -170,15 +151,15 @@ func (brn *BigRegionNumerics) Split() {
 	bottomSectorMid.Add(&bottom, &midI)
 	bottomSectorMid.Quo(&bottomSectorMid, &bigTwo)
 
-	topSideMid := brn.MakeMember(&bigbase.BigComplex{midR, top})
-	bottomSideMid := brn.MakeMember(&bigbase.BigComplex{midR, bottom})
-	leftSideMid := brn.MakeMember(&bigbase.BigComplex{left, midI})
-	rightSideMid := brn.MakeMember(&bigbase.BigComplex{right, midI})
+	topSideMid := brn.Escape(&bigbase.BigComplex{midR, top})
+	bottomSideMid := brn.Escape(&bigbase.BigComplex{midR, bottom})
+	leftSideMid := brn.Escape(&bigbase.BigComplex{left, midI})
+	rightSideMid := brn.Escape(&bigbase.BigComplex{right, midI})
 
-	topLeftMid := brn.MakeMember(&bigbase.BigComplex{leftSectorMid, topSectorMid})
-	topRightMid := brn.MakeMember(&bigbase.BigComplex{rightSectorMid, topSectorMid})
-	bottomLeftMid := brn.MakeMember(&bigbase.BigComplex{leftSectorMid, bottomSectorMid})
-	bottomRightMid := brn.MakeMember(&bigbase.BigComplex{rightSectorMid, bottomSectorMid})
+	topLeftMid := brn.Escape(&bigbase.BigComplex{leftSectorMid, topSectorMid})
+	topRightMid := brn.Escape(&bigbase.BigComplex{rightSectorMid, topSectorMid})
+	bottomLeftMid := brn.Escape(&bigbase.BigComplex{leftSectorMid, bottomSectorMid})
+	bottomRightMid := brn.Escape(&bigbase.BigComplex{rightSectorMid, bottomSectorMid})
 
 	tl := bigRegion{
 		topLeft:     r.topLeft,
@@ -253,8 +234,7 @@ func (brn *BigRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
 	}
 
 	eval := func (r, i *big.Float) uint8 {
-		p := brn.MakeMember(&bigbase.BigComplex{*r, *i})
-		p.Mandelbrot(brn.IterateLimit)
+		p := brn.Escape(&bigbase.BigComplex{*r, *i})
 		return p.InvDiv
 	}
 
@@ -298,20 +278,19 @@ func (brn *BigRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
 	close(idivch)
 }
 
-func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
+func createBigRegion(big bigbase.BigBaseNumerics, min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 	left := min.R
 	bottom := min.I
 	right := max.R
 	top := max.I
 
-	prec := left.Prec()
-	bigTwo := bigbase.MakeBigFloat(2.0, prec)
+	bigTwo := big.MakeBigFloat(2.0)
 
-	midR := bigbase.MakeBigFloat(0.0, prec)
+	midR := big.MakeBigFloat(0.0)
 	midR.Add(&right, &left)
 	midR.Quo(&midR, &bigTwo)
 
-	midI := bigbase.MakeBigFloat(0.0, prec)
+	midI := big.MakeBigFloat(0.0)
 	midI.Add(&top, &bottom)
 	midI.Quo(&midI, &bigTwo)
 
@@ -326,11 +305,10 @@ func createBigRegion(min bigbase.BigComplex, max bigbase.BigComplex) bigRegion {
 	points := make([]bigbase.BigEscapeValue, len(coords))
 
 	for i, c := range coords {
-		p := bigbase.BigEscapeValue{}
-		z := bigbase.MakeBigComplex(0.0, 0.0, prec)
+		z := big.MakeBigComplex(0.0, 0.0)
 		z.R.Copy(c.Real())
 		z.I.Copy(c.Imag())
-		p.C = &z
+		p := big.Escape(&z)
 		points[i] = p
 	}
 

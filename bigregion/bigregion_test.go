@@ -134,6 +134,10 @@ func TestRect(t *testing.T) {
 
 func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	const iterlim = 255
+	parent := bigbase.BigBaseNumerics{}
+	parent.Precision = prec
+	parent.SqrtDivergeLimit = parent.MakeBigFloat(2.0)
+	parent.IterateLimit = iterlim
 
 	initMin := bigbase.BigComplex{helper.left, helper.bottom}
 	initMax := bigbase.BigComplex{helper.right, helper.top}
@@ -150,19 +154,18 @@ func testRegionSplit(helper bigRegionSplitHelper, t *testing.T) {
 	bottomRightMin := bigbase.BigComplex{helper.midR, helper.bottom}
 	bottomRightMax := bigbase.BigComplex{helper.right, helper.midI}
 
-	subjectRegion := createBigRegion(initMin, initMax)
+	subjectRegion := createBigRegion(parent, initMin, initMax)
 
 	expected := []bigRegion{
-		createBigRegion(topLeftMin, topLeftMax),
-		createBigRegion(topRightMin, topRightMax),
-		createBigRegion(bottomLeftMin, bottomLeftMax),
-		createBigRegion(bottomRightMin, bottomRightMax),
+		createBigRegion(parent, topLeftMin, topLeftMax),
+		createBigRegion(parent, topRightMin, topRightMax),
+		createBigRegion(parent, bottomLeftMin, bottomLeftMax),
+		createBigRegion(parent, bottomRightMin, bottomRightMax),
 	}
 
 	numerics := BigRegionNumerics{}
+	numerics.BigBaseNumerics = parent
 	numerics.Region = subjectRegion
-	numerics.SqrtDivergeLimit = bigbase.MakeBigFloat(2.0, prec)
-	numerics.Precision = prec
 	numerics.Split()
 	actualChildren := numerics.subregion.children
 
