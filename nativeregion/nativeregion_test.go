@@ -106,21 +106,23 @@ func TestRect(t *testing.T) {
 
 	min := complex(left, bottom)
 	max := complex(right, top)
-	numerics := &NativeRegionNumerics{
-		NativeBaseNumerics: nativebase.NativeBaseNumerics{
-			BaseNumerics: base.BaseNumerics{
-				PicXMin: 0,
-				PicXMax: picSide,
-				PicYMin: 0,
-				PicYMax: picSide,
-			},
-			RealMin: left,
-			RealMax: right,
-			ImagMin: bottom,
-			ImagMax: top,
+	parent := nativebase.NativeBaseNumerics{
+		BaseNumerics: base.BaseNumerics{
+			PicXMin: 0,
+			PicXMax: picSide,
+			PicYMin: 0,
+			PicYMax: picSide,
 		},
-		Region:  createNativeRegion(min, max, sqrtDLimit),
+		SqrtDivergeLimit: sqrtDLimit,
+		RealMin: left,
+		RealMax: right,
+		ImagMin: bottom,
+		ImagMax: top,
 	}
+	numerics := &NativeRegionNumerics{
+		NativeBaseNumerics: parent,
+	}
+	numerics.Region = createNativeRegion(parent, min, max)
 
 	uq := nativebase.UnitQuery{picSide, picSide, planeSide, planeSide}
 	numerics.Runit, numerics.Iunit = uq.PixelUnits()
@@ -144,6 +146,10 @@ func TestRect(t *testing.T) {
 
 func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 	const iterlim = uint8(255)
+	parent := nativebase.NativeBaseNumerics{}
+	parent.SqrtDivergeLimit = sqrtDLimit
+	parent.IterateLimit = iterlim
+
 	initMin := complex(helper.left, helper.bottom)
 	initMax := complex(helper.right, helper.top)
 
@@ -159,19 +165,19 @@ func testRegionSplit(helper NativeRegionSplitHelper, t *testing.T) {
 	bottomRightMin := complex(helper.midR, helper.bottom)
 	bottomRightMax := complex(helper.right, helper.midI)
 
-	subjectRegion := createNativeRegion(initMin, initMax, sqrtDLimit)
+	subjectRegion := createNativeRegion(parent, initMin, initMax)
 
 	expected := []nativeRegion{
-		createNativeRegion(topLeftMin, topLeftMax, sqrtDLimit),
-		createNativeRegion(topRightMin, topRightMax, sqrtDLimit),
-		createNativeRegion(bottomLeftMin, bottomLeftMax, sqrtDLimit),
-		createNativeRegion(bottomRightMin, bottomRightMax, sqrtDLimit),
+		createNativeRegion(parent, topLeftMin, topLeftMax),
+		createNativeRegion(parent, topRightMin, topRightMax),
+		createNativeRegion(parent, bottomLeftMin, bottomLeftMax),
+		createNativeRegion(parent, bottomRightMin, bottomRightMax),
 	}
 
 	numerics := NativeRegionNumerics{
 		Region: subjectRegion,
 	}
-	numerics.SqrtDivergeLimit = sqrtDLimit
+	numerics.NativeBaseNumerics = parent
 	numerics.Split()
 	actualChildren := numerics.subregion.children
 

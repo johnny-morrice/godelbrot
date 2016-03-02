@@ -55,13 +55,13 @@ func Make(app RenderApplication) NativeRegionNumerics {
 	parent := nativebase.Make(app)
 	planeMin := complex(parent.RealMin, parent.ImagMin)
 	planeMax := complex(parent.RealMax, parent.ImagMax)
-	divergeLimit := parent.SqrtDivergeLimit
-	return NativeRegionNumerics{
+	reg := NativeRegionNumerics{
 		NativeBaseNumerics: parent,
 		RegionConfig: app.RegionConfig(),
 		SequenceNumerics: &sequence,
-		Region: createNativeRegion(planeMin, planeMax, divergeLimit),
+		Region: createNativeRegion(parent, planeMin, planeMax),
 	}
+	return reg
 }
 
 func (native *NativeRegionNumerics) ClaimExtrinsics() {
@@ -144,15 +144,15 @@ func (native *NativeRegionNumerics) Split() {
 	topSectorMid := (top + midI) / 2.0
 	bottomSectorMid := (midI + bottom) / 2.0
 
-	topSideMid := native.createPoint(complex(midR, top))
-	bottomSideMid := native.createPoint(complex(midR, bottom))
-	leftSideMid := native.createPoint(complex(left, midI))
-	rightSideMid := native.createPoint(complex(right, midI))
+	topSideMid := native.Escape(complex(midR, top))
+	bottomSideMid := native.Escape(complex(midR, bottom))
+	leftSideMid := native.Escape(complex(left, midI))
+	rightSideMid := native.Escape(complex(right, midI))
 
-	topLeftMid := native.createPoint(complex(leftSectorMid, topSectorMid))
-	topRightMid := native.createPoint(complex(rightSectorMid, topSectorMid))
-	bottomLeftMid := native.createPoint(complex(leftSectorMid, bottomSectorMid))
-	bottomRightMid := native.createPoint(complex(rightSectorMid, bottomSectorMid))
+	topLeftMid := native.Escape(complex(leftSectorMid, topSectorMid))
+	topRightMid := native.Escape(complex(rightSectorMid, topSectorMid))
+	bottomLeftMid := native.Escape(complex(leftSectorMid, bottomSectorMid))
+	bottomRightMid := native.Escape(complex(rightSectorMid, bottomSectorMid))
 
 	tl := nativeRegion{
 		topLeft:     r.topLeft,
@@ -200,12 +200,6 @@ func (native *NativeRegionNumerics) RegionMember() base.EscapeValue {
 	return native.Region.topLeft.EscapeValue
 }
 
-func (native *NativeRegionNumerics) createPoint(c complex128) nativebase.NativeEscapeValue {
-	point := native.CreateMandelbrot(c)
-	point.Mandelbrot(native.IterateLimit)
-	return point
-}
-
 func (native *NativeRegionNumerics) Points() []nativebase.NativeEscapeValue {
 	region := native.Region
 	return []nativebase.NativeEscapeValue{
@@ -239,7 +233,7 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 	}
 
 	eval := func (r, i float64) uint8 {
-		p := native.createPoint(complex(r, i))
+		p := native.Escape(complex(r, i))
 		return p.InvDiv
 	}
 
@@ -277,7 +271,8 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 	close(idivch)
 }
 
-func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nativeRegion {
+// Does not evaluate points
+func createNativeRegion(nat nativebase.NativeBaseNumerics, min complex128, max complex128) nativeRegion {
 	left := real(min)
 	right := real(max)
 	top := imag(max)
@@ -294,7 +289,7 @@ func createNativeRegion(min complex128, max complex128, sqrtDLimit float64) nati
 
 	points := make([]nativebase.NativeEscapeValue, len(coords))
 	for i, c := range coords {
-		points[i] = nativebase.NativeEscapeValue{C: c, SqrtDivergeLimit: sqrtDLimit}
+		points[i] = nat.Escape(c)
 	}
 
 	region := nativeRegion{

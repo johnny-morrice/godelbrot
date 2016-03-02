@@ -43,6 +43,7 @@ func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
 
 	numerics := nativesequence.NativeSequenceNumerics{
 		NativeBaseNumerics: nativebase.NativeBaseNumerics{
+			SqrtDivergeLimit: sqrtDLimit,
 			BaseNumerics: base.BaseNumerics{
 				PicXMin: 0,
 				PicYMin: 0,
@@ -58,7 +59,7 @@ func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
 		},
 	}
 	native := NativeSequenceProxy{
-		LocalRegion:   createNativeRegion(regMin, regMax, sqrtDLimit),
+		LocalRegion:   createNativeRegion(numerics.NativeBaseNumerics, regMin, regMax),
 		NativeSequenceNumerics: &numerics,
 	}
 
