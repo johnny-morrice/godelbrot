@@ -79,25 +79,22 @@ func (c *configurator) chooseNumerics() error {
     return nil
 }
 
-func (c *configurator) selectUserPrec() uint {
+func (c *configurator) selectUserPrec() {
     userPrec := c.UserRequest.Precision
     if userPrec > 0 {
         c.Precision = userPrec
+    } else {
+        c.Precision = c.howManyBits()
     }
-    return userPrec
 }
 
 func (c *configurator) chooseAccurateNumerics() {
     // 53 bits precision is available to 64 bit floats
     const prec64 uint = 53
 
-    prec := c.selectUserPrec()
-    if prec < 1 {
-        prec = c.howManyBits()
-    }
-    c.Precision = prec
+    c.selectUserPrec()
     c.usePrec()
-    if prec > prec64 {
+    if c.Precision > prec64 {
         c.useBig()
     } else {
         c.useNative()
