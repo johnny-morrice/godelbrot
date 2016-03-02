@@ -185,9 +185,24 @@ func (c *configurator) useRegionRenderer() {
     c.RenderStrategy = RegionRenderMode
 }
 
+// Sample method to discover how many bits needed
 func (c *configurator) howManyBits() uint {
-    // For now, always choose Native Arithmetic
-    return 53
+    bounds := []big.Float{
+        c.RealMin,
+        c.RealMax,
+        c.ImagMin,
+        c.ImagMax,
+    }
+
+    bits := uint(0)
+    for _, bnd := range bounds {
+        prec := bnd.MinPrec()
+        if prec > bits {
+            bits = prec
+        }
+    }
+
+    return bits
 }
 
 func (c *configurator) choosePalette() error {

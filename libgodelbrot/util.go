@@ -7,17 +7,40 @@ import (
 
 // Parse a big.Float
 func parseBig(number string) (*big.Float, error) {
-    f, _, err := big.ParseFloat(number, DefaultBase, DefaultHighPrec, big.ToNearestEven)
+    bits := digits2bits(uint(len(number)))
+    f, _, err := big.ParseFloat(number, DefaultBase, bits, big.ToNearestEven)
     return f, err
 }
 
 func emitBig(b *big.Float) string {
-    return b.Text('e', bitDecAcc(b.MinPrec()))
+    digits := bits2digits(b.MinPrec())
+    return b.Text('e', int(digits))
 }
 
-func bitDecAcc(bits uint) int {
-    const maxi64 = ^uint64(0) >> 1
-    const topi = (^uint(0) >> 1) - 1
+const maxi64 = ^uint64(0) >> 1
+
+// Returns number of bits given number of digits
+func digits2bits(digits uint) uint {
+    if uint64(digits) > maxi64 {
+        log.Panic("int64 would overflow")
+    }
+
+    bits := big.NewInt(int64(digits))
+    two := big.NewInt(2)
+    ten := big.NewInt(10)
+    bits.Exp(ten, bits, nil)
+
+    count := uint(1)
+    for ; bits.Cmp(two) != -1; count++ {
+        bits.Div(bits, two)
+    }
+
+    return count
+}
+
+
+// Returns number of digits given number of bits
+func bits2digits(bits uint) uint {
     if uint64(bits) > maxi64 {
         log.Panic("int64 would overflow")
     }
@@ -26,14 +49,9 @@ func bitDecAcc(bits uint) int {
     ten := big.NewInt(10)
     digits.Exp(two, digits, nil)
 
-    var count int
-    for count = int(1); digits.Cmp(ten) != -1; count++ {
+    count := uint(1)
+    for ; digits.Cmp(ten) != -1; count++ {
         digits.Div(digits, ten)
-        // Check for overflow
-        // TODO analytic solution before loop
-        if uint(count) == topi {
-            log.Panic("int would overflow")
-        }
     }
 
     return count
