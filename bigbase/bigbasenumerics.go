@@ -173,6 +173,12 @@ func (bbn *BigBaseNumerics) PixelSize() (big.Float, big.Float) {
 	return bbn.Runit, bbn.Iunit
 }
 
+func (bbn *BigBaseNumerics) Escape(c *BigComplex) BigEscapeValue {
+	point := bbn.MakeMember(c)
+	point.Mandelbrot(bbn.IterateLimit)
+	return point
+}
+
 type UnitQuery struct {
 	pictureW uint
 	pictureH uint
