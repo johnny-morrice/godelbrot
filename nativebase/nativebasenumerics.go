@@ -113,6 +113,12 @@ func (nbn *NativeBaseNumerics) PixelToPlane(i, j int) complex128 {
 	return complex(tr, ti)
 }
 
+func (nbn *NativeBaseNumerics) Escape(c complex128) NativeEscapeValue {
+	point := nbn.CreateMandelbrot(c)
+	point.Mandelbrot(nbn.IterateLimit)
+	return point
+}
+
 func (nbn *NativeBaseNumerics) SubImage(rect image.Rectangle) {
 	min := nbn.PixelToPlane(rect.Min.X, rect.Min.Y)
 	max := nbn.PixelToPlane(rect.Max.X, rect.Max.Y)
