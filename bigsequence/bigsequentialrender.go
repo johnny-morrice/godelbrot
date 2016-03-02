@@ -31,15 +31,17 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 	out := make([]base.PixelMember, area)
 
 	pos := bigbase.BigComplex{
-		R: bsn.RealMin,
+		R: bsn.MakeBigFloat(0.0),
+		I: bsn.MakeBigFloat(0.0),
 	}
+	pos.R.Copy(&bsn.RealMin)
 	count := 0
 	member := bigbase.BigEscapeValue{
 		SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
 		Prec: bsn.Precision,
 	}
 	for i := ileft; i < iright; i++ {
-		pos.I = bsn.ImagMax
+		pos.I.Copy(&bsn.ImagMax)
 		for j := itop; j < ibott; j++ {
 			member.C = &pos
 			member.Mandelbrot(iterlim)
