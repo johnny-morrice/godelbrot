@@ -16,7 +16,7 @@ type MockRegionProvider struct {
     TRegionNumericsFactory bool
 
     RegConfig RegionConfig
-    RegionFactory *MockFactory
+    RegionFactory RegionNumericsFactory
 }
 
 func (mock *MockRegionProvider) RegionConfig() RegionConfig {
