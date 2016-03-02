@@ -14,7 +14,6 @@ type MockNativeCoordProvider struct {
 
     PlaneMin complex128
     PlaneMax complex128
-    FixAspect bool
 }
 
 func (mock *MockNativeCoordProvider) NativeUserCoords() (complex128, complex128) {
