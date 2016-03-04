@@ -238,6 +238,7 @@ func TestSampleDivs(t *testing.T) {
 	bigCoords.UserMax = bigMax
 	bigCoords.Prec = prec
 
+	// This business is over complicated
 	bigProvider := region.MockRegionProvider{}
 	bigProvider.RegConfig = regConfig
 	bigProvider.RegionFactory = fRegFactory(func () region.RegionNumerics {
