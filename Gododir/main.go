@@ -3,45 +3,67 @@
 package main
 
 import (
+    "fmt"
     do "gopkg.in/godo.v2"
 )
 
 const packageRoot = "github.com/johnny-morrice/godelbrot"
+const internalRoot = packageRoot + "/internal"
 
-var lib = []string{
-    "base",
-    "draw",
-    "sequence",
-    "region",
+type pkg struct {
+    name string
+    root string
 }
 
-var nativeArithmetic = []string{
-    "nativebase",
-    "nativesequence",
-    "nativeregion",
+func publicPkg(name string) pkg {
+    p := pkg{}
+    p.name = name
+    p.root = packageRoot
+    return p
 }
 
-var bigArithmetic = []string{
-   "bigbase",
-   "bigsequence",
-   "bigregion",
+func internalPkg(name string) pkg {
+    p := pkg{}
+    p.name = name
+    p.root = internalRoot
+    return p
 }
 
-var appBase = []string {
-    "libgodelbrot",
+var lib = []pkg{
+    internalPkg("base"),
+    internalPkg("draw"),
+    internalPkg("sequence"),
+    internalPkg("region"),
 }
 
-var apps = []string{
-    "configbrot",
-    "renderbrot",
-    "colorbrot",
+var nativeArithmetic = []pkg{
+    internalPkg("nativebase"),
+    internalPkg("nativesequence"),
+    internalPkg("nativeregion"),
 }
 
-var all []string
+var bigArithmetic = []pkg{
+   internalPkg("bigbase"),
+   internalPkg("bigsequence"),
+   internalPkg("bigregion"),
+}
+
+var appBase = []pkg {
+    publicPkg("libgodelbrot"),
+}
+
+var apps = []pkg{
+    publicPkg("configbrot"),
+    publicPkg("renderbrot"),
+    publicPkg("colorbrot"),
+    publicPkg(""), // Top level binary
+}
+
+var all []pkg
 
 // Group all packages in one slice
 func init() {
-    subsystems := [][]string{
+    subsystems := [][]pkg{
         lib,
         nativeArithmetic,
         bigArithmetic,
@@ -54,7 +76,7 @@ func init() {
 }
 
 func tasks(p *do.Project) {
-    units := map[string][]string{
+    units := map[string][]pkg{
         "lib": lib,
         "native": nativeArithmetic,
         "big": bigArithmetic,
@@ -70,21 +92,21 @@ func tasks(p *do.Project) {
     p.Task("default", do.S{"allInstall"}, nil)
 }
 
-func buildFeatures(p *do.Project, subsystem string, components []string) {
+func buildFeatures(p *do.Project, subsystem string, components []pkg) {
     var componentsInstall do.S
     var componentsTest do.S
     for _, module := range components {
-        install := installTaskName(module)
-        test := testTaskName(module)
+        install := installTaskName(module.name)
+        test := testTaskName(module.name)
         componentsInstall = append(componentsInstall, install)
         componentsTest = append(componentsTest, test)
 
-        p.Task(install, nil, func(unit string) func(c *do.Context) {
+        p.Task(install, nil, func(unit pkg) func(c *do.Context) {
             return func (c *do.Context) {
                 goInstall(c, unit)
             }
         }(module))
-        p.Task(test, nil, func(unit string) func(c *do.Context) {
+        p.Task(test, nil, func(unit pkg) func(c *do.Context) {
              return func (c *do.Context) {
                 goTest(c, unit)
             }
@@ -95,18 +117,14 @@ func buildFeatures(p *do.Project, subsystem string, components []string) {
     p.Task(testTaskName(subsystem), componentsTest, nil)
 }
 
-func goInstall(c *do.Context, unit string) {
-    command := "go install " + fullUnitPath(unit)
+func goInstall(c *do.Context, unit pkg) {
+    command := fmt.Sprintf("go install %v/%v", unit.root, unit.name)
     c.Run(command)
 }
 
-func goTest(c *do.Context, unit string) {
-    command := "go test " + fullUnitPath(unit)
+func goTest(c *do.Context, unit pkg) {
+    command := fmt.Sprintf("go test %v/%v", unit.root, unit.name)
     c.Run(command)
-}
-
-func fullUnitPath(module string) string {
-    return packageRoot + "/" + module
 }
 
 func installTaskName(module string) string {
