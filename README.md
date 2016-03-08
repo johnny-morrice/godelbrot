@@ -10,21 +10,26 @@ A Unix-style Mandelbrot set explorer in Go.
 * Configuration file generation tool (configbrot)
 * Subdividing regions algorithm
 * Arbitrary precision mode (and extensible internals)
+* Greyscale is default (for integration into an external pipeline)
 
 ## Philosophy
 
 * Worse is better
-* Greyscale is default
 * Few features
 * Designed for extensibility (both internally, and in command-line app usage).
 
 ## Get it
 
-    $ go get github.com/johnny-morrice/godelbrot/renderbrot
-    $ go get github.com/johnny-morrice/godelbrot/configbrot
-    $ go get github.com/johnny-morrice/godelbrot/colorbrot
+    $ go get github.com/johnny-morrice/godelbrot
+    $ go install -tags production github.com/johnny-morrice/godelbrot...
+
+As Godelbrot is a multiple-binary toolkit so the latter command installs all other binaries.
 
 ## Use it
+
+    $ godelbrot > mandelbrot.png
+
+Which is equivalent to:
 
     $ configbrot | renderbrot > mandelbrot.png
 
@@ -36,7 +41,7 @@ colorbrot is provided as a convenience for those who may like to recolour the ou
 
 ## You might also like
 
-Webdelbrot is a web front-end for Godelbrot.  
+Webdelbrot is a web front-end for Godelbrot.
 
 http://github.com/johnny-morrice/webdelbrot
 
