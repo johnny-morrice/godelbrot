@@ -3,9 +3,9 @@ package libgodelbrot
 import (
     "log"
     "image"
-    "github.com/johnny-morrice/godelbrot/sequence"
-    "github.com/johnny-morrice/godelbrot/nativesequence"
-    "github.com/johnny-morrice/godelbrot/bigsequence"
+    "github.com/johnny-morrice/godelbrot/internal/sequence"
+    "github.com/johnny-morrice/godelbrot/internal/nativesequence"
+    "github.com/johnny-morrice/godelbrot/internal/bigsequence"
 )
 
 type sequenceFacade struct {

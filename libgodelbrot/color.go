@@ -2,7 +2,7 @@ package libgodelbrot
 
 import (
     "image"
-    "github.com/johnny-morrice/godelbrot/base"
+    "github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 func Recolor(desc *Info, gray image.Image) *image.NRGBA {

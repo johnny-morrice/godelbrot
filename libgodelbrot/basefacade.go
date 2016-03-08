@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "github.com/johnny-morrice/godelbrot/base"
+    "github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 type baseFacade struct {

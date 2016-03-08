@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "github.com/johnny-morrice/godelbrot/nativeregion"
+    "github.com/johnny-morrice/godelbrot/internal/nativeregion"
 )
 
 type nativeRegionFacade struct {

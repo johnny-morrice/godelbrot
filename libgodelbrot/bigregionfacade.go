@@ -1,7 +1,7 @@
 package libgodelbrot
 
 import (
-    "github.com/johnny-morrice/godelbrot/bigregion"
+    "github.com/johnny-morrice/godelbrot/internal/bigregion"
 )
 
 type bigRegionFacade struct {

@@ -3,9 +3,9 @@ package libgodelbrot
 import (
     "log"
     "image"
-    "github.com/johnny-morrice/godelbrot/region"
-    "github.com/johnny-morrice/godelbrot/nativeregion"
-    "github.com/johnny-morrice/godelbrot/bigregion"
+    "github.com/johnny-morrice/godelbrot/internal/region"
+    "github.com/johnny-morrice/godelbrot/internal/nativeregion"
+    "github.com/johnny-morrice/godelbrot/internal/bigregion"
 )
 
 type regionProvider struct {
