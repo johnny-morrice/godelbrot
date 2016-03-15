@@ -53,9 +53,7 @@ http://functorama.com
 
 https://github.com/johnny-morrice
 
-**Gavin Leech**
-
-https://github.com/technicalities
+See HISTORY.md for contributors
 
 ## License
 
