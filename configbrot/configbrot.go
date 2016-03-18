@@ -65,7 +65,7 @@ func parseArguments() commandLine {
         "Render mode.  (auto|sequence|region)")
     flag.UintVar(&args.regionCollapse, "collapse",
         libgodelbrot.DefaultCollapse, "Pixel width of region at which sequential render is forced")
-    flag.UintVar(&args.glitchSamples, "regionGlitchSamples",
+    flag.UintVar(&args.glitchSamples, "samples",
         libgodelbrot.DefaultRegionSamples, "Size of region sample set")
     flag.UintVar(&args.precision, "prec",
         libgodelbrot.DefaultPrecision, "Precision for big.Float render mode")
@@ -115,6 +115,7 @@ func newRequest(args commandLine) (*libgodelbrot.Request, error) {
         "rmax": func () {req.RealMax = user.RealMax},
         "imin": func () {req.ImagMin = user.ImagMin},
         "imax": func () {req.ImagMax = user.ImagMax},
+        "samples": func() {req.RegionSamples = user.RegionSamples},
         "reconf": func() {},
     }
 
@@ -192,6 +193,7 @@ func main() {
     output := os.Stdout
 
     args := parseArguments()
+
     req, inerr := newRequest(args)
     if inerr != nil {
         log.Fatal("Error forming request: ", inerr)
