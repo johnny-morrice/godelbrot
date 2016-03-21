@@ -52,4 +52,4 @@ const DefaultBase int = 10
 const DefaultTinyImageArea uint = 40000
 
 // Default sample size for region glitch-correction
-const DefaultRegionSamples uint = 7
+const DefaultRegionSamples uint = 12
