@@ -168,10 +168,12 @@ func (c *configurator) chooseFastRenderStrategy() {
         log.Panic("Must choose render strategy after numerics system")
     }
 
-    if area < DefaultTinyImageArea && numerics == NativeNumericsMode {
-        // Use `SequenceRenderStrategy' when
-        // We have native arithmetic and the image is tiny
-        c.useSequenceRenderer()
+    bigsz := area > DefaultTinyImageArea
+    weirdbase := numerics != NativeNumericsMode
+    squarepic := req.ImageWidth == req.ImageHeight
+
+    if (bigsz || weirdbase) && squarepic {
+        c.useRegionRenderer()
     } else {
         c.useRegionRenderer()
     }
