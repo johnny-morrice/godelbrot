@@ -92,9 +92,9 @@ func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 	// Scale y
 	sy := ty / iUnit
 
-	rx = int(math.Floor(sx))
+	rx = round(sx)
 	// Remember that we draw downwards
-	ry = int(math.Ceil(sy))
+	ry = round(sy)
 
 	return
 }
@@ -142,4 +142,13 @@ func (uq UnitQuery) PixelUnits() (float64, float64) {
 	rUnit := uq.PlaneW / float64(uq.PictureW)
 	iUnit := uq.PlaneH / float64(uq.PictureH)
 	return rUnit, iUnit
+}
+
+func round(r float64) int {
+	frac := math.Abs(r - math.Floor(r))
+	if frac >= 0.5 {
+		return int(math.Ceil(r))
+	} else {
+		return int(math.Floor(r))
+	}
 }
