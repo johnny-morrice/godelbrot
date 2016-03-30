@@ -44,6 +44,24 @@ func (d distort) para(time *big.Float) *big.Float {
 
 // Frame zooms towards the target coordinates.  Degree = 1 is a complete zoom.
 func (z *Zoom) Magnify(degree float64) (*Info, error) {
+    info := z.lens(degree)
+
+    if z.UpPrec {
+        for !info.IsAccurate() {
+            info.AddPrec(1)
+            info.UserRequest = info.GenRequest()
+            info = z.lens(degree)
+        }
+    }
+
+    if z.Reconfigure {
+        return Configure(&info.UserRequest)
+    } else {
+        return info, nil
+    }
+}
+
+func (z *Zoom) lens(degree float64) *Info {
     baseapp := makeBaseFacade(&z.Prev)
     app := makeBigBaseFacade(&z.Prev, baseapp)
     num := bigbase.Make(app)
@@ -80,27 +98,20 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
         zoom[i] = d.para(&time)
     }
 
-    if z.UpPrec {
-        // What what what?
-    }
-
     req.RealMin = emitBig(zoom[0])
     req.ImagMin = emitBig(zoom[1])
     req.RealMax = emitBig(zoom[2])
     req.ImagMax = emitBig(zoom[3])
 
-    if z.Reconfigure {
-        return Configure(req)
-    } else {
-        info := new(Info)
-        *info = z.Prev
-        info.UserRequest = *req
-        info.RealMin = *zoom[0]
-        info.ImagMin = *zoom[1]
-        info.RealMax = *zoom[2]
-        info.ImagMax = *zoom[3]
-        return info, nil
-    }
+    info := new(Info)
+    *info = z.Prev
+    info.UserRequest = *req
+    info.RealMin = *zoom[0]
+    info.ImagMin = *zoom[1]
+    info.RealMax = *zoom[2]
+    info.ImagMax = *zoom[3]
+
+    return info
 }
 
 // Movie is a parametric expansion of frames.

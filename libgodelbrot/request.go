@@ -47,6 +47,50 @@ type Info struct {
     BigInfo
 }
 
+func (info *Info) bignums() []*big.Float {
+    return []*big.Float{
+        &info.RealMin,
+        &info.RealMax,
+        &info.ImagMin,
+        &info.ImagMax,
+    }
+}
+
+// IsAccurate returns True if the bignums used internally by info are all accurate.
+func (info *Info) IsAccurate() bool {
+    for _, x := range info.bignums() {
+        if x.Acc() == big.Below {
+            return false
+        }
+    }
+    return true
+}
+
+// AddPrec increases the precision of all Infos internal bignums by delta bits.
+func (info *Info) AddPrec(delta int) {
+    nextPrec := int(info.Precision) + delta
+    if nextPrec <= 0 {
+        msg := fmt.Sprintf("Invalid precision: %v", nextPrec)
+        panic(msg)
+    }
+    prec := uint(nextPrec)
+    info.Precision = prec
+    for _, x := range info.bignums() {
+        x.SetPrec(prec)
+    }
+}
+
+// Generate a user request that corresponts to the info numerics
+func (info *Info) GenRequest() Request {
+    req := info.UserRequest
+    req.RealMin = emitBig(&info.RealMin)
+    req.RealMax = emitBig(&info.RealMax)
+    req.ImagMin = emitBig(&info.ImagMin)
+    req.ImagMax = emitBig(&info.ImagMax)
+
+    return req
+}
+
 // UserInfo is a variant of Info that can be easily serialized
 type UserInfo struct {
     NativeInfo
