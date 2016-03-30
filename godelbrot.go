@@ -1,20 +1,13 @@
 package main
 
 import (
-    "bytes"
     "fmt"
     "os"
-    "os/exec"
-    "github.com/johnny-morrice/pipeline"
+    "github.com/johnny-morrice/godelbrot/process"
 )
 
 func main() {
-    config := exec.Command("configbrot", os.Args[1:]...)
-    render := exec.Command("renderbrot")
-
-    pl := pipeline.New(&bytes.Buffer{}, os.Stdout, os.Stderr)
-    pl.Chain(config, render)
-    err := pl.Exec()
+    err := process.Render(os.Stdout, os.Stderr, os.Args[1:])
     if err != nil {
         fatal(err)
     }
