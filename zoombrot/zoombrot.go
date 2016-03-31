@@ -1,11 +1,12 @@
 package main
 
 import (
+    "errors"
     "flag"
     "io"
     "log"
     "os"
-    "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
 func main() {
@@ -13,11 +14,19 @@ func main() {
     var output io.Writer = os.Stdout
 
     args := readArgs()
-
-    z, zerr := libgodelbrot.ReadZoom(input)
-    if zerr != nil {
-        log.Fatal("Could not read zoom:", zerr)
+    validerr := validateZoom(args)
+    if validerr != nil {
+        log.Fatal(validerr)
     }
+
+    info, readerr := lib.ReadInfo(input)
+    if readerr != nil {
+        log.Fatal("Could not read info:", readerr)
+    }
+
+    z := lib.Zoom{}
+    z.ZoomTarget = args.zt
+    z.Prev = *info
 
     frames, moverr := z.Movie(args.count)
     if moverr != nil {
@@ -25,7 +34,7 @@ func main() {
     }
 
     for _, info := range frames {
-        outerr := libgodelbrot.WriteInfo(output, info)
+        outerr := lib.WriteInfo(output, info)
         if outerr != nil {
             log.Println("Error writing output:", outerr)
             break
@@ -33,9 +42,22 @@ func main() {
     }
 }
 
+func validateZoom(args params) error {
+    if args.zt.Xmin >= args.zt.Xmax || args.zt.Ymin >= args.zt.Ymax {
+        return errors.New("Min and max zoom boundaries are invalid.")
+    }
+    return nil
+}
+
 func readArgs() params {
     args := params{}
     flag.UintVar(&args.count, "frames", 1, "Number of frames in zoom")
+    flag.UintVar(&args.zt.Xmin, "xmin", 0, "X-Min")
+    flag.UintVar(&args.zt.Xmax, "xmax", 0, "X-Max")
+    flag.UintVar(&args.zt.Ymin, "ymin", 0, "Y-Min")
+    flag.UintVar(&args.zt.Ymax, "ymax", 0, "Y-Max")
+    flag.BoolVar(&args.zt.Reconfigure, "reconf", true, "Reconfigure magnified request")
+    flag.BoolVar(&args.zt.UpPrec, "incprec", true, "Increase precision for zoom")
     flag.Parse()
 
     return args
@@ -43,4 +65,5 @@ func readArgs() params {
 
 type params struct {
     count uint
+    zt lib.ZoomTarget
 }
