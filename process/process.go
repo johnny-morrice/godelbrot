@@ -7,9 +7,22 @@ import (
     "github.com/johnny-morrice/pipeline"
 )
 
-// Render sends a new fractal image to the passed stdout pipe, corresponding to configbrot's
+// Config creates a new Info, given the args, and sends it to stdout.
+func Config(stdout, stderr io.Writer, args []string) error {
+    config := configbrot(args)
+    return runPipeCmd(config, &bytes.Buffer{}, stdout, stderr)
+}
+
+// Render sends a new fractal image to the passed stdout pipe, corresponding to the Info
+// serialized in stdin.
+func Render(stdin io.Reader, stdout, stderr io.Writer) error {
+    render := renderbrot()
+    return runPipeCmd(render, stdin, stdout, stderr)
+}
+
+// ConfigRender sends a new fractal image to the passed stdout pipe, corresponding to configbrot's
 // processing of the args slice.
-func Render(stdout, stderr io.Writer, args []string) error {
+func ConfigRender(stdout, stderr io.Writer, args []string) error {
     config := configbrot(args)
     render := renderbrot()
 
@@ -18,31 +31,27 @@ func Render(stdout, stderr io.Writer, args []string) error {
     return pl.Exec()
 }
 
-// Zoom reads *Info from stdin, and sends a fractal to stdout, returning the next *Info,
-// serialized as a io.Reader.
-func Zoom(stdin io.Reader, stdout, stderr io.Writer, args []string) (io.Reader, error) {
+// Zoom magnifies a section of the Info read from stdin, sending it to stdout.
+func Zoom(stdin io.Reader, stdout, stderr io.Writer, args[]string) error {
     zoom := zoombrot(args)
-    zoom.Stdin = stdin
-    zoom.Stderr = stderr
+    return runPipeCmd(zoom, stdin, stdout, stderr)
+}
 
-    zoombytes, zoomerr := zoom.Output()
+// Zoom reads Info from stdin, and sends a fractal to stdout, returning the magnified Info,
+// serialized as a io.Reader.
+func ZoomRender(stdin io.Reader, stdout, stderr io.Writer, args []string) (io.Reader, error) {
+    zoomBuff := &bytes.Buffer{}
+    zoomerr := Zoom(stdin, zoomBuff, stderr, args)
     if zoomerr != nil {
         return nil, zoomerr
     }
 
-    rendbuff, outbuff := bytes.NewBuffer(zoombytes), bytes.NewBuffer(zoombytes)
-    render := renderbrot()
-    render.Stdin = rendbuff
-    render.Stdout = stdout
-    render.Stderr = stderr
+    outbuff := &bytes.Buffer{}
+    rendin := io.TeeReader(zoomBuff, outbuff)
 
-    err := render.Run()
+    err := Render(rendin, stdout, stderr)
 
-    if err != nil {
-        return nil, err
-    }
-
-    return outbuff, nil
+    return outbuff, err
 }
 
 func zoombrot(args []string) *exec.Cmd {
@@ -55,4 +64,11 @@ func configbrot(args []string) *exec.Cmd {
 
 func renderbrot() *exec.Cmd {
     return exec.Command("renderbrot")
+}
+
+func runPipeCmd(cmd *exec.Cmd, stdin io.Reader, stdout, stderr io.Writer) error {
+    cmd.Stdin = stdin
+    cmd.Stdout = stdout
+    cmd.Stderr = stderr
+    return cmd.Run()
 }

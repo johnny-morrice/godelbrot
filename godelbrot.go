@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-    err := process.Render(os.Stdout, os.Stderr, os.Args[1:])
+    err := process.ConfigRender(os.Stdout, os.Stderr, os.Args[1:])
     if err != nil {
         fatal(err)
     }
