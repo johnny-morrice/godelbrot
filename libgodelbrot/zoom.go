@@ -34,7 +34,8 @@ func (d distort) para(time *big.Float) *big.Float {
     prec := d.next.Prec()
     delta := bigbase.MakeBigFloat(0.0, prec)
     delta.Sub(&d.prev, &d.next)
-    delta.Quo(&delta, time)
+    delta.Abs(&delta)
+    delta.Mul(&delta, time)
     if d.prev.Cmp(&d.next) > 0 {
         return delta.Sub(&d.prev, &delta)
     } else {
@@ -43,13 +44,23 @@ func (d distort) para(time *big.Float) *big.Float {
 }
 
 // Frame zooms towards the target coordinates.  Degree = 1 is a complete zoom.
+func (z *Zoom) rescope(degree float64) (*Info, error) {
+    info := z.lens(degree)
+
+    if z.Reconfigure {
+        return Configure(&info.UserRequest)
+    } else {
+        return info, nil
+    }
+}
+
 func (z *Zoom) Magnify(degree float64) (*Info, error) {
     info := z.lens(degree)
 
     if z.UpPrec {
         for !info.IsAccurate() {
-            info.AddPrec(1)
-            info.UserRequest = info.GenRequest()
+            z.Prev.AddPrec(1)
+            z.Prev.UserRequest = z.Prev.GenRequest()
             info = z.lens(degree)
         }
     }
@@ -116,17 +127,31 @@ func (z *Zoom) lens(degree float64) *Info {
 
 // Movie is a parametric expansion of frames.
 func (z *Zoom) Movie(count uint) ([]*Info, error) {
+    if count == 0 {
+        return []*Info{}, nil
+    }
+
+    // Compute last frame first to encourage numerical stability
+    const fullZoom = 1.0
+    last, lerr := z.Magnify(fullZoom)
+    if lerr != nil {
+        return nil, lerr
+    }
+
+    // Compute intervening frames
     interval := 1.0 / float64(count)
     time := 0.0
     frames := make([]*Info, count)
-    for i := uint(0); i < count; i++ {
+    for i := uint(0); i < count - 1; i++ {
         time += interval
-        info, err := z.Magnify(time)
+        info, err := z.rescope(time)
         if err != nil {
             return nil, err
         }
         frames[i] = info
     }
+
+    frames[count - 1] = last
     return frames, nil
 }
 
