@@ -12,21 +12,37 @@ func main() {
     var input io.Reader = os.Stdin
     var output io.Writer = os.Stdout
 
-    desc, readErr := lib.ReadInfo(input)
-
-    if readErr != nil {
-        log.Fatal("Error reading info: ", readErr)
+    frames := []*lib.Info{}
+    var frameErr error
+    for {
+        info, readerr := lib.ReadInfo(input)
+        if readerr != nil {
+            frameErr = readerr
+            break
+        }
+        frames = append(frames, info)
     }
 
-    picture, renderErr := lib.Render(desc)
-
-    if renderErr != nil {
-        log.Fatal("Render errror:", renderErr)
+    framecnt := len(frames)
+    if frameErr != nil {
+        log.Printf("Error after %v frames: %v", framecnt, frameErr)
     }
 
-    encodeErr := png.Encode(output, picture)
+    if framecnt == 0 {
+        log.Fatal("No input frames found")
+    }
 
-    if encodeErr != nil {
-        log.Fatal("Encoding error:", encodeErr)
+    for _, info := range frames {
+        picture, renderErr := lib.Render(info)
+
+        if renderErr != nil {
+            log.Fatal("Render errror:", renderErr)
+        }
+
+        encodeErr := png.Encode(output, picture)
+
+        if encodeErr != nil {
+            log.Fatal("Encoding error:", encodeErr)
+        }
     }
 }
