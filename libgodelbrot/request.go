@@ -5,7 +5,6 @@ import (
     "strconv"
     "encoding/json"
     "io"
-    "bytes"
     "fmt"
 )
 
@@ -162,14 +161,60 @@ func WriteInfo(w io.Writer, desc *Info) error {
 }
 
 func ReadInfo(r io.Reader) (*Info, error) {
-    buff := bytes.Buffer{}
-    _, rerr := buff.ReadFrom(r)
-
-    if rerr != nil {
-        return nil, rerr
+    ui := &UserInfo{}
+    dec := json.NewDecoder(r)
+    err := dec.Decode(ui)
+    if err != nil {
+        return nil, err
     }
+    return Unfriendly(ui)
+}
 
-    return FromJSON(buff.Bytes())
+type InfoPkt struct {
+    Info *Info
+    Err error
+}
+
+type uipkt struct {
+    ui *UserInfo
+    err error
+}
+
+func ReadInfoStream(r io.Reader) <-chan InfoPkt {
+    uich := make(chan uipkt)
+    go func() {
+        dec := json.NewDecoder(r)
+        for i := 0; dec.More(); i++ {
+            ui := &UserInfo{}
+            readerr := dec.Decode(ui)
+            if readerr != nil {
+                message := fmt.Errorf("Error after %v JSON objects: %v", i, readerr)
+                uich<- uipkt{err: message,}
+                continue
+            }
+            uich<- uipkt{ui: ui,}
+        }
+        close(uich)
+    }()
+
+    infoch := make(chan InfoPkt)
+    go func() {
+        for uipkt := range uich {
+            if uipkt.err != nil {
+                infoch<- InfoPkt{Err: uipkt.err,}
+                continue
+            }
+            inf, err := Unfriendly(uipkt.ui)
+            if err != nil {
+                infoch<- InfoPkt{Err: uipkt.err,}
+                continue
+            }
+            infoch<- InfoPkt{Info: inf,}
+        }
+        close(infoch)
+    }()
+
+    return infoch
 }
 
 // Available render algorithms
