@@ -54,35 +54,13 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
     }
 }
 
-func (z *Zoom) Magnify(degree float64) (*Info, error) {
-    info := z.lens(degree)
-
-    if z.UpPrec {
-        for !info.IsAccurate() {
-            z.Prev.AddPrec(1)
-            z.Prev.UserRequest = z.Prev.GenRequest()
-            info = z.lens(degree)
-        }
-    }
-
-    if z.Reconfigure {
-        return Configure(&info.UserRequest)
-    } else {
-        return info, nil
-    }
-}
-
 func (z *Zoom) lens(degree float64) *Info {
     baseapp := makeBaseFacade(&z.Prev)
     app := makeBigBaseFacade(&z.Prev, baseapp)
     num := bigbase.Make(app)
 
-    req := new(Request)
-    *req = z.Prev.UserRequest
-
     time := bigbase.MakeBigFloat(degree, num.Precision)
 
-    // Flip Y axis
     min := num.PixelToPlane(int(z.Xmin), int(z.Ymin))
     max := num.PixelToPlane(int(z.Xmax), int(z.Ymax))
 
@@ -109,21 +87,35 @@ func (z *Zoom) lens(degree float64) *Info {
         zoom[i] = d.para(&time)
     }
 
-    req.RealMin = emitBig(zoom[0])
-    req.ImagMin = emitBig(zoom[1])
-    req.RealMax = emitBig(zoom[2])
-    req.ImagMax = emitBig(zoom[3])
-
     info := new(Info)
     *info = z.Prev
-    info.UserRequest = *req
     info.RealMin = *zoom[0]
     info.ImagMin = *zoom[1]
     info.RealMax = *zoom[2]
     info.ImagMax = *zoom[3]
+    info.UserRequest = info.GenRequest()
 
     return info
 }
+
+func (z *Zoom) Magnify(degree float64) (*Info, error) {
+    info := z.lens(degree)
+
+    if z.UpPrec {
+        for !info.IsAccurate() {
+            z.Prev.AddPrec(1)
+            z.Prev.UserRequest = z.Prev.GenRequest()
+            info = z.lens(degree)
+        }
+    }
+
+    if z.Reconfigure {
+        return Configure(&info.UserRequest)
+    } else {
+        return info, nil
+    }
+}
+
 
 // Movie is a parametric expansion of frames.
 func (z *Zoom) Movie(count uint) ([]*Info, error) {
