@@ -3,41 +3,28 @@ package process
 import (
     "bytes"
     "io"
+    "fmt"
     "os/exec"
     "github.com/johnny-morrice/pipeline"
+    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
-type Infow io.Writer
-type Infor io.Reader
-type Pngw io.Writer
-type Pngr io.Reader
-
-func PngBuff() (Pngr, Pngw) {
-    buff := &bytes.Buffer{}
-    return Pngr(buff), Pngw(buff)
-}
-
-func InfoBuff() (Infor, Infow) {
-    buff := &bytes.Buffer{}
-    return Infor(buff), Infow(buff)
-}
-
 // Config creates a new Info, given the args, and sends it to stdout.
-func Config(stdout Infow, stderr io.Writer, args []string) error {
+func Config(stdout io.Writer, stderr io.Writer, args []string) error {
     config := configbrot(args)
     return runPipeCmd(config, &bytes.Buffer{}, stdout, stderr)
 }
 
 // Render sends a new fractal image to the passed stdout pipe, corresponding to the Info
 // serialized in stdin.
-func Render(stdin Infor, stdout Pngw, stderr io.Writer) error {
+func Render(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
     render := renderbrot()
     return runPipeCmd(render, stdin, stdout, stderr)
 }
 
 // ConfigRender sends a new fractal image to the passed stdout pipe, corresponding to configbrot's
 // processing of the args slice.
-func ConfigRender(stdout Pngw, stderr io.Writer, args []string) error {
+func ConfigRender(stdout io.Writer, stderr io.Writer, args []string) error {
     config := configbrot(args)
     render := renderbrot()
 
@@ -47,14 +34,14 @@ func ConfigRender(stdout Pngw, stderr io.Writer, args []string) error {
 }
 
 // Zoom magnifies a section of the Info read from stdin, sending it to stdout.
-func Zoom(stdin Infor, stdout Infow, stderr io.Writer, args[]string) error {
+func Zoom(stdin io.Reader, stdout io.Writer, stderr io.Writer, args[]string) error {
     zoom := zoombrot(args)
     return runPipeCmd(zoom, stdin, stdout, stderr)
 }
 
 // Zoom reads Info from stdin, and sends a fractal to stdout, returning the magnified Info,
-// serialized as an Infor.
-func ZoomRender(stdin Infor, stdout Pngw, stderr io.Writer, args []string) (Infor, error) {
+// serialized as an io.Reader.
+func ZoomRender(stdin io.Reader, stdout io.Writer, stderr io.Writer, args []string) (io.Reader, error) {
     zoomBuff := &bytes.Buffer{}
     zoomerr := Zoom(stdin, zoomBuff, stderr, args)
     if zoomerr != nil {
@@ -67,6 +54,34 @@ func ZoomRender(stdin Infor, stdout Pngw, stderr io.Writer, args []string) (Info
     err := Render(rendin, stdout, stderr)
 
     return outbuff, err
+}
+
+func ZoomArgs(target lib.ZoomTarget) []string {
+    formal := []string{
+        "frames",
+        "incprec",
+        "reconf",
+        "xmax",
+        "xmin",
+        "ymax",
+        "ymin",
+    }
+    actual := []string{
+        fmt.Sprint(target.Frames),
+        fmt.Sprint(target.UpPrec),
+        fmt.Sprint(target.UpPrec),
+        fmt.Sprint(target.Xmin),
+        fmt.Sprint(target.Xmax),
+        fmt.Sprint(target.Ymin),
+        fmt.Sprint(target.Ymax),
+    }
+
+    opts := make([]string, len(formal))
+    for i, fm := range formal {
+        opts[i] = fmt.Sprintf("-%v=%v", fm, actual[i])
+    }
+
+    return opts
 }
 
 func zoombrot(args []string) *exec.Cmd {
