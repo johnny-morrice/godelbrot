@@ -14,7 +14,7 @@ func main() {
     var output io.Writer = os.Stdout
 
     args := readArgs()
-    validerr := validateZoom(args)
+    validerr := args.zt.Validate()
     if validerr != nil {
         log.Fatal(validerr)
     }
@@ -28,7 +28,7 @@ func main() {
     z.ZoomTarget = args.zt
     z.Prev = *info
 
-    frames, moverr := z.Movie(args.count)
+    frames, moverr := z.Movie()
     if moverr != nil {
         log.Fatal("Error zooming:", moverr)
     }
@@ -42,16 +42,9 @@ func main() {
     }
 }
 
-func validateZoom(args params) error {
-    if args.zt.Xmin >= args.zt.Xmax || args.zt.Ymin >= args.zt.Ymax {
-        return errors.New("Min and max zoom boundaries are invalid.")
-    }
-    return nil
-}
-
 func readArgs() params {
     args := params{}
-    flag.UintVar(&args.count, "frames", 1, "Number of frames in zoom")
+    flag.UintVar(&args.zt.Frames, "frames", 1, "Number of frames in zoom")
     flag.UintVar(&args.zt.Xmin, "xmin", 0, "X-Min")
     flag.UintVar(&args.zt.Xmax, "xmax", 0, "X-Max")
     flag.UintVar(&args.zt.Ymin, "ymin", 0, "Y-Min")
@@ -64,6 +57,5 @@ func readArgs() params {
 }
 
 type params struct {
-    count uint
     zt lib.ZoomTarget
 }
