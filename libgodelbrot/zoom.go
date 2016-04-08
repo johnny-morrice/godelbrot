@@ -2,6 +2,7 @@ package libgodelbrot
 
 import (
     "encoding/json"
+    "errors"
     "io"
     "math/big"
     "github.com/johnny-morrice/godelbrot/internal/bigbase"
@@ -17,6 +18,15 @@ type ZoomTarget struct {
     // Increase precision.  With Reconfigure, this should automatically engage arbitrary
     // precision mode.
     UpPrec bool
+    // Number of frames for zoom
+    Frames uint
+}
+
+func (zt *ZoomTarget) Validate() error {
+    if zt.Xmin >= zt.Xmax || zt.Ymin >= zt.Ymax {
+        return errors.New("Min and max zoom boundaries are invalid.")
+    }
+    return nil
 }
 
 // Zoom into a portion of the previous image.
@@ -118,8 +128,9 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
 
 
 // Movie is a parametric expansion of frames.
-func (z *Zoom) Movie(count uint) ([]*Info, error) {
-    if count == 0 {
+func (z *Zoom) Movie() ([]*Info, error) {
+    cnt := z.Frames
+    if cnt == 0 {
         return []*Info{}, nil
     }
 
@@ -131,10 +142,10 @@ func (z *Zoom) Movie(count uint) ([]*Info, error) {
     }
 
     // Compute intervening frames
-    interval := 1.0 / float64(count)
+    interval := 1.0 / float64(cnt)
     time := 0.0
-    frames := make([]*Info, count)
-    for i := uint(0); i < count - 1; i++ {
+    frames := make([]*Info, cnt)
+    for i := uint(0); i < cnt - 1; i++ {
         time += interval
         info, err := z.rescope(time)
         if err != nil {
@@ -143,7 +154,7 @@ func (z *Zoom) Movie(count uint) ([]*Info, error) {
         frames[i] = info
     }
 
-    frames[count - 1] = last
+    frames[cnt - 1] = last
     return frames, nil
 }
 
