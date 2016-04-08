@@ -47,9 +47,11 @@ func (d distort) para(time *big.Float) *big.Float {
     delta.Abs(&delta)
     delta.Mul(&delta, time)
     if d.prev.Cmp(&d.next) > 0 {
-        return delta.Sub(&d.prev, &delta)
+        // Prevent bad aliasing
+        extra := bigbase.MakeBigFloat(0.0, prec)
+        return extra.Sub(&d.prev, &delta)
     } else {
-        return delta.Add(&d.prev, &delta)
+        return delta.Add(&delta, &d.prev)
     }
 }
 
@@ -65,14 +67,17 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
 }
 
 func (z *Zoom) lens(degree float64) *Info {
-    baseapp := makeBaseFacade(&z.Prev)
-    app := makeBigBaseFacade(&z.Prev, baseapp)
+    appinfo := new(Info)
+    *appinfo = z.Prev
+    appinfo.UserRequest.FixAspect = false
+    baseapp := makeBaseFacade(appinfo)
+    app := makeBigBaseFacade(appinfo, baseapp)
     num := bigbase.Make(app)
 
     time := bigbase.MakeBigFloat(degree, num.Precision)
 
-    min := num.PixelToPlane(int(z.Xmin), int(z.Ymin))
-    max := num.PixelToPlane(int(z.Xmax), int(z.Ymax))
+    min := num.PixelToPlane(int(z.Xmin), int(z.Ymax))
+    max := num.PixelToPlane(int(z.Xmax), int(z.Ymin))
 
     target := []big.Float{
         min.R,
@@ -87,6 +92,7 @@ func (z *Zoom) lens(degree float64) *Info {
         z.Prev.RealMax,
         z.Prev.ImagMax,
     }
+
     zoom := make([]*big.Float, len(bounds))
     for i, b := range bounds {
         d := distort{
@@ -94,7 +100,8 @@ func (z *Zoom) lens(degree float64) *Info {
             next: target[i],
         }
 
-        zoom[i] = d.para(&time)
+        res := d.para(&time)
+        zoom[i] = res
     }
 
     info := new(Info)

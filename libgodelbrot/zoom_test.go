@@ -10,8 +10,8 @@ func TestMagnifyHalf(t *testing.T) {
         target := ZoomTarget{}
     target.Xmin = 10
     target.Xmax = 30
-    target.Ymax = 20
-    target.Ymin = 50
+    target.Ymin = 20
+    target.Ymax = 50
 
     req := DefaultRequest()
     req.RealMin = "0.5"
@@ -62,8 +62,8 @@ func TestMagnifyWhole(t *testing.T) {
     target := ZoomTarget{}
     target.Xmin = 10
     target.Xmax = 30
-    target.Ymax = 20
-    target.Ymin = 50
+    target.Ymin = 20
+    target.Ymax = 50
 
     req := DefaultRequest()
     req.RealMin = "0.5"
@@ -111,11 +111,14 @@ func TestMagnifyWhole(t *testing.T) {
 }
 
 func TestMovie(t *testing.T) {
+    const framecnt = 2
+
     target := ZoomTarget{}
     target.Xmin = 10
     target.Xmax = 30
-    target.Ymax = 20
-    target.Ymin = 50
+    target.Ymin = 20
+    target.Ymax = 50
+    target.Frames = framecnt
 
     req := DefaultRequest()
     req.RealMin = "0.5"
@@ -126,7 +129,6 @@ func TestMovie(t *testing.T) {
     req.ImageHeight = 100
     req.Precision = 53
 
-    const framecnt = 2
     expectations := make([][]*big.Float, framecnt)
     expectations[0] = []*big.Float{
         big.NewFloat(0.505),
@@ -148,7 +150,7 @@ func TestMovie(t *testing.T) {
     }
     z.Prev = *prev
 
-    frames, magerr := z.Movie(framecnt)
+    frames, magerr := z.Movie()
     if magerr != nil {
         t.Fatal(magerr)
     }
