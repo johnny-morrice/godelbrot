@@ -5,7 +5,6 @@ import (
     "strconv"
     "encoding/json"
     "io"
-    "bytes"
     "fmt"
 )
 
@@ -45,6 +44,50 @@ type SerialBigInfo struct {
 type Info struct {
     NativeInfo
     BigInfo
+}
+
+func (info *Info) bignums() []*big.Float {
+    return []*big.Float{
+        &info.RealMin,
+        &info.RealMax,
+        &info.ImagMin,
+        &info.ImagMax,
+    }
+}
+
+// IsAccurate returns True if the bignums used internally by info are all accurate.
+func (info *Info) IsAccurate() bool {
+    for _, x := range info.bignums() {
+        if x.Acc() == big.Below {
+            return false
+        }
+    }
+    return true
+}
+
+// AddPrec increases the precision of all Infos internal bignums by delta bits.
+func (info *Info) AddPrec(delta int) {
+    nextPrec := int(info.Precision) + delta
+    if nextPrec <= 0 {
+        msg := fmt.Sprintf("Invalid precision: %v", nextPrec)
+        panic(msg)
+    }
+    prec := uint(nextPrec)
+    info.Precision = prec
+    for _, x := range info.bignums() {
+        x.SetPrec(prec)
+    }
+}
+
+// Generate a user request that corresponts to the info numerics
+func (info *Info) GenRequest() Request {
+    req := info.UserRequest
+    req.RealMin = emitBig(&info.RealMin)
+    req.RealMax = emitBig(&info.RealMax)
+    req.ImagMin = emitBig(&info.ImagMin)
+    req.ImagMax = emitBig(&info.ImagMax)
+
+    return req
 }
 
 // UserInfo is a variant of Info that can be easily serialized
@@ -118,14 +161,60 @@ func WriteInfo(w io.Writer, desc *Info) error {
 }
 
 func ReadInfo(r io.Reader) (*Info, error) {
-    buff := bytes.Buffer{}
-    _, rerr := buff.ReadFrom(r)
-
-    if rerr != nil {
-        return nil, rerr
+    ui := &UserInfo{}
+    dec := json.NewDecoder(r)
+    err := dec.Decode(ui)
+    if err != nil {
+        return nil, err
     }
+    return Unfriendly(ui)
+}
 
-    return FromJSON(buff.Bytes())
+type InfoPkt struct {
+    Info *Info
+    Err error
+}
+
+type uipkt struct {
+    ui *UserInfo
+    err error
+}
+
+func ReadInfoStream(r io.Reader) <-chan InfoPkt {
+    uich := make(chan uipkt)
+    go func() {
+        dec := json.NewDecoder(r)
+        for i := 0; dec.More(); i++ {
+            ui := &UserInfo{}
+            readerr := dec.Decode(ui)
+            if readerr != nil {
+                message := fmt.Errorf("Error after %v JSON objects: %v", i, readerr)
+                uich<- uipkt{err: message,}
+                continue
+            }
+            uich<- uipkt{ui: ui,}
+        }
+        close(uich)
+    }()
+
+    infoch := make(chan InfoPkt)
+    go func() {
+        for uipkt := range uich {
+            if uipkt.err != nil {
+                infoch<- InfoPkt{Err: uipkt.err,}
+                continue
+            }
+            inf, err := Unfriendly(uipkt.ui)
+            if err != nil {
+                infoch<- InfoPkt{Err: uipkt.err,}
+                continue
+            }
+            infoch<- InfoPkt{Info: inf,}
+        }
+        close(infoch)
+    }()
+
+    return infoch
 }
 
 // Available render algorithms

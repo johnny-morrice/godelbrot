@@ -1,6 +1,7 @@
 package main
 
 import (
+    "image"
     "image/png"
     "os"
     "io"
@@ -12,21 +13,31 @@ func main() {
     var input io.Reader = os.Stdin
     var output io.Writer = os.Stdout
 
-    desc, readErr := lib.ReadInfo(input)
+    frch := lib.ReadInfoStream(input)
+    imgch := make(chan image.Image)
 
-    if readErr != nil {
-        log.Fatal("Error reading info: ", readErr)
+    go func() {
+        for frpkt := range frch {
+            if frpkt.Err != nil {
+                log.Fatal(frpkt.Err)
+            }
+            picture, renderErr := lib.Render(frpkt.Info)
+
+            if renderErr != nil {
+                log.Fatal("Render errror:", renderErr)
+            }
+
+            imgch<- picture
+        }
+        close(imgch)
+    }()
+
+    for picture := range imgch {
+        encodeErr := png.Encode(output, picture)
+
+        if encodeErr != nil {
+            log.Fatal("Encoding error:", encodeErr)
+        }
     }
 
-    picture, renderErr := lib.Render(desc)
-
-    if renderErr != nil {
-        log.Fatal("Render errror:", renderErr)
-    }
-
-    encodeErr := png.Encode(output, picture)
-
-    if encodeErr != nil {
-        log.Fatal("Encoding error:", encodeErr)
-    }
 }

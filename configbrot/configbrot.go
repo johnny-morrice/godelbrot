@@ -9,6 +9,28 @@ import (
     "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
+func main() {
+    output := os.Stdout
+
+    args := parseArguments()
+
+    req, inerr := newRequest(args)
+    if inerr != nil {
+        log.Fatal("Error forming request: ", inerr)
+    }
+
+    desc, gerr := libgodelbrot.Configure(req)
+
+    if gerr != nil {
+        log.Fatal("Error configuring Info: ", gerr)
+    }
+
+    outerr := libgodelbrot.WriteInfo(output, desc)
+    if outerr != nil {
+        log.Fatal("Error writing Info: ", outerr)
+    }
+}
+
 // Structure representing our command line arguments
 type commandLine struct {
     iterateLimit   uint
@@ -187,26 +209,4 @@ func userReq(args commandLine) (*libgodelbrot.Request, error) {
     req.Precision = args.precision
 
     return req, nil
-}
-
-func main() {
-    output := os.Stdout
-
-    args := parseArguments()
-
-    req, inerr := newRequest(args)
-    if inerr != nil {
-        log.Fatal("Error forming request: ", inerr)
-    }
-
-    desc, gerr := libgodelbrot.Configure(req)
-
-    if gerr != nil {
-        log.Fatal("Error configuring Info: ", gerr)
-    }
-
-    outerr := libgodelbrot.WriteInfo(output, desc)
-    if outerr != nil {
-        log.Fatal("Error writing Info: ", outerr)
-    }
 }
