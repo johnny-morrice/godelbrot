@@ -40,7 +40,7 @@ const DefaultPrecision uint = 53
 
 const DefaultIterations uint8 = 255
 const DefaultDivergeLimit float64 = 4.0
-const DefaultImageWidth uint = 800
+const DefaultImageWidth uint = 600
 const DefaultImageHeight uint = 600
 const DefaultCollapse uint = 4
 const DefaultBufferSize uint = 256
