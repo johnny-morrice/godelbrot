@@ -8,6 +8,7 @@ import (
     "io"
     "net/http"
     "os"
+    "runtime/debug"
     "time"
     "github.com/johnny-morrice/godelbrot/rest"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
@@ -81,13 +82,15 @@ func (web *webclient) cycle() (io.Reader, error) {
         return nil, err
     }
     for {
-        rqstat, err := web.getrqraw(newresp.RQStatusURL)
+        url := web.url(newresp.RQStatusURL)
+        rqstat, err := web.getrqraw(url)
         if err != nil {
             return nil, err
         }
         switch rqstat.State {
         case "done":
-            return web.getimagraw(rqstat.ImageURL)
+            url := web.url(rqstat.ImageURL)
+            return web.getimagraw(url)
         case "error":
             weberr := fmt.Errorf("RQGetResp error: %v", rqstat.Error)
             return nil, weberr
@@ -100,31 +103,34 @@ func (web *webclient) cycle() (io.Reader, error) {
 }
 
 func (web *webclient) newrq() (*rest.RQNewResp, error) {
-    return web.newrqraw(web.url("/renderqueue"))
+    return web.newrqraw(web.url("renderqueue"))
 }
 
 func (web *webclient) newrqraw(url string) (*rest.RQNewResp, error) {
     renreq, rerr := web.renreq()
     if rerr != nil {
-        return nil, rerr
+        return nil, addstack(rerr)
     }
     buff := &bytes.Buffer{}
     werr := rest.WriteReq(buff, renreq)
     if werr != nil {
-        return nil, werr
+        return nil, addstack(werr)
     }
     resp, err := web.client.Post(url, "application/json", buff)
     if err != nil {
         return nil, err
     }
+    if resp.StatusCode != 200 {
+        return nil, httpError(resp)
+    }
     defer resp.Body.Close()
     rqi := &rest.RQNewResp{}
     derr := decode(resp.Body, rqi)
-    return rqi, derr
+    return rqi, addstack(derr)
 }
 
 func (web *webclient) getrq() (*rest.RQGetResp, error) {
-    url := web.url(fmt.Sprintf("/renderqueue/%v/", web.args.getrq))
+    url := web.url(fmt.Sprintf("renderqueue/%v", web.args.getrq))
     return web.getrqraw(url)
 }
 
@@ -136,11 +142,12 @@ func (web *webclient) getrqraw(url string) (*rest.RQGetResp, error) {
     defer resp.Body.Close()
     rqi := &rest.RQGetResp{}
     derr := decode(resp.Body, rqi)
-    return rqi, derr
+    return rqi, addstack(derr)
 }
 
 func (web *webclient) getimag() (io.Reader, error) {
-    return web.getimagraw(web.url("/image"))
+    url := fmt.Sprintf("image/%v", web.args.getimag)
+    return web.getimagraw(web.url(url))
 }
 
 func (web *webclient) getimagraw(url string) (io.Reader, error) {
@@ -148,10 +155,13 @@ func (web *webclient) getimagraw(url string) (io.Reader, error) {
     if err != nil {
         return nil, err
     }
+    if resp.StatusCode != 200 {
+        return nil, httpError(resp)
+    }
     defer resp.Body.Close()
     buff := &bytes.Buffer{}
     _, cpyerr := io.Copy(buff, resp.Body)
-    return buff, cpyerr
+    return buff, addstack(cpyerr)
 }
 
 func (web *webclient) renreq() (*rest.RenderRequest, error) {
@@ -170,8 +180,22 @@ func (web *webclient) renreq() (*rest.RenderRequest, error) {
 
 func (web *webclient) url(last string) string {
     args := web.args
-    return fmt.Sprintf("http://%v:%v/%v/%v",
-        args.addr, args.port, args.prefix, last)
+    if web.args.prefix == "" {
+        return fmt.Sprintf("http://%v:%v/%v/",
+            args.addr, args.port, last)
+    } else {
+        return fmt.Sprintf("http://%v:%v/%v/%v",
+                args.addr, args.port, args.prefix, last)
+    }
+}
+
+func httpError(resp *http.Response) error {
+    buff := &bytes.Buffer{}
+    err := resp.Write(buff)
+    if err != nil {
+        panic(err)
+    }
+    return fmt.Errorf("Response:\n%v", buff)
 }
 
 func decode(r io.Reader, any interface{}) error {
@@ -193,11 +217,21 @@ func fatalguard(err error) {
     }
 }
 
+func addstack(err error) error {
+    if err == nil {
+        return nil
+    } else {
+        return fmt.Errorf("%v\n%v", err, string(debug.Stack()))
+    }
+
+}
+
+
 func readArgs() params {
     args := params{}
     flag.StringVar(&args.addr, "remote", "localhost", "Remote address of restfulbrot service")
     flag.UintVar(&args.port, "port", 9898, "Port of remote service")
-    flag.StringVar(&args.prefix, "prefix", "/", "Prefix of service URL")
+    flag.StringVar(&args.prefix, "prefix", "", "Prefix of service URL")
     flag.UintVar(&args.timeout, "timeout", 1000, "Web request abort timeout (milliseconds)")
     flag.UintVar(&args.wait, "wait", 100, "Time between requests (spider delay)")
     flag.BoolVar(&args.newrq, "newrq", false, "Add new item to render queue (info from stdin)")
