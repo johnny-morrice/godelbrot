@@ -3,6 +3,7 @@ package rest
 import (
     "bytes"
     "crypto/md5"
+    "encoding/base64"
     "encoding/json"
     "fmt"
     "log"
@@ -43,7 +44,10 @@ func makeRqitem(pkt *renderpacket) *rqitem {
         panic("renderpacket should serialize")
     }
     hsh := md5.Sum(buff.Bytes())
-    rqi.code = hashcode(hsh[:])
+    buff64 := &bytes.Buffer{}
+    enc64 := base64.NewEncoder(base64.URLEncoding, buff64)
+    enc64.Write(hsh[:])
+    rqi.code = hashcode(buff64.String())
     return rqi
 }
 

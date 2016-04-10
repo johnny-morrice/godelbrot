@@ -92,7 +92,7 @@ type webservice struct {
     prefix string
 }
 
-func MakeWebservice(baseinfo *lib.Info, concurrent uint, prefix string) *mux.Router {
+func MakeWebservice(baseinfo *lib.Info, concurrent uint, prefix string) http.Handler {
     ws := &webservice{}
     ws.baseinfo = *baseinfo
     ws.prefix = prefix
@@ -100,9 +100,9 @@ func MakeWebservice(baseinfo *lib.Info, concurrent uint, prefix string) *mux.Rou
     ws.rq = makeRenderQueue(concurrent)
 
     r := mux.NewRouter()
-    r.HandleFunc("/renderqueue", ws.enterRQHandler)
-    r.HandleFunc("/renderqueue/{rqcode}/", ws.getRQHandler)
-    r.HandleFunc("/image/{rqcode}/", ws.getImageHandler)
+    r.HandleFunc("/renderqueue/", ws.enterRQHandler).Methods("POST")
+    r.HandleFunc("/renderqueue/{rqcode}/", ws.getRQHandler).Methods("GET")
+    r.HandleFunc("/image/{rqcode}/", ws.getImageHandler).Methods("GET")
     return r
 }
 
