@@ -12,12 +12,12 @@ import (
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
-type RQState uint8
+type rqstate uint8
 
 const (
-    WAIT = RQState(iota)
-    DONE
-    ERROR
+    __WAIT = rqstate(iota)
+    __DONE
+    __ERROR
 )
 
 type rqitem struct {
@@ -25,7 +25,7 @@ type rqitem struct {
     completetime time.Time
     packet renderpacket
     code hashcode
-    state RQState
+    state rqstate
     err string
     nextinfo lib.Info
     mutex sync.RWMutex
@@ -56,7 +56,7 @@ func (rqi *rqitem) hash() hashcode {
 
 func (rqi *rqitem) done(nextinfo *lib.Info) {
     rqi.nextinfo = *nextinfo
-    rqi.state = DONE
+    rqi.state = __DONE
     rqi.logcomplete()
 }
 
@@ -70,9 +70,9 @@ func (rqi *rqitem) logcomplete() {
     elapsed := rqi.completetime.Sub(rqi.createtime)
     milli := elapsed * time.Millisecond
     switch rqi.state {
-    case DONE:
+    case __DONE:
         log.Printf("rqitem rendered OK after %v milliseconds", milli)
-    case ERROR:
+    case __ERROR:
         log.Printf("rqitem error after %v milliseconds: %v", milli)
     default:
         panic(fmt.Sprintf("rq completed after %v milliseconds with bad state (%v): %v",

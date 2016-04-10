@@ -9,12 +9,9 @@ import (
     "log"
     "net/http"
     "strconv"
-    "strings"
     "github.com/gorilla/mux"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
-
-const formkey = "godelbrot-packet"
 
 type RenderRequest struct {
     Req lib.Request
@@ -22,17 +19,17 @@ type RenderRequest struct {
     WantZoom bool
 }
 
-func (rr *RenderRequest) validate() error {
-    if rr.Req.ImageWidth < 1 || rr.Req.ImageHeight < 1 {
+func (renreq *RenderRequest) validate() error {
+    if renreq.Req.ImageWidth < 1 || renreq.Req.ImageHeight < 1 {
         return errors.New("Invalid Req")
     }
 
-    validerr := rr.Target.Validate();
-    if rr.WantZoom && validerr != nil {
+    validerr := renreq.Target.Validate();
+    if renreq.WantZoom && validerr != nil {
         return errors.New("Invalid Target")
     }
 
-    if !rr.WantZoom && validerr == nil {
+    if !renreq.WantZoom && validerr == nil {
         return errors.New("False WantZoom yet valid Target")
     }
 
@@ -40,11 +37,16 @@ func (rr *RenderRequest) validate() error {
     return nil
 }
 
-type RQNewResp struct {
-    RQStatusUrl string
+func WriteReq(w io.Writer, renreq *RenderRequest) error {
+    enc := json.NewEncoder(w)
+    return enc.Encode(renreq)
 }
 
-type RQStatusResp struct {
+type RQNewResp struct {
+    RQStatusURL string
+}
+
+type RQGetResp struct {
     CreateTime int64
     CompleteTime int64
     State string
@@ -131,20 +133,20 @@ func (ws *webservice) getRQ(s session) error {
         panic(fmt.Sprintf("Expected type rqitem but received: %v", any))
     }
 
-    resp := &RQStatusResp{}
+    resp := &RQGetResp{}
     resp.CreateTime = rqi.createtime.Unix()
 
     switch rqi.state {
-    case DONE:
+    case __DONE:
         resp.State = "done"
         resp.CompleteTime = rqi.completetime.Unix()
         resp.NextReq = rqi.packet.info.UserRequest
         resp.ImageURL = fmt.Sprintf("%v/image/%v/", ws.prefix, rqi.hash())
-    case ERROR:
+    case __ERROR:
         resp.State = "error"
         resp.CompleteTime = rqi.completetime.Unix()
         resp.Error = rqi.err
-    case WAIT:
+    case __WAIT:
         resp.State = "wait"
     default:
         panic(fmt.Sprintf("Unknown state: %v", rqi.state))
@@ -154,14 +156,7 @@ func (ws *webservice) getRQ(s session) error {
 }
 
 func (ws *webservice) enterRQ(s session) error {
-    jsonPacket := s.req.FormValue(formkey)
-
-    if len(jsonPacket) == 0 {
-        err := s.httpError(fmt.Sprintf("No data found in parameter '%v'", formkey), 400)
-        return err
-    }
-
-    dec := json.NewDecoder(strings.NewReader(jsonPacket))
+    dec := json.NewDecoder(s.req.Body)
     renreq := &RenderRequest{}
     jsonerr := dec.Decode(renreq)
 
@@ -189,7 +184,7 @@ func (ws *webservice) enterRQ(s session) error {
 
     code := ws.rq.enqueue(pkt)
     resp := &RQNewResp{}
-    resp.RQStatusUrl = fmt.Sprintf("%v/renderqueue/%v/", ws.prefix, code)
+    resp.RQStatusURL = fmt.Sprintf("%v/renderqueue/%v/", ws.prefix, code)
     return s.serveJson(resp)
 }
 
