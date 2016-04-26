@@ -6,6 +6,7 @@ import (
     "encoding/json"
     "fmt"
     "io"
+    "log"
     "net/http"
     "os"
     "runtime/debug"
@@ -17,9 +18,7 @@ import (
 func main() {
     args := readArgs()
 
-    web := &webclient{}
-    web.args = args
-    web.client.Timeout = time.Millisecond * time.Duration(web.args.timeout)
+    web := newWebClient(args)
 
     if args.cycle || args.newrq {
         info, ierr := lib.ReadInfo(os.Stdin)
@@ -74,6 +73,15 @@ type webclient struct {
     client http.Client
     req lib.Request
     zoom bool
+    tick *time.Ticker
+
+}
+
+func newWebClient(args params) *webclient {
+    web := &webclient{}
+    web.args = args
+    web.client.Timeout = time.Millisecond * time.Duration(web.args.timeout)
+    return web
 }
 
 func (web *webclient) cycle() (io.Reader, error) {
@@ -116,7 +124,7 @@ func (web *webclient) newrqraw(url string) (*rest.RQNewResp, error) {
     if werr != nil {
         return nil, addstack(werr)
     }
-    resp, err := web.client.Post(url, "application/json", buff)
+    resp, err := web.post(url, "application/json", buff)
     if err != nil {
         return nil, err
     }
@@ -125,7 +133,7 @@ func (web *webclient) newrqraw(url string) (*rest.RQNewResp, error) {
     }
     defer resp.Body.Close()
     rqi := &rest.RQNewResp{}
-    derr := decode(resp.Body, rqi)
+    derr := web.decode(resp.Body, rqi)
     return rqi, addstack(derr)
 }
 
@@ -135,13 +143,13 @@ func (web *webclient) getrq() (*rest.RQGetResp, error) {
 }
 
 func (web *webclient) getrqraw(url string) (*rest.RQGetResp, error) {
-    resp, err := web.client.Get(url)
+    resp, err := web.get(url)
     if err != nil {
         return nil, err
     }
     defer resp.Body.Close()
     rqi := &rest.RQGetResp{}
-    derr := decode(resp.Body, rqi)
+    derr := web.decode(resp.Body, rqi)
     return rqi, addstack(derr)
 }
 
@@ -151,7 +159,7 @@ func (web *webclient) getimag() (io.Reader, error) {
 }
 
 func (web *webclient) getimagraw(url string) (io.Reader, error) {
-    resp, err := web.client.Get(url)
+    resp, err := web.get(url)
     if err != nil {
         return nil, err
     }
@@ -187,6 +195,65 @@ func (web *webclient) url(last string) string {
         return fmt.Sprintf("http://%v:%v/%v/%v",
                 args.addr, args.port, args.prefix, last)
     }
+}
+
+func (web *webclient) get(url string) (r *http.Response, err error) {
+    web.cautiously(func () {
+        if web.args.debug {
+            log.Printf("GET %v", url)
+        }
+        r, err = web.client.Get(url)
+        if web.args.debug {
+            web.reportResponse(r, err)
+        }
+    })
+    return
+}
+
+func (web *webclient) post(url, ctype string, body io.Reader) (r *http.Response, err error) {
+    web.cautiously(func () {
+        if web.args.debug {
+            log.Printf("POST %v", url)
+        }
+        r, err = web.client.Post(url, ctype, body)
+        if web.args.debug {
+            web.reportResponse(r, err)
+        }
+    })
+    return
+}
+
+func (web *webclient) reportResponse(r *http.Response, err error) {
+    if err != nil {
+        log.Printf("Error: %v", err)
+    }
+    log.Printf("Status: %v", r.Status)
+    ctypeHeads := r.Header["Content-Type"]
+    if len(ctypeHeads) != 1 {
+        log.Printf("Bad Content-Type header")
+    } else {
+        log.Printf("Content-Type: %v", ctypeHeads[0])
+    }
+}
+
+func (web *webclient) cautiously(f func()) {
+    if web.tick == nil {
+        web.tick = time.NewTicker(time.Duration(web.args.ticktime) * time.Millisecond)
+    } else {
+        <-web.tick.C
+    }
+    f()
+}
+
+func (web *webclient) decode(r io.Reader, any interface{}) error {
+    if web.args.debug {
+        buff := &bytes.Buffer{}
+        r = io.TeeReader(r, buff)
+        derr := decode(r, any)
+        log.Printf("Decoded: %v", buff.String())
+        return derr
+    }
+    return decode(r, any)
 }
 
 func httpError(resp *http.Response) error {
@@ -233,12 +300,13 @@ func readArgs() params {
     flag.UintVar(&args.port, "port", 9898, "Port of remote service")
     flag.StringVar(&args.prefix, "prefix", "", "Prefix of service URL")
     flag.UintVar(&args.timeout, "timeout", 1000, "Web request abort timeout (milliseconds)")
-    flag.UintVar(&args.wait, "wait", 100, "Time between requests (spider delay)")
+    flag.UintVar(&args.ticktime, "ticktime", 100, "Max one request per tick (milliseconds)")
     flag.BoolVar(&args.newrq, "newrq", false, "Add new item to render queue (info from stdin)")
     flag.StringVar(&args.getrq, "getrq", "", "Get status of render queue item")
     flag.StringVar(&args.getimag, "getimag", "", "Download fractal render (png to stdout)")
     flag.BoolVar(&args.cycle, "cycle", true,
         "Wait for fractal to render (info from stdin, png to stdout")
+    flag.BoolVar(&args.debug, "debug", false, "Verbose debug mode")
     flag.Parse()
     return args
 }
@@ -248,7 +316,8 @@ type params struct {
     port uint
     prefix string
     timeout uint
-    wait uint
+    ticktime uint
+    debug bool
 
     newrq bool
     getrq string
