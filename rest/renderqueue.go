@@ -128,6 +128,7 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
 
     rqi.mutex.RLock()
     info := rqi.packet.info
+    rqi.mutex.RUnlock()
     rqi.mutex.Lock()
     buffs := renderBuffers{}
     bufferr := buffs.input(&info)
