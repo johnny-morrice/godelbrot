@@ -74,6 +74,7 @@ func (rqi *rqitem) done(nextinfo *lib.Info) {
 func (rqi *rqitem) fail(msg string) {
     writeM(rqi.mutex, func () {
         rqi.err = msg
+        rqi.state = __ERROR
     })
     rqi.logcomplete()
 }
@@ -82,18 +83,20 @@ func (rqi *rqitem) logcomplete() {
     var state rqstate
     var milli time.Duration
     var pkt renderpacket
+    var err string
     writeM(rqi.mutex, func () {
         rqi.completetime = time.Now()
         elapsed := rqi.completetime.Sub(rqi.createtime)
         milli = elapsed * time.Millisecond
         state = rqi.state
         pkt = rqi.pkt
+        err = rqi.err
     })
     switch state {
     case __DONE:
         log.Printf("rqitem rendered OK after %v milliseconds", milli)
     case __ERROR:
-        log.Printf("rqitem error after %v milliseconds: %v", milli)
+        log.Printf("rqitem error after %v milliseconds: %v", milli, err)
     default:
         panic(fmt.Sprintf("rq completed after %v milliseconds with bad state (%v): %v",
                 milli, state, pkt))
