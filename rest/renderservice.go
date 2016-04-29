@@ -9,14 +9,14 @@ import (
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
-type renderBuffers struct {
+type renderbuffers struct {
     png bytes.Buffer
     info bytes.Buffer
     nextinfo bytes.Buffer
     report bytes.Buffer
 }
 
-func (rb renderBuffers) logReport() {
+func (rb renderbuffers) logReport() {
     sc := bufio.NewScanner(&rb.report)
     for sc.Scan() {
         err := sc.Err()
@@ -27,7 +27,7 @@ func (rb renderBuffers) logReport() {
     }
 }
 
-func (rb renderBuffers) input(info *lib.Info) error {
+func (rb renderbuffers) input(info *lib.Info) error {
     return lib.WriteInfo(&rb.info, info)
 }
 
@@ -43,8 +43,8 @@ func makeRenderservice(concurrent uint) renderservice {
     return rs
 }
 
-// render a fractal into the renderBuffers
-func (rs renderservice) render(rbuf renderBuffers, zoomArgs []string) error {
+// render a fractal into the renderbuffers
+func (rs renderservice) render(rbuf renderbuffers, zoomArgs []string) error {
     rs.s.acquire(1)
     var err error
     if zoomArgs == nil || len(zoomArgs) == 0 {

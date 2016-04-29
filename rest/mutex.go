@@ -4,13 +4,19 @@ import (
     "sync"
 )
 
-func ReadM(f func (), mut sync.RWMutex) {
+func readM(mut sync.RWMutex, f func ()) {
     mut.RLock()
     defer mut.RUnlock()
     f()
 }
 
-func WriteM(f func (), mut sync.RWMutex) {
+func writeM(mut sync.RWMutex, f func ()) {
+    mut.Lock()
+    defer mut.Unlock()
+    f()
+}
+
+func readwriteM(mut sync.Mutex, f func ()) {
     mut.Lock()
     defer mut.Unlock()
     f()

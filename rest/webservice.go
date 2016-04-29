@@ -134,22 +134,38 @@ func (ws *webservice) getRQ(s session) error {
     }
 
     resp := &RQGetResp{}
-    resp.CreateTime = rqi.createtime.Unix()
 
-    switch rqi.state {
+    // This ugly read is candidate for encapsulation in rqitem
+    var completetime int64
+    var rqerr string
+    var state rqstate
+    var nextreq lib.Request
+    var code hashcode
+    readM(rqi.mutex, func () {
+        resp.CreateTime = rqi.createtime.Unix()
+        if rqi.state == __DONE || rqi.state == __ERROR {
+            completetime = rqi.completetime.Unix()
+        }
+        rqerr = rqi.err
+        state = rqi.state
+        nextreq = rqi.pkt.info.UserRequest
+        code = rqi.code
+    })
+
+    switch state {
     case __DONE:
         resp.State = "done"
-        resp.CompleteTime = rqi.completetime.Unix()
-        resp.NextReq = rqi.packet.info.UserRequest
-        resp.ImageURL = fmt.Sprintf("%v/image/%v/", ws.prefix, rqi.hash())
+        resp.CompleteTime = completetime
+        resp.NextReq = nextreq
+        resp.ImageURL = fmt.Sprintf("%v/image/%v/", ws.prefix, code)
     case __ERROR:
         resp.State = "error"
-        resp.CompleteTime = rqi.completetime.Unix()
-        resp.Error = rqi.err
+        resp.CompleteTime = completetime
+        resp.Error = rqerr
     case __WAIT:
         resp.State = "wait"
     default:
-        panic(fmt.Sprintf("Unknown state: %v", rqi.state))
+        panic(fmt.Sprintf("Unknown state: %v", state))
     }
 
     return s.serveJson(resp)

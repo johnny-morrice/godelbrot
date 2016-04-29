@@ -24,7 +24,7 @@ const (
 type rqitem struct {
     createtime time.Time
     completetime time.Time
-    packet renderpacket
+    pkt renderpacket
     code hashcode
     state rqstate
     err string
@@ -34,7 +34,7 @@ type rqitem struct {
 
 func makeRqitem(pkt *renderpacket) *rqitem {
     rqi := &rqitem{}
-    rqi.packet = *pkt
+    rqi.pkt = *pkt
     rqi.createtime = time.Now()
 
     buff := &bytes.Buffer{}
@@ -51,37 +51,63 @@ func makeRqitem(pkt *renderpacket) *rqitem {
     return rqi
 }
 
+func (rqi *rqitem) packet() renderpacket {
+    rqi.mutex.RLock()
+    defer rqi.mutex.RUnlock()
+    return rqi.pkt
+}
+
 func (rqi *rqitem) hash() hashcode {
     rqi.mutex.RLock()
-    code := rqi.code
-    rqi.mutex.RUnlock()
-    return code
+    defer rqi.mutex.RUnlock()
+    return rqi.code
 }
 
 func (rqi *rqitem) done(nextinfo *lib.Info) {
-    rqi.nextinfo = *nextinfo
-    rqi.state = __DONE
+    writeM(rqi.mutex, func () {
+        rqi.nextinfo = *nextinfo
+        rqi.state = __DONE
+    })
     rqi.logcomplete()
 }
 
 func (rqi *rqitem) fail(msg string) {
-    rqi.err = msg
+    writeM(rqi.mutex, func () {
+        rqi.err = msg
+    })
     rqi.logcomplete()
 }
 
 func (rqi *rqitem) logcomplete() {
-    rqi.completetime = time.Now()
-    elapsed := rqi.completetime.Sub(rqi.createtime)
-    milli := elapsed * time.Millisecond
-    switch rqi.state {
+    var state rqstate
+    var milli time.Duration
+    var pkt renderpacket
+    writeM(rqi.mutex, func () {
+        rqi.completetime = time.Now()
+        elapsed := rqi.completetime.Sub(rqi.createtime)
+        milli = elapsed * time.Millisecond
+        state = rqi.state
+        pkt = rqi.pkt
+    })
+    switch state {
     case __DONE:
         log.Printf("rqitem rendered OK after %v milliseconds", milli)
     case __ERROR:
         log.Printf("rqitem error after %v milliseconds: %v", milli)
     default:
         panic(fmt.Sprintf("rq completed after %v milliseconds with bad state (%v): %v",
-                milli, rqi.state, rqi.packet))
+                milli, state, pkt))
     }
+}
+
+func (rqi *rqitem) mkbuffs() (renderbuffers, error) {
+    buffs := renderbuffers{}
+    var bufferr error
+    readM(rqi.mutex, func () {
+        info := rqi.pkt.info
+        bufferr = buffs.input(&info)
+    })
+    return buffs, bufferr
 }
 
 type renderpacket struct {
@@ -106,10 +132,11 @@ func makeRenderQueue(concurrent uint) renderqueue {
 
 func (rq *renderqueue) enqueue(pkt *renderpacket) hashcode {
     rqi := makeRqitem(pkt)
+    code := rqi.code
 
-    _, present := rq.ca.get(rqi.hash())
+    _, present := rq.ca.get(code)
     if present {
-        return rqi.hash()
+        return code
     }
 
     rq.ca.put(rqi)
@@ -117,7 +144,7 @@ func (rq *renderqueue) enqueue(pkt *renderpacket) hashcode {
         rq.sysdraw(rqi, pkt)
     }()
 
-    return rqi.hash()
+    return code
 }
 
 func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
@@ -126,15 +153,11 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
         zoomArgs = process.ZoomArgs(pkt.target)
     }
 
-    rqi.mutex.RLock()
-    info := rqi.packet.info
-    rqi.mutex.RUnlock()
-    rqi.mutex.Lock()
-    buffs := renderBuffers{}
-    bufferr := buffs.input(&info)
-    if bufferr != nil {
+    buffs, berr := rqi.mkbuffs()
+
+    if berr != nil {
         rqi.fail("failed input buffer")
-        log.Printf("Buffer input error: %v, for packet %v", bufferr, rqi.packet)
+        log.Printf("Buffer input error: %v, for packet %v", berr, rqi.packet())
         return
     }
     renderErr := rq.rs.render(buffs, zoomArgs)
@@ -144,19 +167,17 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
 
     if renderErr != nil {
         rqi.fail("failed render")
-        log.Printf("Render error: %v, for packet %v", renderErr, rqi.packet)
+        log.Printf("Render error: %v, for packet %v", renderErr, rqi.packet())
         return
     }
 
     nextinfo, infoerr := lib.ReadInfo(&buffs.nextinfo)
     if infoerr != nil {
         rqi.fail("failed output buffer")
-        log.Printf("Buffer output error: %v, for packet %v", infoerr, rqi.packet)
+        log.Printf("Buffer output error: %v, for packet %v", infoerr, rqi.packet())
         return
     }
 
     rq.ic.put(rqi.hash(), buffs.png.Bytes())
-    rqi.mutex.Lock()
-    defer rqi.mutex.Unlock()
     rqi.done(nextinfo)
 }
