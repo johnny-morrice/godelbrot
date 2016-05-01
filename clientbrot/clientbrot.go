@@ -307,10 +307,32 @@ func readArgs() params {
     flag.BoolVar(&args.newrq, "newrq", false, "Add new item to render queue (info from stdin)")
     flag.StringVar(&args.getrq, "getrq", "", "Get status of render queue item")
     flag.StringVar(&args.getimag, "getimag", "", "Download fractal render (png to stdout)")
-    flag.BoolVar(&args.cycle, "cycle", true,
+    flag.BoolVar(&args.cycle, "cycle", false,
         "Wait for fractal to render (info from stdin, png to stdout")
     flag.BoolVar(&args.debug, "debug", false, "Verbose debug mode")
+    flag.UintVar(&args.xmin, "xmin", 0, "xmin pixel bound")
+    flag.UintVar(&args.xmax, "xmax", 0, "xmax pixel bound")
+    flag.UintVar(&args.ymin, "ymin", 0, "ymin pixel bound")
+    flag.UintVar(&args.ymax, "ymax", 0, "ymax pixel bound")
     flag.Parse()
+
+    // Cycle is default on only if no other operations provided.
+    operation := map[string]bool {
+        "getrq": true,
+        "newrq": true,
+        "getimag": true,
+    }
+    notcycle := false
+    defcycle := false
+    flag.Visit(func (fl *flag.Flag) {
+        if fl.Name == "cycle" {
+            defcycle = true
+        } else {
+            notcycle = notcycle || operation[fl.Name]
+        }
+    })
+    args.cycle = (defcycle && args.cycle) || !notcycle
+
     return args
 }
 
