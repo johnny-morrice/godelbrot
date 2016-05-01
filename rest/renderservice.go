@@ -5,6 +5,7 @@ import (
     "bytes"
     "io"
     "log"
+    "strings"
     "github.com/johnny-morrice/godelbrot/process"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
@@ -44,7 +45,7 @@ func makeRenderservice(concurrent uint) renderservice {
 }
 
 // render a fractal into the renderbuffers
-func (rs *renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
+func (rs renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
     rs.s.acquire(1)
     var err error
     if zoomArgs == nil || len(zoomArgs) == 0 {
@@ -53,7 +54,7 @@ func (rs *renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
         err = process.Render(tee, &rbuf.png, &rbuf.report)
         debugf("Render done")
     } else {
-        debugf("ZoomRender in progress")
+        debugf("ZoomRender in progress: %v", strings.Join(zoomArgs, " "))
         next, zerr := process.ZoomRender(&rbuf.info, &rbuf.png, &rbuf.report, zoomArgs)
         err = zerr
         if err == nil {
