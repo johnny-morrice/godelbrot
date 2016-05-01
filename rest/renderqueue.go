@@ -115,21 +115,23 @@ func (rqi *rqitem) logcomplete() {
     var elapsed time.Duration
     var pkt renderpacket
     var err string
+    var code hashcode
     writeM(rqi.mutex, func () {
         rqi.completetime = time.Now()
         elapsed = rqi.completetime.Sub(rqi.createtime)
         state = rqi.state
         pkt = rqi.pkt
         err = rqi.err
+        code = rqi.code
     })
     switch state {
     case __DONE:
-        log.Printf("rqitem rendered OK after %v", elapsed)
+        log.Printf("rqitem %v rendered OK after %v", code, elapsed)
     case __ERROR:
-        log.Printf("rqitem error after %v: %v", elapsed, err)
+        log.Printf("rqitem %v error after %v: %v", code, elapsed, err)
     default:
-        panic(fmt.Sprintf("rq completed after %v with bad state (%v): %v",
-                elapsed, state, pkt))
+        panic(fmt.Sprintf("rqitem %v completed after %v with bad state (%v): %v",
+                code, elapsed, state, pkt))
     }
 }
 
@@ -166,7 +168,7 @@ func makeRenderQueue(concurrent uint) renderqueue {
 func (rq *renderqueue) enqueue(pkt *renderpacket) hashcode {
     rqi := makeRqitem(pkt)
     code := rqi.code
-    debugf("Queing packet %v", code)
+    log.Printf("Queing packet %v", code)
 
     _, present := rq.ca.get(code)
     if present {
