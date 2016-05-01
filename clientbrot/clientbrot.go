@@ -227,6 +227,9 @@ func (web *webclient) reportResponse(r *http.Response, err error) {
     if err != nil {
         log.Printf("Error: %v", err)
     }
+    if r == nil {
+        return
+    }
     log.Printf("Status: %v", r.Status)
     ctypeHeads := r.Header["Content-Type"]
     if len(ctypeHeads) != 1 {
