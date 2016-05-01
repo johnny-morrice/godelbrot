@@ -4,8 +4,10 @@ import (
     "bytes"
     "crypto/md5"
     "encoding/base64"
+    "encoding/gob"
     "encoding/json"
     "fmt"
+    "io"
     "log"
     "time"
     "sync"
@@ -37,17 +39,46 @@ func makeRqitem(pkt *renderpacket) *rqitem {
     rqi.pkt = *pkt
     rqi.createtime = time.Now()
 
-    buff := &bytes.Buffer{}
-    enc := json.NewEncoder(buff)
-    err := enc.Encode(pkt)
-    if err != nil {
-        panic("renderpacket should serialize")
+    type UserPacket struct {
+        WantZoom bool
+        Target lib.ZoomTarget
+        Info lib.UserInfo
     }
-    hsh := md5.Sum(buff.Bytes())
+    userpkt := UserPacket{
+        WantZoom: pkt.wantzoom,
+        Target: pkt.target,
+        Info: *lib.Friendly(&pkt.info),
+    }
+
+    // Use json in debug mode but gob otherwise.
+    serialize := func (encfactory func (io.Writer) func(interface{}) error) []byte {
+        buff := &bytes.Buffer{}
+        encoder := encfactory(buff)
+        err := encoder(userpkt)
+        if err != nil {
+            panic(fmt.Sprintf("Render packet should serialize: %v", err))
+        }
+        return buff.Bytes()
+    }
+    var dat []byte
+    if __DEBUG {
+        dat = serialize(func (w io.Writer) func(interface{}) error {
+            enc := json.NewEncoder(w)
+            return enc.Encode
+        })
+    } else {
+        dat = serialize(func (w io.Writer) func (interface{}) error {
+            enc := gob.NewEncoder(w)
+            return enc.Encode
+        })
+    }
+    hsh := md5.Sum(dat)
     buff64 := &bytes.Buffer{}
     enc64 := base64.NewEncoder(base64.URLEncoding, buff64)
     enc64.Write(hsh[:])
     rqi.code = hashcode(buff64.String())
+
+    debugf("rqi with packet representation %v has code %v", string(dat), rqi.code)
     return rqi
 }
 
@@ -81,25 +112,24 @@ func (rqi *rqitem) fail(msg string) {
 
 func (rqi *rqitem) logcomplete() {
     var state rqstate
-    var milli time.Duration
+    var elapsed time.Duration
     var pkt renderpacket
     var err string
     writeM(rqi.mutex, func () {
         rqi.completetime = time.Now()
-        elapsed := rqi.completetime.Sub(rqi.createtime)
-        milli = elapsed * time.Millisecond
+        elapsed = rqi.completetime.Sub(rqi.createtime)
         state = rqi.state
         pkt = rqi.pkt
         err = rqi.err
     })
     switch state {
     case __DONE:
-        log.Printf("rqitem rendered OK after %v milliseconds", milli)
+        log.Printf("rqitem rendered OK after %v", elapsed)
     case __ERROR:
-        log.Printf("rqitem error after %v milliseconds: %v", milli, err)
+        log.Printf("rqitem error after %v: %v", elapsed, err)
     default:
-        panic(fmt.Sprintf("rq completed after %v milliseconds with bad state (%v): %v",
-                milli, state, pkt))
+        panic(fmt.Sprintf("rq completed after %v with bad state (%v): %v",
+                elapsed, state, pkt))
     }
 }
 
