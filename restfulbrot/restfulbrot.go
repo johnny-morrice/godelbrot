@@ -29,6 +29,7 @@ func main() {
     if args.debug {
         log.Println("Running in debug mode")
         h = loghandler{handler: h}
+        rest.Debug()
     }
     addr := fmt.Sprintf("%v:%v", args.bind, args.port)
     httperr := http.ListenAndServe(addr, h)
