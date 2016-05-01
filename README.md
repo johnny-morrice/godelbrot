@@ -52,7 +52,7 @@ For a persisent process try `restfulbrot`
 
 `clientbrot` is a command line client of restfulbrot.
 
-    $ # No configbrot needed with item stored server-side
+    $ # No configbrot needed when zooming to item stored server-side.
     $ clientbrot --cycle --getrq CJRRiGU_neADTL-GWEoC -xmin 100 -xmax 350 -ymin 100 ymax 280 > img/zoom.png
 
 `colorbrot` is provided as a convenience for those who may like to recolour the output.
