@@ -20,7 +20,7 @@ func main() {
 
     web := newWebClient(args)
 
-    if args.cycle || args.newrq {
+    if (args.cycle && args.getrq == "") || args.newrq {
         info, ierr := lib.ReadInfo(os.Stdin)
         fatalguard(ierr)
         web.req = info.GenRequest()
@@ -42,7 +42,11 @@ func main() {
 
     // Ugly
     var r io.Reader
-    if args.newrq {
+    if args.cycle {
+        png, err := web.cycle()
+        fatalguard(err)
+        r = png
+    } else if args.newrq {
         rqi, err := web.newrq()
         fatalguard(err)
         reqr, jerr := jsonr(rqi)
@@ -56,10 +60,6 @@ func main() {
         r = reqr
     } else if args.getimag != "" {
         png, err := web.getimag()
-        fatalguard(err)
-        r = png
-    } else if args.cycle {
-        png, err := web.cycle()
         fatalguard(err)
         r = png
     }
@@ -85,20 +85,34 @@ func newWebClient(args params) *webclient {
 }
 
 func (web *webclient) cycle() (io.Reader, error) {
-    newresp, err := web.newrq()
-    if err != nil {
-        return nil, err
+    // Continue zoom or start anew?
+    var rqurl string
+    if web.args.getrq == "" {
+        newresp, err := web.newrq()
+        if err != nil {
+            return nil, err
+        }
+        rqurl = web.url(newresp.RQStatusURL)
+    } else {
+        if web.zoom {
+            newresp, err := web.rqzoom()
+            if err != nil {
+                return nil ,err
+            }
+            rqurl = web.url(newresp.RQStatusURL)
+        } else {
+            rqurl = web.rqurl()
+        }
     }
     for {
-        url := web.url(newresp.RQStatusURL)
-        rqstat, err := web.getrqraw(url)
+        rqstat, err := web.getrqraw(rqurl)
         if err != nil {
             return nil, err
         }
         switch rqstat.State {
         case "done":
-            url := web.url(rqstat.ImageURL)
-            return web.getimagraw(url)
+            imgurl := web.url(rqstat.ImageURL)
+            return web.getimagraw(imgurl)
         case "error":
             weberr := fmt.Errorf("RQGetResp error: %v", rqstat.Error)
             return nil, weberr
@@ -111,14 +125,10 @@ func (web *webclient) cycle() (io.Reader, error) {
 }
 
 func (web *webclient) newrq() (*rest.RQNewResp, error) {
-    return web.newrqraw(web.url("renderqueue"))
+    return web.newrqraw(web.url("renderqueue"), web.renreq())
 }
 
-func (web *webclient) newrqraw(url string) (*rest.RQNewResp, error) {
-    renreq, rerr := web.renreq()
-    if rerr != nil {
-        return nil, addstack(rerr)
-    }
+func (web *webclient) newrqraw(url string, renreq *rest.RenderRequest) (*rest.RQNewResp, error) {
     buff := &bytes.Buffer{}
     werr := rest.WriteReq(buff, renreq)
     if werr != nil {
@@ -137,9 +147,31 @@ func (web *webclient) newrqraw(url string) (*rest.RQNewResp, error) {
     return rqi, addstack(derr)
 }
 
+func (web *webclient) rqzoom() (*rest.RQNewResp, error) {
+    cacheresp, err := web.getrq()
+    if err != nil {
+        return nil, err
+    }
+    renreq := &rest.RenderRequest{}
+    if !web.zoom {
+        fmt.Fprintf(os.Stderr, "Warning: Pointless rqzoom with zoom off")
+    }
+    renreq.WantZoom = web.zoom
+    renreq.Target.Xmin = web.args.xmin
+    renreq.Target.Xmax = web.args.xmax
+    renreq.Target.Ymin = web.args.ymin
+    renreq.Target.Ymax = web.args.ymax
+    renreq.Req = cacheresp.NextReq
+    return web.newrqraw(web.url("renderqueue"), renreq)
+}
+
 func (web *webclient) getrq() (*rest.RQGetResp, error) {
-    url := web.url(fmt.Sprintf("renderqueue/%v", web.args.getrq))
+    url := web.rqurl()
     return web.getrqraw(url)
+}
+
+func (web *webclient) rqurl() string {
+    return web.url(fmt.Sprintf("renderqueue/%v", web.args.getrq))
 }
 
 func (web *webclient) getrqraw(url string) (*rest.RQGetResp, error) {
@@ -172,18 +204,16 @@ func (web *webclient) getimagraw(url string) (io.Reader, error) {
     return buff, addstack(cpyerr)
 }
 
-func (web *webclient) renreq() (*rest.RenderRequest, error) {
+func (web *webclient) renreq() *rest.RenderRequest {
     renreq := &rest.RenderRequest{}
     renreq.Req = web.req
-    if web.zoom {
-        renreq.WantZoom = true
-        renreq.Target.Xmin = web.args.xmin
-        renreq.Target.Xmax = web.args.xmax
-        renreq.Target.Ymin = web.args.ymin
-        renreq.Target.Ymax = web.args.ymax
-    }
+    renreq.WantZoom = web.zoom
+    renreq.Target.Xmin = web.args.xmin
+    renreq.Target.Xmax = web.args.xmax
+    renreq.Target.Ymin = web.args.ymin
+    renreq.Target.Ymax = web.args.ymax
 
-    return renreq, nil
+    return renreq
 }
 
 func (web *webclient) url(last string) string {
