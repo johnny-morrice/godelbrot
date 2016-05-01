@@ -50,7 +50,7 @@ For a persisent process try `restfulbrot`
 
 `restfulbrot` supports a range of options useful for the implementors of viewing clients.
 
-`clientbrot` is a command line client of restfulbrot, useful for debugging the service.
+`clientbrot` is a command line client of restfulbrot.
 
     $ # No configbrot needed with item stored server-side
     $ clientbrot clientbrot --cycle --getrq CJRRiGU_neADTL-GWEoC -xmin 100 -xmax 350 -ymin 100 ymax 280 > img/zoom.png
