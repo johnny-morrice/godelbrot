@@ -7,7 +7,8 @@ A Unix-style Mandelbrot set explorer in Go.
 ## Features
 
 * Designed as Unix toolkit of orthogonal command-line apps
-* Provides middleware REST service to manage queuing and concurrency.
+* Provides middleware REST service to manage queuing and concurrency
+* Zoom into image given pixel boundaries (no math for you! :)
 * Configuration file generation tool (configbrot)
 * Subdividing regions algorithm
 * Arbitrary precision mode (and extensible internals)
@@ -17,7 +18,8 @@ A Unix-style Mandelbrot set explorer in Go.
 
 * Worse is better
 * Few features
-* Designed for extensibility (both internally, and in command-line app usage).
+* Designed for extensibility (both internally, and in command-line app usage)
+* Ease of client implementation
 
 ## Get it
 
