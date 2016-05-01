@@ -103,8 +103,8 @@ func (rqi *rqitem) logcomplete() {
     }
 }
 
-func (rqi *rqitem) mkbuffs() (renderbuffers, error) {
-    buffs := renderbuffers{}
+func (rqi *rqitem) mkbuffs() (*renderbuffers, error) {
+    buffs := &renderbuffers{}
     var bufferr error
     readM(rqi.mutex, func () {
         info := rqi.pkt.info
@@ -136,12 +136,15 @@ func makeRenderQueue(concurrent uint) renderqueue {
 func (rq *renderqueue) enqueue(pkt *renderpacket) hashcode {
     rqi := makeRqitem(pkt)
     code := rqi.code
+    debugf("Queing packet %v", code)
 
     _, present := rq.ca.get(code)
     if present {
+        debugf("Deduplicated packet %v", code)
         return code
     }
 
+    debugf("Storing packet %v", code)
     rq.ca.put(rqi)
     go func() {
         rq.sysdraw(rqi, pkt)
@@ -151,6 +154,10 @@ func (rq *renderqueue) enqueue(pkt *renderpacket) hashcode {
 }
 
 func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
+    code := hashcode("")
+    if __DEBUG {
+        code = rqi.hash()
+    }
     var zoomArgs []string
     if pkt.wantzoom {
         zoomArgs = process.ZoomArgs(pkt.target)
@@ -160,26 +167,33 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
 
     if berr != nil {
         rqi.fail("failed input buffer")
-        log.Printf("Buffer input error: %v, for packet %v", berr, rqi.packet())
+        log.Printf("Buffer input error: %v, for packet %v (%v)",
+            berr, rqi.hash(), rqi.packet())
         return
     }
     renderErr := rq.rs.render(buffs, zoomArgs)
+    debugf("Rendered packet %v", code)
 
     // Copy any stderr messages
     buffs.logReport()
 
     if renderErr != nil {
         rqi.fail("failed render")
-        log.Printf("Render error: %v, for packet %v", renderErr, rqi.packet())
+        log.Printf("Render error: %v, for packet %v (%v)",
+            renderErr, rqi.hash(), rqi.packet())
         return
     }
 
-    nextinfo, infoerr := lib.ReadInfo(&buffs.nextinfo)
+    nextinfo := new(lib.Info)
+    *nextinfo = rqi.packet().info
+    zoominfo, infoerr := lib.ReadInfo(&buffs.nextinfo)
     if infoerr != nil {
         rqi.fail("failed output buffer")
-        log.Printf("Buffer output error: %v, for packet %v", infoerr, rqi.packet())
+        log.Printf("Buffer output error: %v, for packet %v (%v)",
+            infoerr, rqi.hash(), rqi.packet())
         return
     }
+    nextinfo = zoominfo
 
     rq.ic.put(rqi.hash(), buffs.png.Bytes())
     rqi.done(nextinfo)

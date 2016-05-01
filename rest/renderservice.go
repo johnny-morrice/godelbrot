@@ -16,7 +16,7 @@ type renderbuffers struct {
     report bytes.Buffer
 }
 
-func (rb renderbuffers) logReport() {
+func (rb *renderbuffers) logReport() {
     sc := bufio.NewScanner(&rb.report)
     for sc.Scan() {
         err := sc.Err()
@@ -27,7 +27,7 @@ func (rb renderbuffers) logReport() {
     }
 }
 
-func (rb renderbuffers) input(info *lib.Info) error {
+func (rb *renderbuffers) input(info *lib.Info) error {
     return lib.WriteInfo(&rb.info, info)
 }
 
@@ -44,18 +44,22 @@ func makeRenderservice(concurrent uint) renderservice {
 }
 
 // render a fractal into the renderbuffers
-func (rs renderservice) render(rbuf renderbuffers, zoomArgs []string) error {
+func (rs *renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
     rs.s.acquire(1)
     var err error
     if zoomArgs == nil || len(zoomArgs) == 0 {
+        debugf("Render in progress")
+        tee := io.TeeReader(&rbuf.info, &rbuf.nextinfo)
+        err = process.Render(tee, &rbuf.png, &rbuf.report)
+        debugf("Render done")
+    } else {
+        debugf("ZoomRender in progress")
         next, zerr := process.ZoomRender(&rbuf.info, &rbuf.png, &rbuf.report, zoomArgs)
         err = zerr
         if err == nil {
             _, err = io.Copy(&rbuf.nextinfo, next)
         }
-    } else {
-        tee := io.TeeReader(&rbuf.info, &rbuf.nextinfo)
-        err = process.Render(tee, &rbuf.png, &rbuf.report)
+        debugf("ZoomRender done")
     }
     rs.s.release(1)
     return err

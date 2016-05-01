@@ -24,6 +24,11 @@ func makeImageCache() imagecache {
 }
 
 func (ic imagecache) put(hsh hashcode, png []byte) {
+    sz := 0
+    if __DEBUG {
+        sz = len(png)
+    }
+    debugf("Storing image for %v (length %v)", hsh, sz)
     p := pic{}
     p.png = png
     p.pkthsh = hsh
@@ -31,6 +36,7 @@ func (ic imagecache) put(hsh hashcode, png []byte) {
 }
 
 func (ic imagecache) get(hsh hashcode) ([]byte, bool) {
+    debugf("Fetching image for %v", hsh)
     any, present := ic.ca.get(hsh)
     if !present {
         return nil, false
