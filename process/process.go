@@ -61,10 +61,10 @@ func ZoomArgs(target lib.ZoomTarget) []string {
         "frames",
         "incprec",
         "reconf",
-        "xmax",
         "xmin",
-        "ymax",
+        "xmax",
         "ymin",
+        "ymax",
     }
     actual := []string{
         fmt.Sprint(target.Frames),
