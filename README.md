@@ -9,7 +9,7 @@ A Unix-style Mandelbrot set explorer in Go.
 * Designed as Unix toolkit of orthogonal command-line apps
 * Provides middleware REST service to manage queuing and concurrency
 * Zoom into image given pixel boundaries (no math for you! :)
-* Configuration file generation tool (configbrot)
+* Configuration file generation tool (`configbrot`)
 * Subdividing regions algorithm
 * Arbitrary precision mode (and extensible internals)
 * Greyscale is default (for integration into an external pipeline)
@@ -55,7 +55,7 @@ For a persisent process try `restfulbrot`
 `clientbrot` is a command line client of restfulbrot.
 
     $ # No configbrot needed when zooming to item stored server-side.
-    $ clientbrot --cycle --getrq CJRRiGU_neADTL-GWEoC -xmin 100 -xmax 350 -ymin 100 ymax 280 > img/zoom.png
+    $ clientbrot --cycle --getrq CJRRiGU_neADTL-GWEoC -xmin 100 -xmax 350 -ymin 100 -ymax 280 > img/zoom.png
 
 `colorbrot` is provided as a convenience for those who may like to recolour the output.
 
