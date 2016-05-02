@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "log"
     "image"
+    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/internal/region"
     "github.com/johnny-morrice/godelbrot/internal/nativeregion"
     "github.com/johnny-morrice/godelbrot/internal/bigregion"
@@ -68,11 +69,11 @@ type regionNumericsFactory struct {
 
 func (factory *regionNumericsFactory) Build() region.RegionNumerics {
     switch factory.desc.NumericsStrategy {
-    case NativeNumericsMode:
+    case config.NativeNumericsMode:
         app := makeNativeRegionFacade(factory.desc, factory.baseApp, factory.provider)
         nativeApp := nativeregion.Make(app)
         return &nativeApp
-    case BigFloatNumericsMode:
+    case config.BigFloatNumericsMode:
         app := makeBigRegionFacade(factory.desc, factory.baseApp, factory.provider)
         bigApp := bigregion.Make(app)
         return &bigApp

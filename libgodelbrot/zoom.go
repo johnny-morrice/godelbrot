@@ -2,31 +2,14 @@ package libgodelbrot
 
 import (
     "encoding/json"
-    "errors"
     "io"
     "math/big"
+    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/internal/bigbase"
 )
 
 type ZoomTarget struct {
-    Xmin uint
-    Xmax uint
-    Ymin uint
-    Ymax uint
-    // Reconsider numerical system and render modes as appropriate.
-    Reconfigure bool
-    // Increase precision.  With Reconfigure, this should automatically engage arbitrary
-    // precision mode.
-    UpPrec bool
-    // Number of frames for zoom
-    Frames uint
-}
-
-func (zt *ZoomTarget) Validate() error {
-    if zt.Xmin >= zt.Xmax || zt.Ymin >= zt.Ymax {
-        return errors.New("Min and max zoom boundaries are invalid.")
-    }
-    return nil
+    config.ZoomTarget
 }
 
 // Zoom into a portion of the previous image.

@@ -10,16 +10,12 @@ import (
     "net/http"
     "strconv"
     "github.com/gorilla/mux"
+    "github.com/johnny-morrice/godelbrot/config"
+    "github.com/johnny-morrice/godelbrot/rest/protocol"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
-type RenderRequest struct {
-    Req lib.Request
-    Target lib.ZoomTarget
-    WantZoom bool
-}
-
-func (renreq *RenderRequest) validate() error {
+func validate(renreq *protocol.RenderRequest) error {
     if renreq.Req.ImageWidth < 1 || renreq.Req.ImageHeight < 1 {
         return errors.New("Invalid Req")
     }
@@ -35,24 +31,6 @@ func (renreq *RenderRequest) validate() error {
 
 
     return nil
-}
-
-func WriteReq(w io.Writer, renreq *RenderRequest) error {
-    enc := json.NewEncoder(w)
-    return enc.Encode(renreq)
-}
-
-type RQNewResp struct {
-    RQStatusURL string
-}
-
-type RQGetResp struct {
-    CreateTime int64
-    CompleteTime int64
-    State string
-    Error string
-    NextReq lib.Request
-    ImageURL string
 }
 
 type session struct {
@@ -133,13 +111,13 @@ func (ws *webservice) getRQ(s session) error {
         panic(fmt.Sprintf("Expected type rqitem but received: %v", any))
     }
 
-    resp := &RQGetResp{}
+    resp := &protocol.RQGetResp{}
 
     // This ugly read is candidate for encapsulation in rqitem
     var completetime int64
     var rqerr string
     var state rqstate
-    var nextreq lib.Request
+    var nextreq config.Request
     var code hashcode
     readM(rqi.mutex, func () {
         resp.CreateTime = rqi.createtime.Unix()
@@ -173,7 +151,7 @@ func (ws *webservice) getRQ(s session) error {
 
 func (ws *webservice) enterRQ(s session) error {
     dec := json.NewDecoder(s.req.Body)
-    renreq := &RenderRequest{}
+    renreq := &protocol.RenderRequest{}
     jsonerr := dec.Decode(renreq)
 
     if jsonerr != nil {
@@ -182,7 +160,7 @@ func (ws *webservice) enterRQ(s session) error {
         return jsonerr
     }
 
-    validerr := renreq.validate()
+    validerr := validate(renreq)
     if validerr != nil {
         err := s.httpError(fmt.Sprintf("Invalid render request: %v", validerr), 400)
         log.Println(err)
@@ -190,16 +168,17 @@ func (ws *webservice) enterRQ(s session) error {
     }
 
     // Defaults overwrite where appropriate (security concern)
-    ws.safeTarget(renreq)
+
     info := ws.mergeInfo(renreq)
+    target := ws.makeTarget(renreq)
 
     pkt := &renderpacket{}
     pkt.wantzoom = renreq.WantZoom
     pkt.info = *info
-    pkt.target = renreq.Target
+    pkt.target = target
 
     code := ws.rq.enqueue(pkt)
-    resp := &RQNewResp{}
+    resp := &protocol.RQNewResp{}
     resp.RQStatusURL = fmt.Sprintf("%v/renderqueue/%v/", ws.prefix, code)
     return s.serveJson(resp)
 }
@@ -240,17 +219,21 @@ func withSession(w http.ResponseWriter, req *http.Request, handler func (session
 }
 
 // Only allow zoom reconfiguration if autodetection is enabled throughout the base info.
-func (ws *webservice) safeTarget(renreq *RenderRequest) {
+func (ws *webservice) makeTarget(renreq *protocol.RenderRequest) config.ZoomTarget {
     req := ws.baseinfo.UserRequest
-    dyn := req.Renderer == lib.AutoDetectRenderMode
-    dyn = dyn && req.Numerics == lib.AutoDetectNumericsMode
+    dyn := req.Renderer == config.AutoDetectRenderMode
+    dyn = dyn && req.Numerics == config.AutoDetectNumericsMode
 
-    renreq.Target.UpPrec = dyn
-    renreq.Target.Reconfigure = dyn
-    renreq.Target.Frames = 1
+    target := config.ZoomTarget{}
+
+    target.ZoomBounds = renreq.Target
+    target.UpPrec = dyn
+    target.Reconfigure = dyn
+    target.Frames = 1
+    return target
 }
 
-func (ws *webservice) mergeInfo(renreq *RenderRequest) *lib.Info {
+func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) *lib.Info {
     req := ws.baseinfo.UserRequest
 
     req.ImageWidth = renreq.Req.ImageWidth
