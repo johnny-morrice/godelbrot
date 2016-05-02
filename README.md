@@ -44,11 +44,13 @@ For a persisent process try `restfulbrot`
 
     $ # Terminal A
     $ # Run fractal webservice
-    $ configbrot | restfulbrot
+    $ # Options given to configbrot here become defaults for all render clients.
+    $ configbrot -palette pretty | restfulbrot
 
     $ # Terminal B
     $ # Render through the webservice
-    $ configbrot | clientbrot > mandelbrot.png
+    $ # Customize defaults with configbrot options
+    $ configbrot -width 1920 -height 1080 | clientbrot > mandelbrot.png
 
 `restfulbrot` supports a range of options useful for the implementors of viewing clients.
 
