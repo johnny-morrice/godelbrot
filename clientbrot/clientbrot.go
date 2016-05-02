@@ -18,14 +18,14 @@ import (
 func main() {
     args := readArgs()
 
-    shcl := newShellClient(args)
-
     if (args.cycle && args.getrq == "") || args.newrq {
         info, ierr := lib.ReadInfo(os.Stdin)
         fatalguard(ierr)
         req := info.GenRequest()
-        shcl.args.config.StartReq = &req
+        args.config.StartReq = &req
     }
+
+    shcl := newShellClient(args)
 
     zoomparts := map[string]bool {
         "xmin": true,
@@ -81,15 +81,16 @@ func newShellClient(args params) *shellClient {
     hcl := &http.Client{}
     hcl.Timeout = time.Millisecond * time.Duration(shcl.args.timeout)
     args.config.Http = (*goHttp)(hcl)
+    shcl.restclient = restclient.New(args.config)
     return shcl
 }
 
 func (shcl *shellClient) cycle() (io.Reader, error) {
-    const url = ""
     var target *config.ZoomBounds
     if shcl.zoom {
         target = &shcl.args.zoombox
     }
+    url := shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
     return shcl.restclient.Cycle(url, shcl.zoom, target)
 }
 
