@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "log"
     "image"
+    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/internal/sequence"
     "github.com/johnny-morrice/godelbrot/internal/nativesequence"
     "github.com/johnny-morrice/godelbrot/internal/bigsequence"
@@ -44,11 +45,11 @@ type sequenceNumericsFactory struct {
 
 func (factory *sequenceNumericsFactory) Build() sequence.SequenceNumerics {
     switch factory.desc.NumericsStrategy {
-    case NativeNumericsMode:
+    case config.NativeNumericsMode:
         specialBase := makeNativeBaseFacade(factory.desc, factory.baseApp)
         nativeApp := nativesequence.Make(specialBase)
         return &nativeApp
-    case BigFloatNumericsMode:
+    case config.BigFloatNumericsMode:
         specialBase := makeBigBaseFacade(factory.desc, factory.baseApp)
         bigApp := bigsequence.Make(specialBase)
         return &bigApp

@@ -6,6 +6,7 @@ import (
     "log"
     "strconv"
     "os"
+    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
 
@@ -103,14 +104,14 @@ func parseArguments() commandLine {
 }
 
 // Validate and extract a render description from the command line arguments
-func newRequest(args commandLine) (*libgodelbrot.Request, error) {
+func newRequest(args commandLine) (*config.Request, error) {
     user, uerr := userReq(args)
 
     if uerr != nil {
         return nil, uerr
     }
 
-    var req *libgodelbrot.Request
+    var req *config.Request
     if args.reconfigure {
         desc, rerr := libgodelbrot.ReadInfo(os.Stdin)
         if rerr != nil {
@@ -152,7 +153,7 @@ func newRequest(args commandLine) (*libgodelbrot.Request, error) {
     return req, nil
 }
 
-func userReq(args commandLine) (*libgodelbrot.Request, error) {
+func userReq(args commandLine) (*config.Request, error) {
     const max8 = uint(^uint8(0))
     if args.iterateLimit > max8 {
         return nil, fmt.Errorf("iterateLimit out of bounds.  Valid values in range (0,%v)", max8)
@@ -167,31 +168,31 @@ func userReq(args commandLine) (*libgodelbrot.Request, error) {
         return nil, fmt.Errorf("jobs out of bounds.  Valid values in range (0,%v)", max16)
     }
 
-    numerics := libgodelbrot.AutoDetectNumericsMode
+    numerics := config.AutoDetectNumericsMode
     switch args.numerics {
     case "auto":
         // No change
     case "bigfloat":
-        numerics = libgodelbrot.BigFloatNumericsMode
+        numerics = config.BigFloatNumericsMode
     case "native":
-        numerics = libgodelbrot.NativeNumericsMode
+        numerics = config.NativeNumericsMode
     default:
         return nil, fmt.Errorf("Unknown numerics mode: %v", args.numerics)
     }
 
-    renderer := libgodelbrot.AutoDetectRenderMode
+    renderer := config.AutoDetectRenderMode
     switch args.mode {
     case "auto":
         // No change
     case "sequence":
-        renderer = libgodelbrot.SequenceRenderMode
+        renderer = config.SequenceRenderMode
     case "region":
-        renderer = libgodelbrot.RegionRenderMode
+        renderer = config.RegionRenderMode
     default:
         return nil, fmt.Errorf("Unknown render mode: %v", args.mode)
     }
 
-    req := &libgodelbrot.Request{}
+    req := &config.Request{}
     req.IterateLimit = uint8(args.iterateLimit)
     req.DivergeLimit = args.divergeLimit
     req.RealMin = args.realMin

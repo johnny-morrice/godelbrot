@@ -4,13 +4,14 @@ import (
     "math/big"
     "log"
     "fmt"
+    "github.com/johnny-morrice/godelbrot/config"
 )
 
 // Object to initialize the godelbrot system
 type configurator Info
 
 // InitializeContext examines the description, chooses a renderer, numerical system and palette.
-func Configure(req *Request) (*Info, error) {
+func Configure(req *config.Request) (*Info, error) {
     c := &configurator{}
     c.UserRequest = *req
 
@@ -39,11 +40,11 @@ func Configure(req *Request) (*Info, error) {
 func (c *configurator) chooseRenderStrategy() error {
     req := c.UserRequest
     switch req.Renderer {
-    case AutoDetectRenderMode:
+    case config.AutoDetectRenderMode:
         c.chooseFastRenderStrategy()
-    case SequenceRenderMode:
+    case config.SequenceRenderMode:
         c.useSequenceRenderer()
-    case RegionRenderMode:
+    case config.RegionRenderMode:
         c.useRegionRenderer()
     default:
         return fmt.Errorf("Unknown render mode: %v", req.Renderer)
@@ -62,13 +63,13 @@ func (c *configurator) chooseNumerics() error {
     }
 
     switch desc.Numerics {
-    case AutoDetectNumericsMode:
+    case config.AutoDetectNumericsMode:
         c.chooseAccurateNumerics()
-    case NativeNumericsMode:
+    case config.NativeNumericsMode:
         c.useNative()
         c.Precision = 53
         c.usePrec()
-    case BigFloatNumericsMode:
+    case config.BigFloatNumericsMode:
         c.selectUserPrec()
         c.usePrec()
         c.useBig()
@@ -117,11 +118,11 @@ func (c *configurator) usePrec() {
 }
 
 func (c *configurator) useNative() {
-    c.NumericsStrategy = NativeNumericsMode
+    c.NumericsStrategy = config.NativeNumericsMode
 }
 
 func (c *configurator) useBig() {
-    c.NumericsStrategy = BigFloatNumericsMode
+    c.NumericsStrategy = config.BigFloatNumericsMode
 }
 
 func (c *configurator) parseUserCoords() error {
@@ -164,12 +165,12 @@ func (c *configurator) chooseFastRenderStrategy() {
     area := req.ImageWidth * req.ImageHeight
     numerics := c.NumericsStrategy
 
-    if numerics == AutoDetectNumericsMode {
+    if numerics == config.AutoDetectNumericsMode {
         log.Panic("Must choose render strategy after numerics system")
     }
 
     bigsz := area > DefaultTinyImageArea
-    weirdbase := numerics != NativeNumericsMode
+    weirdbase := numerics != config.NativeNumericsMode
     squarepic := req.ImageWidth == req.ImageHeight
 
     if (bigsz || weirdbase) && squarepic {
@@ -180,11 +181,11 @@ func (c *configurator) chooseFastRenderStrategy() {
 }
 
 func (c *configurator) useSequenceRenderer() {
-    c.RenderStrategy = SequenceRenderMode
+    c.RenderStrategy = config.SequenceRenderMode
 }
 
 func (c *configurator) useRegionRenderer() {
-    c.RenderStrategy = RegionRenderMode
+    c.RenderStrategy = config.RegionRenderMode
 }
 
 // Sample method to discover how many bits needed

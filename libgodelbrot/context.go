@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "image"
     "fmt"
+    "github.com/johnny-morrice/godelbrot/config"
 )
 
 type Renderer interface {
@@ -12,17 +13,17 @@ type Renderer interface {
 func MakeRenderer(desc *Info) (Renderer, error) {
     // Check that numerics modes are okay, but do not act on them
     switch desc.NumericsStrategy {
-    case NativeNumericsMode:
-    case BigFloatNumericsMode:
+    case config.NativeNumericsMode:
+    case config.BigFloatNumericsMode:
     default:
         return nil, fmt.Errorf("Invalid NumericsStrategy: %v", desc.NumericsStrategy)
     }
 
     renderer := Renderer(nil)
     switch desc.RenderStrategy {
-    case SequenceRenderMode:
+    case config.SequenceRenderMode:
         renderer = makeSequenceFacade(desc)
-    case RegionRenderMode:
+    case config.RegionRenderMode:
         renderer = makeRegionFacade(desc)
     default:
         return nil, fmt.Errorf("Invalid RenderStrategy: %v", desc.RenderStrategy)

@@ -6,14 +6,15 @@ import (
     "encoding/json"
     "io"
     "fmt"
+    "github.com/johnny-morrice/godelbrot/config"
 )
 
 type NativeInfo struct {
-    UserRequest Request
+    UserRequest config.Request
     // Describe the render strategy in use
-    RenderStrategy RenderMode
+    RenderStrategy config.RenderMode
     // Describe the numerics system in use
-    NumericsStrategy NumericsMode
+    NumericsStrategy config.NumericsMode
     PaletteType PaletteKind
     Precision uint
 }
@@ -80,7 +81,7 @@ func (info *Info) AddPrec(delta int) {
 }
 
 // Generate a user request that corresponts to the info numerics
-func (info *Info) GenRequest() Request {
+func (info *Info) GenRequest() config.Request {
     req := info.UserRequest
     req.RealMin = emitBig(&info.RealMin)
     req.RealMax = emitBig(&info.RealMax)
@@ -217,54 +218,8 @@ func ReadInfoStream(r io.Reader) <-chan InfoPkt {
     return infoch
 }
 
-// Available render algorithms
-type RenderMode uint
-
-const (
-    AutoDetectRenderMode       = RenderMode(iota)
-    RegionRenderMode
-    SequenceRenderMode
-)
-
-// Available numeric systems
-type NumericsMode uint
-
-const (
-    // Functions should auto-detect the correct system for rendering
-    AutoDetectNumericsMode = NumericsMode(iota)
-    // Use the native CPU arithmetic operations
-    NativeNumericsMode
-    // Use arithmetic based around the standard library big.Float type
-    BigFloatNumericsMode
-)
-
-// Request is a user description of the render to be accomplished
-type Request struct {
-    IterateLimit uint8
-    DivergeLimit float64
-    RealMin      string
-    RealMax      string
-    ImagMin      string
-    ImagMax      string
-    ImageWidth   uint
-    ImageHeight  uint
-    PaletteCode      string
-    FixAspect        bool
-    // Render algorithm
-    Renderer RenderMode
-    // Number of render threads
-    Jobs           uint16
-    RegionCollapse uint
-    // Numerical system
-    Numerics NumericsMode
-    // Number of samples taken when detecting region render glitches
-    RegionSamples uint
-    // Number of bits for big.Float rendering
-    Precision uint
-}
-
-func DefaultRequest() *Request {
-    return &Request{
+func DefaultRequest() *config.Request {
+    return &config.Request {
         IterateLimit:   DefaultIterations,
         DivergeLimit:   DefaultDivergeLimit,
         RegionCollapse: DefaultCollapse,
