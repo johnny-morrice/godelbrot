@@ -11,6 +11,7 @@ import (
     "log"
     "time"
     "sync"
+    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/process"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
 )
@@ -41,7 +42,7 @@ func makeRqitem(pkt *renderpacket) *rqitem {
 
     type UserPacket struct {
         WantZoom bool
-        Target lib.ZoomTarget
+        Target config.ZoomTarget
         Info lib.UserInfo
     }
     userpkt := UserPacket{
@@ -147,7 +148,7 @@ func (rqi *rqitem) mkbuffs() (*renderbuffers, error) {
 
 type renderpacket struct {
     wantzoom bool
-    target lib.ZoomTarget
+    target config.ZoomTarget
     info lib.Info
 }
 
@@ -192,7 +193,7 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
     }
     var zoomArgs []string
     if pkt.wantzoom {
-        zoomArgs = process.ZoomArgs(pkt.target)
+        zoomArgs = process.ZoomArgs(lib.ZoomTarget{ZoomTarget: pkt.target})
     }
 
     buffs, berr := rqi.mkbuffs()
