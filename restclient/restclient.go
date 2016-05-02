@@ -39,14 +39,14 @@ type Config struct {
 // This allows inclusion of this stock code within static archives for other platforms, or
 // gopherjs for javascript.
 type Client struct {
-    args Config
+    config Config
     zoom bool
     tick *time.Ticker
 }
 
-func New(args Config) *Client {
+func New(config Config) *Client {
     web := &Client{}
-    web.args = args
+    web.config = config
     return web
 }
 
@@ -153,10 +153,10 @@ func (web *Client) Getimag(url string) (io.Reader, error) {
 
 func (web *Client) renreq(wantzoom bool, target *config.ZoomBounds) *protocol.RenderRequest {
     renreq := &protocol.RenderRequest{}
-    if web.args.StartReq == nil {
+    if web.config.StartReq == nil {
         panic("Creating default render request but no StartReq given")
     }
-    renreq.Req = *web.args.StartReq
+    renreq.Req = *web.config.StartReq
     renreq.WantZoom = wantzoom
     if target != nil {
         renreq.Target = *target
@@ -165,23 +165,23 @@ func (web *Client) renreq(wantzoom bool, target *config.ZoomBounds) *protocol.Re
 }
 
 func (web *Client) Url(path string) string {
-    args := web.args
-    if web.args.Prefix == "" {
+    config := web.config
+    if web.config.Prefix == "" {
         return fmt.Sprintf("http://%v:%v/%v/",
-            args.Addr, args.Port, path)
+            config.Addr, config.Port, path)
     } else {
         return fmt.Sprintf("http://%v:%v/%v/%v",
-                args.Addr, args.Port, args.Prefix, path)
+                config.Addr, config.Port, config.Prefix, path)
     }
 }
 
 func (web *Client) get(url string) (r HttpResponse, err error) {
     web.cautiously(func () {
-        if web.args.Debug {
+        if web.config.Debug {
             log.Printf("GET %v", url)
         }
-        r, err = web.args.Http.Get(url)
-        if web.args.Debug {
+        r, err = web.config.Http.Get(url)
+        if web.config.Debug {
             web.reportResponse(r, err)
         }
     })
@@ -190,11 +190,11 @@ func (web *Client) get(url string) (r HttpResponse, err error) {
 
 func (web *Client) post(url, ctype string, body io.Reader) (r HttpResponse, err error) {
     web.cautiously(func () {
-        if web.args.Debug {
+        if web.config.Debug {
             log.Printf("POST %v", url)
         }
-        r, err = web.args.Http.Post(url, ctype, body)
-        if web.args.Debug {
+        r, err = web.config.Http.Post(url, ctype, body)
+        if web.config.Debug {
             web.reportResponse(r, err)
         }
     })
@@ -204,8 +204,6 @@ func (web *Client) post(url, ctype string, body io.Reader) (r HttpResponse, err 
 func (web *Client) reportResponse(r HttpResponse, err error) {
     if err != nil {
         log.Printf("Error: %v", err)
-    }
-    if r == nil {
         return
     }
     log.Printf("Status: %v", r.GetStatus())
@@ -219,7 +217,7 @@ func (web *Client) reportResponse(r HttpResponse, err error) {
 
 func (web *Client) cautiously(f func()) {
     if web.tick == nil {
-        web.tick = time.NewTicker(time.Duration(web.args.Ticktime) * time.Millisecond)
+        web.tick = time.NewTicker(time.Duration(web.config.Ticktime) * time.Millisecond)
     } else {
         <-web.tick.C
     }
@@ -227,7 +225,7 @@ func (web *Client) cautiously(f func()) {
 }
 
 func (web *Client) decode(r io.Reader, any interface{}) error {
-    if web.args.Debug {
+    if web.config.Debug {
         buff := &bytes.Buffer{}
         r = io.TeeReader(r, buff)
         derr := decode(r, any)
