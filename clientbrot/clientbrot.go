@@ -90,7 +90,10 @@ func (shcl *shellClient) cycle() (io.Reader, error) {
     if shcl.zoom {
         target = &shcl.args.zoombox
     }
-    url := shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
+    url := ""
+    if shcl.args.getrq != "" {
+        url = shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
+    }
     return shcl.restclient.Cycle(url, shcl.zoom, target)
 }
 
