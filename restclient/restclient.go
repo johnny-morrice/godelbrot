@@ -175,30 +175,41 @@ func (web *Client) Url(path string) string {
     }
 }
 
+type httpFunc func () (HttpResponse, error)
+
 func (web *Client) get(url string) (r HttpResponse, err error) {
-    web.cautiously(func () {
+    f := func () (HttpResponse, error) {
         if web.config.Debug {
             log.Printf("GET %v", url)
         }
-        r, err = web.config.Http.Get(url)
-        if web.config.Debug {
-            web.reportResponse(r, err)
-        }
-    })
-    return
+
+        return web.config.Http.Get(url)
+    }
+    return web.request(f)
 }
 
-func (web *Client) post(url, ctype string, body io.Reader) (r HttpResponse, err error) {
-    web.cautiously(func () {
+func (web *Client) post(url, ctype string, body io.Reader) (HttpResponse, error) {
+    f := func () (HttpResponse, error) {
         if web.config.Debug {
             log.Printf("POST %v", url)
         }
-        r, err = web.config.Http.Post(url, ctype, body)
+
+        return web.config.Http.Post(url, ctype, body)
+    }
+    return web.request(f)
+}
+
+func (web *Client) request(f httpFunc) (HttpResponse, error) {
+    var r HttpResponse
+    var err error
+    web.cautiously(func () {
+        r, err = f()
+
         if web.config.Debug {
             web.reportResponse(r, err)
         }
     })
-    return
+    return r, err
 }
 
 func (web *Client) reportResponse(r HttpResponse, err error) {
