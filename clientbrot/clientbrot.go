@@ -21,8 +21,7 @@ func main() {
     if (args.cycle && args.getrq == "") || args.newrq {
         info, ierr := lib.ReadInfo(os.Stdin)
         fatalguard(ierr)
-        req := info.GenRequest()
-        args.config.StartReq = &req
+        args.req = info.GenRequest()
     }
 
     shcl := newShellClient(args)
@@ -86,15 +85,11 @@ func newShellClient(args params) *shellClient {
 }
 
 func (shcl *shellClient) cycle() (io.Reader, error) {
-    var target *config.ZoomBounds
-    if shcl.zoom {
-        target = &shcl.args.zoombox
-    }
     url := ""
     if shcl.args.getrq != "" {
         url = shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
     }
-    return shcl.restclient.Cycle(url, shcl.zoom, target)
+    return shcl.restclient.Cycle(url, shcl.renreq())
 }
 
 func (shcl *shellClient) getimag() (io.Reader, error) {
@@ -103,13 +98,17 @@ func (shcl *shellClient) getimag() (io.Reader, error) {
 }
 
 func (shcl *shellClient) newrq() (*protocol.RQNewResp, error) {
+    return shcl.restclient.Newrq(shcl.restclient.Url("renderqueue"), shcl.renreq())
+}
+
+func (shcl *shellClient) renreq() *protocol.RenderRequest {
     renreq := &protocol.RenderRequest{}
-    renreq.Req = *shcl.args.config.StartReq
+    renreq.Req = shcl.args.req
     if shcl.zoom {
         renreq.WantZoom = shcl.zoom
         renreq.Target = shcl.args.zoombox
     }
-    return shcl.restclient.Newrq(shcl.restclient.Url("renderqueue"), renreq)
+    return renreq
 }
 
 func (shcl *shellClient) getrq() (*protocol.RQGetResp, error) {
@@ -175,6 +174,8 @@ type params struct {
     getimag string
     cycle bool
     timeout uint
+
+    req config.Request
 
     zoombox config.ZoomBounds
 }
