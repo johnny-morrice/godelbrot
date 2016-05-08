@@ -6,6 +6,7 @@ import (
     "flag"
     "fmt"
     "io"
+    "log"
     "net/http"
     "os"
     "time"
@@ -19,6 +20,9 @@ func main() {
     args := readArgs()
 
     if (args.cycle && args.getrq == "") || args.newrq {
+        if args.config.Debug {
+            log.Println("Reading stdin...")
+        }
         info, ierr := lib.ReadInfo(os.Stdin)
         fatalguard(ierr)
         args.req = info.GenRequest()
