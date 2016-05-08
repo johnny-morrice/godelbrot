@@ -8,7 +8,6 @@ import (
     "io"
     "runtime/debug"
     "time"
-    "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/rest/protocol"
 )
 
@@ -32,7 +31,6 @@ type Config struct {
     Ticktime uint
     Debug bool
     Http HttpClient
-    StartReq *config.Request
 }
 
 // Client provides an interface to restfulbrot over the web, using a user-defined web interface.
@@ -50,9 +48,9 @@ func New(config Config) *Client {
     return web
 }
 
-func (web *Client) Cycle(url string, wantzoom bool, target *config.ZoomBounds) (io.Reader, error) {
+func (web *Client) Cycle(url string, renreq *protocol.RenderRequest) (io.Reader, error) {
     // Continue zoom or start anew?
-    rqurl, err := web.cycstartUrl(url, wantzoom, target)
+    rqurl, err := web.cycstartUrl(url, renreq)
     if err != nil {
         return nil, err
     }
@@ -76,16 +74,16 @@ func (web *Client) Cycle(url string, wantzoom bool, target *config.ZoomBounds) (
     }
 }
 
-func (web *Client) cycstartUrl(url string, wantzoom bool, target *config.ZoomBounds) (string, error) {
+func (web *Client) cycstartUrl(url string, renreq *protocol.RenderRequest) (string, error) {
     if url == "" {
-        newresp, err := web.Newrq(web.Url("renderqueue"), web.renreq(wantzoom, target))
+        newresp, err := web.Newrq(web.Url("renderqueue"), renreq)
         if err != nil {
             return "", err
         }
         return web.Url(newresp.RQStatusURL), nil
     } else {
-        if wantzoom {
-            newresp, err := web.Rqzoom(url, target)
+        if renreq.WantZoom {
+            newresp, err := web.Rqzoom(url, renreq)
             if err != nil {
                 return "" ,err
             }
@@ -114,14 +112,11 @@ func (web *Client) Newrq(url string, renreq *protocol.RenderRequest) (*protocol.
     return rqi, addstack(derr)
 }
 
-func (web *Client) Rqzoom(rqurl string, target *config.ZoomBounds) (*protocol.RQNewResp, error) {
+func (web *Client) Rqzoom(rqurl string, renreq *protocol.RenderRequest) (*protocol.RQNewResp, error) {
     cacheresp, err := web.Getrq(rqurl)
     if err != nil {
         return nil, err
     }
-    renreq := &protocol.RenderRequest{}
-    renreq.WantZoom = true
-    renreq.Target = *target
     renreq.Req = cacheresp.NextReq
     return web.Newrq(web.Url("renderqueue"), renreq)
 }
@@ -149,19 +144,6 @@ func (web *Client) Getimag(url string) (io.Reader, error) {
     buff := &bytes.Buffer{}
     _, cpyerr := io.Copy(buff, resp.GetBody())
     return buff, addstack(cpyerr)
-}
-
-func (web *Client) renreq(wantzoom bool, target *config.ZoomBounds) *protocol.RenderRequest {
-    renreq := &protocol.RenderRequest{}
-    if web.config.StartReq == nil {
-        panic("Creating default render request but no StartReq given")
-    }
-    renreq.Req = *web.config.StartReq
-    renreq.WantZoom = wantzoom
-    if target != nil {
-        renreq.Target = *target
-    }
-    return renreq
 }
 
 func (web *Client) Url(path string) string {
