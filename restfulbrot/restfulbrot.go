@@ -23,6 +23,10 @@ type params struct {
 func main() {
     args := readArgs()
 
+    if args.debug {
+        log.Println("Running in debug mode")
+    }
+
     info, readerr := lib.ReadInfo(os.Stdin)
     if readerr != nil {
         log.Printf("Info read error: %v", readerr)
@@ -33,12 +37,11 @@ func main() {
     
     // Add CORS to the handler
     if args.origins != "" {
-        h = newcorshandler(h, args.origins)
+        h = newcorshandler(h, args)
     }
 
     // Add logging to the handler
     if args.debug {
-        log.Println("Running in debug mode")
         h = loghandler{handler: h}
         rest.Debug()
     }
@@ -53,28 +56,55 @@ func main() {
 
 type corshandler struct {
     handler http.Handler
-    origins map[string]bool
+    allowed map[string]bool
+    headers []string
+    debug bool
 }
 
-func newcorshandler(h http.Handler, origins string) http.Handler {
+func newcorshandler(h http.Handler, args params) http.Handler {
     ch := corshandler{}
     ch.handler = h
+    ch.debug = args.debug
+    ch.headers = []string{"Content-Type"}
 
-    ch.origins = map[string]bool{}
-    for _, o := range strings.Split(origins, ",") {
-        ch.origins[o] = true
+    ch.allowed = map[string]bool{}
+    for _, o := range strings.Split(args.origins, ",") {
+        ch.allowed[o] = true
+        if ch.debug {
+            log.Printf("Allowing CORS for '%v'", o)    
+        }
     }
 
     return ch
 }
 
 func (ch corshandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-    host := req.Host
-    if ch.origins[host] {
-        w.Header()["Access-Control-Allow-Origin"] = []string{host}
-        log.Printf("Added CORS header for %v", host)
+    ch.cors(w, req)
+    if req.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+    } else {
+        ch.handler.ServeHTTP(w, req)
     }
-    ch.handler.ServeHTTP(w, req)
+}
+
+func (ch corshandler) cors(w http.ResponseWriter, req *http.Request) {
+    originheads := req.Header["Origin"]
+    var origin string
+    if len(originheads) == 1 {
+        origin = originheads[0]
+    } else if ch.debug {
+        log.Printf("Bad Origin header: %v", strings.Join(originheads, ","))
+    }
+
+    if ch.allowed[origin] {
+        w.Header()["Access-Control-Allow-Origin"] = []string{origin}
+        w.Header()["Access-Control-Allow-Headers"] = ch.headers
+        if ch.debug {
+            log.Printf("CORS okay for '%v'", origin)    
+        }
+    } else if ch.debug {
+        log.Printf("CORS denied for '%v'", origin)
+    }
 }
 
 type loghandler struct {
