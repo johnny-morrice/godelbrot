@@ -32,7 +32,7 @@ func main() {
         log.Printf("Info read error: %v", readerr)
     }
 
-    const prefix = "/"
+    const prefix = ""
     h := rest.MakeWebservice(info, args.jobs, prefix)
     
     // Add CORS to the handler
