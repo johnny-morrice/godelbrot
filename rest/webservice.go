@@ -130,6 +130,8 @@ func (ws *webservice) getRQ(s session) error {
         code = rqi.code
     })
 
+    resp.ThisUrl = fmt.Sprintf("%v/renderqueue/%v", ws.prefix, code)
+
     switch state {
     case __DONE:
         resp.State = "done"

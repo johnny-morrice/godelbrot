@@ -33,6 +33,11 @@ type Config struct {
     Http HttpClient
 }
 
+type RenderResult struct {
+    Image io.Reader
+    Status protocol.RQGetResp
+}
+
 // Client provides an interface to restfulbrot over the web, using a user-defined web interface.
 // This allows inclusion of this stock code within static archives for other platforms, or
 // gopherjs for javascript.
@@ -48,7 +53,7 @@ func New(config Config) *Client {
     return web
 }
 
-func (web *Client) Cycle(url string, renreq *protocol.RenderRequest) (io.Reader, error) {
+func (web *Client) RenderCycle(url string, renreq *protocol.RenderRequest) (*RenderResult, error) {
     // Continue zoom or start anew?
     rqurl, err := web.cycstartUrl(url, renreq)
     if err != nil {
@@ -60,16 +65,30 @@ func (web *Client) Cycle(url string, renreq *protocol.RenderRequest) (io.Reader,
             return nil, err
         }
         switch rqstat.State {
+
         case "done":
             imgurl := web.Url(rqstat.ImageURL)
-            return web.Getimag(imgurl)
+            
+            r, err := web.Getimag(imgurl)
+            if err != nil {
+                return nil, err
+            }
+
+            resp := &RenderResult{}
+            resp.Image = r
+            resp.Status = *rqstat
+            return resp, nil
+
         case "error":
             weberr := fmt.Errorf("RQGetResp error: %v", rqstat.Error)
             return nil, weberr
+
         case "wait":
             // NOP
+
         default:
             panic(fmt.Errorf("Unknown status: %v", rqstat.State))
+
         }
     }
 }

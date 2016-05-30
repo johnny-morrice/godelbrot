@@ -10,7 +10,7 @@ import (
     "net/http"
     "os"
     "time"
-    "github.com/johnny-morrice/godelbrot/restclient"
+    rc "github.com/johnny-morrice/godelbrot/restclient"
     "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/rest/protocol"
     lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
@@ -47,9 +47,11 @@ func main() {
     // Ugly
     var r io.Reader
     if args.cycle {
-        png, err := shcl.cycle()
+        result, err := shcl.cycle()
         fatalguard(err)
-        r = png
+
+        log.Printf("RequestUrl: %v", result.Status.ThisUrl)
+        r = result.Image
     } else if args.newrq {
         rqi, err := shcl.newrq()
         fatalguard(err)
@@ -73,7 +75,7 @@ func main() {
 }
 
 type shellClient struct {
-    restclient *restclient.Client
+    rc *rc.Client
     zoom bool
     args params
 }
@@ -84,25 +86,25 @@ func newShellClient(args params) *shellClient {
     hcl := &http.Client{}
     hcl.Timeout = time.Millisecond * time.Duration(shcl.args.timeout)
     args.config.Http = (*goHttp)(hcl)
-    shcl.restclient = restclient.New(args.config)
+    shcl.rc = rc.New(args.config)
     return shcl
 }
 
-func (shcl *shellClient) cycle() (io.Reader, error) {
+func (shcl *shellClient) cycle() (*rc.RenderResult, error) {
     url := ""
     if shcl.args.getrq != "" {
-        url = shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
+        url = shcl.rc.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
     }
-    return shcl.restclient.Cycle(url, shcl.renreq())
+    return shcl.rc.RenderCycle(url, shcl.renreq())
 }
 
 func (shcl *shellClient) getimag() (io.Reader, error) {
     url := fmt.Sprintf("image/%v", shcl.args.getimag)
-    return shcl.restclient.Getimag(shcl.restclient.Url(url))
+    return shcl.rc.Getimag(shcl.rc.Url(url))
 }
 
 func (shcl *shellClient) newrq() (*protocol.RQNewResp, error) {
-    return shcl.restclient.Newrq(shcl.restclient.Url("renderqueue"), shcl.renreq())
+    return shcl.rc.Newrq(shcl.rc.Url("renderqueue"), shcl.renreq())
 }
 
 func (shcl *shellClient) renreq() *protocol.RenderRequest {
@@ -117,11 +119,11 @@ func (shcl *shellClient) renreq() *protocol.RenderRequest {
 
 func (shcl *shellClient) getrq() (*protocol.RQGetResp, error) {
     url := shcl.rqurl()
-    return shcl.restclient.Getrq(url)
+    return shcl.rc.Getrq(url)
 }
 
 func (shcl *shellClient) rqurl() string {
-    return shcl.restclient.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
+    return shcl.rc.Url(fmt.Sprintf("renderqueue/%v", shcl.args.getrq))
 }
 
 func fatalguard(err error) {
@@ -172,7 +174,7 @@ func readArgs() params {
 }
 
 type params struct {
-    config restclient.Config
+    config rc.Config
     newrq bool
     getrq string
     getimag string

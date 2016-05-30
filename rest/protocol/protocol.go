@@ -21,5 +21,6 @@ type RQGetResp struct {
     Error string
     NextReq config.Request
     ImageURL string
+    ThisUrl string
 }
 
