@@ -171,7 +171,7 @@ func (web *Client) Url(path string) string {
         return fmt.Sprintf("http://%v:%v/%v/",
             config.Addr, config.Port, path)
     } else {
-        return fmt.Sprintf("http://%v:%v/%v/%v",
+        return fmt.Sprintf("http://%v:%v/%v/%v/",
                 config.Addr, config.Port, config.Prefix, path)
     }
 }

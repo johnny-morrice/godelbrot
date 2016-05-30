@@ -130,14 +130,14 @@ func (ws *webservice) getRQ(s session) error {
         code = rqi.code
     })
 
-    resp.ThisUrl = fmt.Sprintf("%v/renderqueue/%v", ws.prefix, code)
+    resp.ThisUrl = ws.prefixed("renderqueue/%v/", code)
 
     switch state {
     case __DONE:
         resp.State = "done"
         resp.CompleteTime = completetime
         resp.NextReq = nextreq
-        resp.ImageURL = fmt.Sprintf("%v/image/%v/", ws.prefix, code)
+        resp.ImageURL = ws.prefixed("image/%v/", code)
     case __ERROR:
         resp.State = "error"
         resp.CompleteTime = completetime
@@ -181,10 +181,10 @@ func (ws *webservice) enterRQ(s session) error {
 
     code := ws.rq.enqueue(pkt)
     resp := &protocol.RQNewResp{}
-    resp.RQStatusURL = fmt.Sprintf("%v/renderqueue/%v/", ws.prefix, code)
+    resp.RQStatusURL = ws.prefixed("renderqueue/%v/", code)
+    
     return s.serveJson(resp)
 }
-
 
 func (ws *webservice) getImage(s session) error {
     input := s.getMuxVar("rqcode")
@@ -208,6 +208,19 @@ func (ws *webservice) getImage(s session) error {
     }
 
     return nil
+}
+
+func (ws *webservice) prefixed(format string, args... interface{}) string {
+    if ws.prefix == "" {
+        return fmt.Sprintf(format, args...)
+    } else {
+        // TODO inefficient
+        more := []interface{}{
+            ws.prefix,
+        }
+        args = append(more, args...)
+        return fmt.Sprintf("%v/" + format, args)
+    }
 }
 
 func withSession(w http.ResponseWriter, req *http.Request, handler func (session) error) {
