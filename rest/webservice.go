@@ -214,12 +214,12 @@ func (ws *webservice) prefixed(format string, args... interface{}) string {
     if ws.prefix == "" {
         return fmt.Sprintf(format, args...)
     } else {
-        // TODO inefficient
-        more := []interface{}{
-            ws.prefix,
+        more := make([]interface{}, len(args) + 1)
+        more[0] = ws.prefix
+        for i, a := range args {
+            more[i + 1] = a
         }
-        args = append(more, args...)
-        return fmt.Sprintf("%v/" + format, args)
+        return fmt.Sprintf("%v/" + format, more)
     }
 }
 

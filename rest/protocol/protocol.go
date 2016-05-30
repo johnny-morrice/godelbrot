@@ -23,4 +23,3 @@ type RQGetResp struct {
     ImageURL string
     ThisUrl string
 }
-

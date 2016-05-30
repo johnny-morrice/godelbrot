@@ -7,6 +7,7 @@ import (
     "log"
     "io"
     "runtime/debug"
+    "strings"
     "time"
     "github.com/johnny-morrice/godelbrot/rest/protocol"
 )
@@ -167,13 +168,19 @@ func (web *Client) Getimag(url string) (io.Reader, error) {
 
 func (web *Client) Url(path string) string {
     config := web.config
+    var url string
     if web.config.Prefix == "" {
-        return fmt.Sprintf("http://%v:%v/%v/",
+        url = fmt.Sprintf("http://%v:%v/%v",
             config.Addr, config.Port, path)
     } else {
-        return fmt.Sprintf("http://%v:%v/%v/%v/",
+        url = fmt.Sprintf("http://%v:%v/%v/%v",
                 config.Addr, config.Port, config.Prefix, path)
     }
+    // Help the user for once.
+    if !strings.HasSuffix(url, "/") {
+        url += "/"
+    }
+    return url
 }
 
 type httpFunc func () (HttpResponse, error)
