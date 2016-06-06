@@ -37,10 +37,15 @@ func main() {
         "ymax": true,
     }
 
+    first := true
     flag.Visit(func (fl *flag.Flag) {
         _, ok := zoomparts[fl.Name]
         if ok {
             shcl.zoom = true
+            if args.config.Debug && first {
+                log.Printf("Found parameter %v: zooming", fl.Name)
+                first = false
+            }
         }
     })
 
@@ -49,8 +54,9 @@ func main() {
     if args.cycle {
         result, err := shcl.cycle()
         fatalguard(err)
-
-        log.Printf("RequestUrl: %v", result.Status.ThisUrl)
+        if args.config.Debug {
+            log.Printf("RequestUrl: %v", result.Status.ThisUrl)    
+        }
         r = result.Image
     } else if args.newrq {
         rqi, err := shcl.newrq()
