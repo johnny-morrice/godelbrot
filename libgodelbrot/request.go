@@ -230,7 +230,7 @@ func DefaultRequest() *config.Request {
         ImagMax:        float2str(imag(MandelbrotMax)),
         ImageHeight:    DefaultImageHeight,
         ImageWidth:     DefaultImageWidth,
-        FixAspect:      true,
+        FixAspect:      config.Shrink,
         PaletteCode:    "grayscale",
         Jobs: 1,
     }

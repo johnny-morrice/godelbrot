@@ -45,7 +45,7 @@ type commandLine struct {
     mode           string
     regionCollapse uint
     jobs  uint
-    fixAspect      bool
+    fixAspect      string
     numerics string
     glitchSamples uint
     precision uint
@@ -95,7 +95,7 @@ func parseArguments() commandLine {
     flag.StringVar(&args.numerics, "numerics",
         "auto", "Numerical system (auto|native|bigfloat)")
     flag.StringVar(&args.palette, "palette", "grayscale", "(redscale|grayscale|pretty)")
-    flag.BoolVar(&args.fixAspect, "fix", true, "Resize plane window to fit image aspect ratio")
+    flag.StringVar(&args.fixAspect, "fix", "shrink", "Aspect ratio conservation (stretch|shrink|grow)")
     flag.BoolVar(&args.reconfigure, "reconf", false,
         "Reconfigure the render spec sent to stdin")
     flag.Parse()
@@ -192,6 +192,16 @@ func userReq(args commandLine) (*config.Request, error) {
         return nil, fmt.Errorf("Unknown render mode: %v", args.mode)
     }
 
+    aspect := config.Shrink
+    switch args.fixAspect {
+    case "shrink":
+        // No change
+    case "stretch":
+        aspect = config.Stretch
+    case "grow":
+        aspect = config.Grow
+    }
+
     req := &config.Request{}
     req.IterateLimit = uint8(args.iterateLimit)
     req.DivergeLimit = args.divergeLimit
@@ -202,7 +212,7 @@ func userReq(args commandLine) (*config.Request, error) {
     req.ImageWidth = args.width
     req.ImageHeight = args.height
     req.PaletteCode = args.palette
-    req.FixAspect = args.fixAspect
+    req.FixAspect = aspect
     req.Renderer = renderer
     req.Numerics = numerics
     req.RegionCollapse = args.regionCollapse

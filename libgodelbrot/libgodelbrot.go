@@ -12,3 +12,5 @@ func Render(info *Info) (*image.NRGBA, error) {
 		return nil, err
 	}
 }
+
+var __DEBUG = true

@@ -46,33 +46,7 @@ func Make(app RenderApplication) BigBaseNumerics {
 	planeHeight := MakeBigFloat(0.0, prec)
 	planeHeight.Sub(&top, &bottom)
 
-	planeAspect := MakeBigFloat(0.0, prec)
-	planeAspect.Quo(&planeWidth, &planeHeight)
-
-	nativePictureAspect := base.AppPictureAspectRatio(app)
-	pictureAspect := MakeBigFloat(nativePictureAspect, prec)
-
-	thindicator := planeAspect.Cmp(&pictureAspect)
-
 	baseConfig := app.BaseConfig()
-
-	if baseConfig.FixAspect {
-		// If the plane aspect is greater than image aspect
-		// Then the plane is too short, so must be made taller
-		if thindicator == 1 {
-			taller := MakeBigFloat(0.0, prec)
-			taller.Quo(&planeWidth, &pictureAspect)
-			bottom.Sub(&top, &taller)
-			planeHeight.Sub(&top, &bottom)
-		} else if thindicator == -1 {
-			// If the plane aspect is less than the image aspect
-			// Then the plane is too thin, and must be made fatter
-			fatter := MakeBigFloat(0.0, prec)
-			fatter.Mul(&planeHeight, &pictureAspect)
-			right.Add(&left, &fatter)
-			planeWidth.Sub(&right, &left)
-		}
-	}
 
 	pictureWidth, pictureHeight := app.PictureDimensions()
 	uq := UnitQuery{pictureWidth, pictureHeight, &planeWidth, &planeHeight}

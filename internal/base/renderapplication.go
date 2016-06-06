@@ -10,5 +10,4 @@ type RenderApplication interface {
 type BaseConfig struct {
 	IterateLimit uint8
 	DivergeLimit float64
-	FixAspect bool
 }

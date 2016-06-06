@@ -19,7 +19,6 @@ func makeBaseFacade(desc *Info) *baseFacade {
     facade.config = base.BaseConfig{
         IterateLimit: req.IterateLimit,
         DivergeLimit: req.DivergeLimit,
-        FixAspect: req.FixAspect,
     }
     facade.pictureWidth = req.ImageWidth
     facade.pictureHeight = req.ImageHeight

@@ -4,6 +4,14 @@ import (
     "errors"
 )
 
+type AspectConservation uint8
+
+const (
+    Stretch = AspectConservation(iota)
+    Shrink
+    Grow
+)
+
 // Request is a user description of the render to be accomplished
 type Request struct {
     IterateLimit uint8
@@ -15,7 +23,7 @@ type Request struct {
     ImageWidth   uint
     ImageHeight  uint
     PaletteCode      string
-    FixAspect        bool
+    FixAspect        AspectConservation
     // Render algorithm
     Renderer RenderMode
     // Number of render threads

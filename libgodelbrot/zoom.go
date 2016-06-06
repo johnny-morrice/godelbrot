@@ -3,6 +3,7 @@ package libgodelbrot
 import (
     "encoding/json"
     "io"
+    "log"
     "math/big"
     "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/internal/bigbase"
@@ -43,6 +44,7 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
     info := z.lens(degree)
 
     if z.Reconfigure {
+        log.Println("Reconfigure zoom Info")
         return Configure(&info.UserRequest)
     } else {
         return info, nil
@@ -52,7 +54,7 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
 func (z *Zoom) lens(degree float64) *Info {
     appinfo := new(Info)
     *appinfo = z.Prev
-    appinfo.UserRequest.FixAspect = false
+    appinfo.UserRequest.FixAspect = config.Stretch
     baseapp := makeBaseFacade(appinfo)
     app := makeBigBaseFacade(appinfo, baseapp)
     num := bigbase.Make(app)
@@ -102,10 +104,18 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
     info := z.lens(degree)
 
     if z.UpPrec {
+        dumpacc := false
         for !info.IsAccurate() {
+            if __DEBUG {
+                dumpacc = true
+            }
             z.Prev.AddPrec(1)
             z.Prev.UserRequest = z.Prev.GenRequest()
             info = z.lens(degree)
+        }
+
+        if dumpacc {
+            log.Printf("Accuracy increased to %v", z.Prev.RealMin.Prec())
         }
     }
 
@@ -119,6 +129,9 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
 
 // Movie is a parametric expansion of frames.
 func (z *Zoom) Movie() ([]*Info, error) {
+    if __DEBUG {
+        log.Printf("Rendering %v frames", z.Frames)
+    }
     cnt := z.Frames
     if cnt == 0 {
         return []*Info{}, nil

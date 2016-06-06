@@ -26,28 +26,8 @@ func Make(app RenderApplication) NativeBaseNumerics {
 	planeMin, planeMax := app.NativeUserCoords()
 	planeWidth := real(planeMax) - real(planeMin)
 	planeHeight := imag(planeMax) - imag(planeMin)
-	planeAspect := planeWidth / planeHeight
 	pictureWidth, pictureHeight := app.PictureDimensions()
-	pictureAspect := base.PictureAspectRatio(pictureWidth, pictureHeight)
 	config := app.BaseConfig()
-
-	if config.FixAspect {
-		// If the plane aspect is greater than image aspect
-		// Then the plane is too short, so must be made taller
-		if planeAspect > pictureAspect {
-			taller := planeWidth / pictureAspect
-			bottom := imag(planeMax) - taller
-			planeMin = complex(real(planeMin), bottom)
-			planeHeight = imag(planeMax) - bottom
-		} else if planeAspect < pictureAspect {
-			// If the plane aspect is less than the image aspect
-			// Then the plane is too thin, and must be made fatter
-			fatter := planeHeight * pictureAspect
-			right := real(planeMin) + fatter
-			planeMax = complex(right, imag(planeMax))
-			planeWidth = right - real(planeMin)
-		}
-	}
 
 	uq := UnitQuery{pictureWidth, pictureHeight, planeWidth, planeHeight}
 	rUnit, iUnit := uq.PixelUnits()

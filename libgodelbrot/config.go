@@ -1,9 +1,10 @@
 package libgodelbrot
 
 import (
-    "math/big"
-    "log"
     "fmt"
+    "log"
+    "math/big"
+    bb "github.com/johnny-morrice/godelbrot/internal/bigbase"
     "github.com/johnny-morrice/godelbrot/config"
 )
 
@@ -33,7 +34,73 @@ func Configure(req *config.Request) (*Info, error) {
         return nil, perr
     }
 
+    if req.FixAspect != config.Stretch {
+        ferr := c.fixAspect()
+        if ferr != nil {
+            return nil, ferr
+        }    
+    }
+
     return (*Info)(c), nil
+}
+
+func (c *configurator) fixAspect() error {
+    if __DEBUG {
+        log.Println("Fixing aspect ratio")
+    }
+
+    rmin := big.NewFloat(0.0).Copy(&c.RealMin)
+    rmax := big.NewFloat(0.0).Copy(&c.RealMax)
+    imin := big.NewFloat(0.0).Copy(&c.ImagMin)
+    imax := big.NewFloat(0.0).Copy(&c.ImagMax)
+
+    planeWidth := bb.MakeBigFloat(0.0, c.Precision)
+    planeWidth.Sub(rmax, rmin)
+
+    planeHeight := bb.MakeBigFloat(0.0, c.Precision)
+    planeHeight.Sub(imin, imax)
+
+    planeAspect := bb.MakeBigFloat(0.0, c.Precision)
+    planeAspect.Quo(&planeWidth, &planeHeight)
+
+    nativePictureAspect := float64(c.UserRequest.ImageWidth) / float64(c.UserRequest.ImageHeight)
+    pictureAspect := bb.MakeBigFloat(nativePictureAspect, c.Precision)
+
+    thindicator := planeAspect.Cmp(&pictureAspect)
+
+    adjustWidth := func () {
+        trans := bb.MakeBigFloat(0.0, c.Precision)
+        trans.Mul(&planeHeight, &pictureAspect)
+        rmax.Add(rmin, &trans)
+        c.RealMax = *rmax
+    }
+
+    adjustHeight := func () {
+        trans := bb.MakeBigFloat(0.0, c.Precision)
+        trans.Quo(&planeWidth, &pictureAspect)
+        imax.Sub(imin, &trans)
+        c.ImagMax = *imax
+    }
+
+    if c.UserRequest.FixAspect == config.Grow {
+        // Then the plane is too short, so must be made taller
+        if thindicator == 1 {
+            adjustHeight()
+        } else if thindicator == -1 {
+            // Then the plane is too thin, and must be made fatter
+            adjustWidth()
+        }
+    } else if c.UserRequest.FixAspect == config.Shrink {
+        if thindicator == 1 {
+            // The plane is too fat, so must be made thinner
+            adjustWidth()
+        } else if thindicator == -1 {
+            // The plane is too tall, so must be made thinner
+            adjustHeight()
+        }
+    }
+
+    return nil
 }
 
 // Initialize the render system
