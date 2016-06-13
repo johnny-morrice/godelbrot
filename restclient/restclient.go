@@ -138,6 +138,11 @@ func (web *Client) Rqzoom(rqurl string, renreq *protocol.RenderRequest) (*protoc
         return nil, err
     }
     renreq.Req = cacheresp.NextReq
+
+    if web.config.Debug {
+        log.Printf("Next request for %v was %v", rqurl, cacheresp.NextReq)
+    }
+
     return web.Newrq(web.Url("renderqueue"), renreq)
 }
 

@@ -55,17 +55,15 @@ func (c *configurator) fixAspect() error {
     imax := big.NewFloat(0.0).Copy(&c.ImagMax)
 
     planeWidth := bb.MakeBigFloat(0.0, c.Precision)
-    planeWidth.Sub(rmax, rmin)
-
     planeHeight := bb.MakeBigFloat(0.0, c.Precision)
-    planeHeight.Sub(imin, imax)
-
     planeAspect := bb.MakeBigFloat(0.0, c.Precision)
+
+    planeWidth.Sub(rmax, rmin)
+    planeHeight.Sub(imax, imin)
     planeAspect.Quo(&planeWidth, &planeHeight)
 
     nativePictureAspect := float64(c.UserRequest.ImageWidth) / float64(c.UserRequest.ImageHeight)
     pictureAspect := bb.MakeBigFloat(nativePictureAspect, c.Precision)
-
     thindicator := planeAspect.Cmp(&pictureAspect)
 
     adjustWidth := func () {
@@ -78,26 +76,63 @@ func (c *configurator) fixAspect() error {
     adjustHeight := func () {
         trans := bb.MakeBigFloat(0.0, c.Precision)
         trans.Quo(&planeWidth, &pictureAspect)
-        imax.Sub(imin, &trans)
+        imax.Add(imin, &trans)
         c.ImagMax = *imax
     }
 
-    if c.UserRequest.FixAspect == config.Grow {
+    if __TRACE {
+        log.Printf("Old Plane Width: %v", bb.DbgF(planeWidth))
+        log.Printf("Old Plane Height: %v", bb.DbgF(planeHeight))
+        log.Printf("Old Plane Aspect: %v", bb.DbgF(planeAspect))
+        log.Printf("Image Width: %v", c.UserRequest.ImageWidth)
+        log.Printf("Image Height: %v", c.UserRequest.ImageHeight)
+        log.Printf("Image Aspect: %v", bb.DbgF(pictureAspect))
+    }
+
+    var strategy = c.UserRequest.FixAspect
+
+    if strategy == config.Grow {
         // Then the plane is too short, so must be made taller
         if thindicator == 1 {
+            if __DEBUG {
+                log.Println("Plane becomes taller")
+            }
             adjustHeight()
         } else if thindicator == -1 {
+            if __DEBUG {
+                log.Println("Plane becomes fatter")
+            }
             // Then the plane is too thin, and must be made fatter
             adjustWidth()
         }
-    } else if c.UserRequest.FixAspect == config.Shrink {
+    } else if strategy == config.Shrink {
         if thindicator == 1 {
             // The plane is too fat, so must be made thinner
+            if __DEBUG {
+                log.Println("Plane becomes thinner")
+            }
             adjustWidth()
         } else if thindicator == -1 {
-            // The plane is too tall, so must be made thinner
+            if __DEBUG {
+                log.Println("Plane becomes shorter")    
+            }
+            // The plane is too tall, so must be made shorter
             adjustHeight()
         }
+    }
+
+    if __TRACE && (strategy == config.Shrink || strategy == config.Grow) {
+        fixWidth := bb.MakeBigFloat(0.0, c.Precision)
+        fixHeight := bb.MakeBigFloat(0.0, c.Precision)
+        fixAspect := bb.MakeBigFloat(0.0, c.Precision)
+
+        fixWidth.Sub(rmax, rmin)
+        fixHeight.Sub(imax, imin)
+        fixAspect.Quo(&fixWidth, &fixHeight)
+
+        log.Printf("New Plane Width: %v", bb.DbgF(fixWidth))
+        log.Printf("New Plane Height: %v", bb.DbgF(fixHeight))
+        log.Printf("Fixed Aspect: %v", bb.DbgF(fixAspect))
     }
 
     return nil

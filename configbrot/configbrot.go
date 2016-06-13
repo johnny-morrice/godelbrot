@@ -200,6 +200,8 @@ func userReq(args commandLine) (*config.Request, error) {
         aspect = config.Stretch
     case "grow":
         aspect = config.Grow
+    default:
+        return nil, fmt.Errorf("Unknown aspect fix strategy: %v", args.fixAspect)
     }
 
     req := &config.Request{}
