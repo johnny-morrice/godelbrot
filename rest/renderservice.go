@@ -48,6 +48,7 @@ func makeRenderservice(concurrent uint) renderservice {
 func (rs renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
     rs.s.acquire(1)
     var err error
+
     if zoomArgs == nil || len(zoomArgs) == 0 {
         debugf("Render in progress")
         tee := io.TeeReader(&rbuf.info, &rbuf.nextinfo)
@@ -58,7 +59,7 @@ func (rs renderservice) render(rbuf *renderbuffers, zoomArgs []string) error {
         next, zerr := process.ZoomRender(&rbuf.info, &rbuf.png, &rbuf.report, zoomArgs)
         err = zerr
         if err == nil {
-            _, err = io.Copy(&rbuf.nextinfo, next)
+            _, err = io.Copy(&rbuf.nextinfo, next)     
         }
         debugf("ZoomRender done")
     }

@@ -126,9 +126,11 @@ func (ws *webservice) getRQ(s session) error {
         }
         rqerr = rqi.err
         state = rqi.state
-        nextreq = rqi.pkt.info.UserRequest
+        nextreq = rqi.nextinfo.UserRequest
         code = rqi.code
     })
+
+    log.Printf("Sending next user request for %v: %v", code, nextreq)
 
     resp.ThisUrl = ws.prefixed("renderqueue/%v/", code)
 
@@ -171,7 +173,14 @@ func (ws *webservice) enterRQ(s session) error {
 
     // Defaults overwrite where appropriate (security concern)
 
-    info := ws.mergeInfo(renreq)
+    info, mergefault := ws.mergeInfo(renreq)
+
+    if mergefault != nil {
+        err := s.internalError()
+        log.Println(err)
+        return mergefault
+    }
+
     target := ws.makeTarget(renreq)
 
     pkt := &renderpacket{}
@@ -248,17 +257,35 @@ func (ws *webservice) makeTarget(renreq *protocol.RenderRequest) config.ZoomTarg
     return target
 }
 
-func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) *lib.Info {
+func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) (*lib.Info, error) {
     req := ws.baseinfo.UserRequest
 
     req.ImageWidth = renreq.Req.ImageWidth
     req.ImageHeight = renreq.Req.ImageHeight
 
-    inf := new(lib.Info)
-    *inf = ws.baseinfo
-    inf.UserRequest = req
+    // TODO - route for default render, for cleaner semantics here
+    noplane := false
+    bounds := []string {
+        renreq.Req.RealMin,
+        renreq.Req.RealMax,
+        renreq.Req.ImagMin,
+        renreq.Req.ImagMax,
+    }
 
-    return inf
+    for _, b := range bounds {
+        noplane = noplane || b == ""
+    }
+
+    if !noplane {
+        req.RealMin = renreq.Req.RealMin
+        req.RealMax = renreq.Req.RealMax
+        req.ImagMin = renreq.Req.ImagMin
+        req.ImagMax = renreq.Req.ImagMax
+    }
+
+    log.Printf("Configuring renquest: %v", req)
+
+    return lib.Configure(&req)
 }
 
 func format(f float64) string {

@@ -217,8 +217,6 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
         return
     }
 
-    nextinfo := new(lib.Info)
-    *nextinfo = rqi.packet().info
     zoominfo, infoerr := lib.ReadInfo(&buffs.nextinfo)
     if infoerr != nil {
         rqi.fail("failed output buffer")
@@ -226,8 +224,9 @@ func (rq *renderqueue) sysdraw(rqi *rqitem, pkt *renderpacket) {
             infoerr, rqi.hash(), rqi.packet())
         return
     }
-    nextinfo = zoominfo
+
+    log.Printf("Prev/Next Info for %v:\n    * Prev:\n%v\n    *Next: %v", code, rqi.packet().info, zoominfo)
 
     rq.ic.put(rqi.hash(), buffs.png.Bytes())
-    rqi.done(nextinfo)
+    rqi.done(zoominfo)
 }
