@@ -13,5 +13,6 @@ func Render(info *Info) (*image.NRGBA, error) {
 	}
 }
 
-var __DEBUG = true
-var __TRACE = true
+// These flags are intended for developers only
+var __DEBUG = false
+var __TRACE = false
