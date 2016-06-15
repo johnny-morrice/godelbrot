@@ -95,7 +95,7 @@ func parseArguments() commandLine {
     flag.StringVar(&args.numerics, "numerics",
         "auto", "Numerical system (auto|native|bigfloat)")
     flag.StringVar(&args.palette, "palette", "grayscale", "(redscale|grayscale|pretty)")
-    flag.StringVar(&args.fixAspect, "fix", "shrink", "Aspect ratio conservation (stretch|shrink|grow)")
+    flag.StringVar(&args.fixAspect, "fix", "stretch", "Aspect ratio conservation (stretch|shrink|grow)")
     flag.BoolVar(&args.reconfigure, "reconf", false,
         "Reconfigure the render spec sent to stdin")
     flag.Parse()
