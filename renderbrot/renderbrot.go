@@ -39,5 +39,4 @@ func main() {
             log.Fatal("Encoding error:", encodeErr)
         }
     }
-
 }
