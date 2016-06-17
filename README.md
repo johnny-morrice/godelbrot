@@ -4,6 +4,13 @@
 
 A Unix-style Mandelbrot set explorer in Go.
 
+## Demo
+
+[Webdelbrot client](http://godelbrot.functorama.com)
+
+Webdelbrot is a gopherjs web client for Godelbrot.  Godelbrot is a fractal
+render backend designed to allow easy implementation of GUI clients.
+
 ## Features
 
 * Designed as Unix toolkit of orthogonal command-line apps
