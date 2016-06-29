@@ -13,7 +13,7 @@ import (
     "sync"
     "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/process"
-    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot"
 )
 
 type rqstate uint8

@@ -2,7 +2,7 @@ package base
 
 // This module defines magic numbers.
 
-// See 'libgodelbrot/magic.go' for a philosophy on types of constants
+// See 'godelbrot/magic.go' for a philosophy on types of constants
 
 // OPERATIONAL CONSTANTS
 

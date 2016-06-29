@@ -6,7 +6,7 @@ import (
     "fmt"
     "os/exec"
     "github.com/johnny-morrice/pipeline"
-    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot"
 )
 
 // Config creates a new Info, given the args, and sends it to stdout.

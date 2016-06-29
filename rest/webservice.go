@@ -12,7 +12,7 @@ import (
     "github.com/gorilla/mux"
     "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/rest/protocol"
-    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot"
 )
 
 func validate(renreq *protocol.RenderRequest) error {

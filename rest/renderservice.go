@@ -7,7 +7,7 @@ import (
     "log"
     "strings"
     "github.com/johnny-morrice/godelbrot/process"
-    lib "github.com/johnny-morrice/godelbrot/libgodelbrot"
+    lib "github.com/johnny-morrice/godelbrot"
 )
 
 type renderbuffers struct {
