@@ -14,7 +14,7 @@ type baseFacade struct {
 var _ base.RenderApplication = (*baseFacade)(nil)
 
 func makeBaseFacade(desc *Info) *baseFacade {
-    req := &desc.UserRequest
+    req := &desc.WireRequest
     facade := &baseFacade{}
     facade.config = base.BaseConfig{
         IterateLimit: req.IterateLimit,

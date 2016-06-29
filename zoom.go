@@ -45,7 +45,7 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
 
     if z.Reconfigure {
         log.Println("Reconfigure zoom Info")
-        return Configure(&info.UserRequest)
+        return Configure(&info.WireRequest)
     } else {
         return info, nil
     }
@@ -54,7 +54,7 @@ func (z *Zoom) rescope(degree float64) (*Info, error) {
 func (z *Zoom) lens(degree float64) *Info {
     appinfo := new(Info)
     *appinfo = z.Prev
-    appinfo.UserRequest.FixAspect = config.Stretch
+    appinfo.WireRequest.FixAspect = config.Stretch
     baseapp := makeBaseFacade(appinfo)
     app := makeBigBaseFacade(appinfo, baseapp)
     num := bigbase.Make(app)
@@ -95,7 +95,7 @@ func (z *Zoom) lens(degree float64) *Info {
     info.ImagMin = *zoom[1]
     info.RealMax = *zoom[2]
     info.ImagMax = *zoom[3]
-    info.UserRequest = info.GenRequest()
+    info.WireRequest = info.GenRequest()
 
     return info
 }
@@ -110,7 +110,7 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
                 dumpacc = true
             }
             z.Prev.AddPrec(1)
-            z.Prev.UserRequest = z.Prev.GenRequest()
+            z.Prev.WireRequest = z.Prev.GenRequest()
             info = z.lens(degree)
         }
 
@@ -120,7 +120,7 @@ func (z *Zoom) Magnify(degree float64) (*Info, error) {
     }
 
     if z.Reconfigure {
-        return Configure(&info.UserRequest)
+        return Configure(&info.WireRequest)
     } else {
         return info, nil
     }
@@ -161,13 +161,13 @@ func (z *Zoom) Movie() ([]*Info, error) {
     return frames, nil
 }
 
-type UserZoom struct {
-    Prev UserInfo
+type WireZoom struct {
+    Prev WireInfo
     ZoomTarget
 }
 
 func ReadZoom(r io.Reader) (*Zoom, error) {
-    uz := &UserZoom{}
+    uz := &WireZoom{}
     dec := json.NewDecoder(r)
     decerr := dec.Decode(uz)
     if decerr != nil {
@@ -187,7 +187,7 @@ func ReadZoom(r io.Reader) (*Zoom, error) {
 }
 
 func WriteZoom(w io.Writer, z *Zoom) error {
-    uz := &UserZoom{}
+    uz := &WireZoom{}
     uz.Prev = *Friendly(&z.Prev)
     uz.ZoomTarget = z.ZoomTarget
 

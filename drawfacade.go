@@ -34,7 +34,7 @@ func makeDrawFacade(desc *Info) *drawFacade {
 }
 
 func createImage(desc *Info) *image.NRGBA {
-    req := desc.UserRequest
+    req := desc.WireRequest
     bounds := image.Rectangle{
         Min: image.ZP,
         Max: image.Point{
@@ -56,5 +56,5 @@ func createStoredPalette(desc *Info) draw.Palette {
     if found == nil {
         log.Panic("Unknown PaletteKind:", kind)
     }
-    return found(desc.UserRequest.IterateLimit)
+    return found(desc.WireRequest.IterateLimit)
 }

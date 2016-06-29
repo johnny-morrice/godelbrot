@@ -40,12 +40,12 @@ func makeRqitem(pkt *renderpacket) *rqitem {
     rqi.pkt = *pkt
     rqi.createtime = time.Now()
 
-    type UserPacket struct {
+    type WirePacket struct {
         WantZoom bool
         Target config.ZoomTarget
-        Info lib.UserInfo
+        Info lib.WireInfo
     }
-    userpkt := UserPacket{
+    userpkt := WirePacket{
         WantZoom: pkt.wantzoom,
         Target: pkt.target,
         Info: *lib.Friendly(&pkt.info),

@@ -126,7 +126,7 @@ func (ws *webservice) getRQ(s session) error {
         }
         rqerr = rqi.err
         state = rqi.state
-        nextreq = rqi.nextinfo.UserRequest
+        nextreq = rqi.nextinfo.WireRequest
         code = rqi.code
     })
 
@@ -244,7 +244,7 @@ func withSession(w http.ResponseWriter, req *http.Request, handler func (session
 
 // Only allow zoom reconfiguration if autodetection is enabled throughout the base info.
 func (ws *webservice) makeTarget(renreq *protocol.RenderRequest) config.ZoomTarget {
-    req := ws.baseinfo.UserRequest
+    req := ws.baseinfo.WireRequest
     dyn := req.Renderer == config.AutoDetectRenderMode
     dyn = dyn && req.Numerics == config.AutoDetectNumericsMode
 
@@ -258,7 +258,7 @@ func (ws *webservice) makeTarget(renreq *protocol.RenderRequest) config.ZoomTarg
 }
 
 func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) (*lib.Info, error) {
-    req := ws.baseinfo.UserRequest
+    req := ws.baseinfo.WireRequest
 
     req.ImageWidth = renreq.Req.ImageWidth
     req.ImageHeight = renreq.Req.ImageHeight

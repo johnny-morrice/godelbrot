@@ -10,7 +10,7 @@ import (
 )
 
 type NativeInfo struct {
-    UserRequest config.Request
+    WireRequest config.Request
     // Describe the render strategy in use
     RenderStrategy config.RenderMode
     // Describe the numerics system in use
@@ -82,7 +82,7 @@ func (info *Info) AddPrec(delta int) {
 
 // Generate a user request that corresponts to the info numerics
 func (info *Info) GenRequest() config.Request {
-    req := info.UserRequest
+    req := info.WireRequest
     req.RealMin = emitBig(&info.RealMin)
     req.RealMax = emitBig(&info.RealMax)
     req.ImagMin = emitBig(&info.ImagMin)
@@ -91,14 +91,14 @@ func (info *Info) GenRequest() config.Request {
     return req
 }
 
-// UserInfo is a variant of Info that can be easily serialized
-type UserInfo struct {
+// WireInfo is a variant of Info that can be easily serialized
+type WireInfo struct {
     NativeInfo
     SerialBigInfo
 }
 
-func Friendly(desc *Info) *UserInfo {
-    userDesc := &UserInfo{}
+func Friendly(desc *Info) *WireInfo {
+    userDesc := &WireInfo{}
     userDesc.NativeInfo = desc.NativeInfo
     userDesc.RealMin = emitBig(&desc.RealMin)
     userDesc.RealMax = emitBig(&desc.RealMax)
@@ -107,7 +107,7 @@ func Friendly(desc *Info) *UserInfo {
     return userDesc
 }
 
-func Unfriendly(userDesc *UserInfo) (*Info, error) {
+func Unfriendly(userDesc *WireInfo) (*Info, error) {
     desc := &Info{}
     desc.NativeInfo = userDesc.NativeInfo
 
@@ -142,7 +142,7 @@ func ToJSON(desc *Info) ([]byte, error) {
 }
 
 func FromJSON(format []byte) (*Info, error) {
-    userDesc := new(UserInfo)
+    userDesc := new(WireInfo)
     err := json.Unmarshal(format, userDesc)
     if err == nil {
         desc, converr := Unfriendly(userDesc)
@@ -162,7 +162,7 @@ func WriteInfo(w io.Writer, desc *Info) error {
 }
 
 func ReadInfo(r io.Reader) (*Info, error) {
-    ui := &UserInfo{}
+    ui := &WireInfo{}
     dec := json.NewDecoder(r)
     err := dec.Decode(ui)
     if err != nil {
@@ -177,7 +177,7 @@ type InfoPkt struct {
 }
 
 type uipkt struct {
-    ui *UserInfo
+    ui *WireInfo
     err error
 }
 
@@ -186,7 +186,7 @@ func ReadInfoStream(r io.Reader) <-chan InfoPkt {
     go func() {
         dec := json.NewDecoder(r)
         for i := 0; dec.More(); i++ {
-            ui := &UserInfo{}
+            ui := &WireInfo{}
             readerr := dec.Decode(ui)
             if readerr != nil {
                 message := fmt.Errorf("Error after %v JSON objects: %v", i, readerr)

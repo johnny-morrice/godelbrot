@@ -14,7 +14,7 @@ type configurator Info
 // InitializeContext examines the description, chooses a renderer, numerical system and palette.
 func Configure(req *config.Request) (*Info, error) {
     c := &configurator{}
-    c.UserRequest = *req
+    c.WireRequest = *req
 
     nerr := c.chooseNumerics()
 
@@ -62,7 +62,7 @@ func (c *configurator) fixAspect() error {
     planeHeight.Sub(imax, imin)
     planeAspect.Quo(&planeWidth, &planeHeight)
 
-    nativePictureAspect := float64(c.UserRequest.ImageWidth) / float64(c.UserRequest.ImageHeight)
+    nativePictureAspect := float64(c.WireRequest.ImageWidth) / float64(c.WireRequest.ImageHeight)
     pictureAspect := bb.MakeBigFloat(nativePictureAspect, c.Precision)
     thindicator := planeAspect.Cmp(&pictureAspect)
 
@@ -84,12 +84,12 @@ func (c *configurator) fixAspect() error {
         log.Printf("Old Plane Width: %v", bb.DbgF(planeWidth))
         log.Printf("Old Plane Height: %v", bb.DbgF(planeHeight))
         log.Printf("Old Plane Aspect: %v", bb.DbgF(planeAspect))
-        log.Printf("Image Width: %v", c.UserRequest.ImageWidth)
-        log.Printf("Image Height: %v", c.UserRequest.ImageHeight)
+        log.Printf("Image Width: %v", c.WireRequest.ImageWidth)
+        log.Printf("Image Height: %v", c.WireRequest.ImageHeight)
         log.Printf("Image Aspect: %v", bb.DbgF(pictureAspect))
     }
 
-    var strategy = c.UserRequest.FixAspect
+    var strategy = c.WireRequest.FixAspect
 
     if strategy == config.Grow {
         // Then the plane is too short, so must be made taller
@@ -140,7 +140,7 @@ func (c *configurator) fixAspect() error {
 
 // Initialize the render system
 func (c *configurator) chooseRenderStrategy() error {
-    req := c.UserRequest
+    req := c.WireRequest
     switch req.Renderer {
     case config.AutoDetectRenderMode:
         c.chooseFastRenderStrategy()
@@ -157,7 +157,7 @@ func (c *configurator) chooseRenderStrategy() error {
 
 // Initialize the numerics system
 func (c *configurator) chooseNumerics() error {
-    desc := c.UserRequest
+    desc := c.WireRequest
     perr := c.parseUserCoords()
 
     if perr != nil {
@@ -183,7 +183,7 @@ func (c *configurator) chooseNumerics() error {
 }
 
 func (c *configurator) selectUserPrec() {
-    userPrec := c.UserRequest.Precision
+    userPrec := c.WireRequest.Precision
     if userPrec > 0 {
         c.Precision = userPrec
     } else {
@@ -235,7 +235,7 @@ func (c *configurator) parseUserCoords() error {
         func(imagMax *big.Float) { c.ImagMax = *imagMax },
     }
 
-    desc := c.UserRequest
+    desc := c.WireRequest
     userInput := []string{
         desc.RealMin,
         desc.RealMax,
@@ -262,7 +262,7 @@ func (c *configurator) parseUserCoords() error {
 
 // Choose an optimal strategy for rendering the image
 func (c *configurator) chooseFastRenderStrategy() {
-    req := c.UserRequest
+    req := c.WireRequest
 
     area := req.ImageWidth * req.ImageHeight
     numerics := c.NumericsStrategy
@@ -311,7 +311,7 @@ func (c *configurator) howManyBits() uint {
 }
 
 func (c *configurator) choosePalette() error {
-    code := c.UserRequest.PaletteCode
+    code := c.WireRequest.PaletteCode
     switch code {
     case "pretty":
         c.PaletteType = Pretty

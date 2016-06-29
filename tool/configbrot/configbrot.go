@@ -117,7 +117,7 @@ func newRequest(args commandLine) (*config.Request, error) {
         if rerr != nil {
             return nil, rerr
         }
-        req = &desc.UserRequest
+        req = &desc.WireRequest
     } else {
         req = godelbrot.DefaultRequest()
     }

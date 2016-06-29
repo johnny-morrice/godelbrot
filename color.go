@@ -7,7 +7,7 @@ import (
 
 func Recolor(desc *Info, gray image.Image) *image.NRGBA {
     // CAUTION lossy conversion
-    iterlim := desc.UserRequest.IterateLimit
+    iterlim := desc.WireRequest.IterateLimit
 
     dfac := makeDrawFacade(desc)
     palette := dfac.Colors()

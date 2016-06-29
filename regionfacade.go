@@ -34,7 +34,7 @@ var _ region.RenderApplication = (*regionFacade)(nil)
 var _ Renderer = (*regionFacade)(nil)
 
 func makeRegionFacade(desc *Info) *regionFacade {
-    req := desc.UserRequest
+    req := desc.WireRequest
     baseApp := makeBaseFacade(desc)
     facade := &regionFacade{
         baseFacade: baseApp,
