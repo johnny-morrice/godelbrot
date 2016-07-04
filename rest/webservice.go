@@ -9,6 +9,7 @@ import (
     "log"
     "net/http"
     "strconv"
+    "runtime/debug"
     "github.com/gorilla/mux"
     "github.com/johnny-morrice/godelbrot/config"
     "github.com/johnny-morrice/godelbrot/rest/protocol"
@@ -49,6 +50,7 @@ func (s session) httpError(msg string, code int) error {
 }
 
 func (s session) internalError() error {
+    debug.PrintStack()
     return s.httpError("Internal error", 500)
 }
 
@@ -81,7 +83,23 @@ func MakeWebservice(baseinfo *lib.Info, concurrent uint, prefix string) http.Han
     r.HandleFunc("/renderqueue/", ws.enterRQHandler).Methods("POST")
     r.HandleFunc("/renderqueue/{rqcode}/", ws.getRQHandler).Methods("GET")
     r.HandleFunc("/image/{rqcode}/", ws.getImageHandler).Methods("GET")
-    return r
+
+    nc := nocache{}
+    nc.handler = r
+
+    return nc
+}
+
+type nocache struct {
+    handler http.Handler
+}
+
+func (nc nocache) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+    w.Header().Set("cache-control", "priviate, max-age=0, no-cache")
+    w.Header().Set("pragma", "no-cache")
+    w.Header().Set("expires", "-1")
+
+    nc.handler.ServeHTTP(w, req)
 }
 
 func (ws *webservice) getImageHandler(w http.ResponseWriter, req *http.Request) {
@@ -260,6 +278,8 @@ func (ws *webservice) makeTarget(renreq *protocol.RenderRequest) config.ZoomTarg
 func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) (*lib.Info, error) {
     req := ws.baseinfo.UserRequest
 
+    log.Printf("Base request: %v", req)
+
     req.ImageWidth = renreq.Req.ImageWidth
     req.ImageHeight = renreq.Req.ImageHeight
 
@@ -283,7 +303,7 @@ func (ws *webservice) mergeInfo(renreq *protocol.RenderRequest) (*lib.Info, erro
         req.ImagMax = renreq.Req.ImagMax
     }
 
-    log.Printf("Configuring renquest: %v", req)
+    log.Printf("Configuring request: %v", req)
 
     return lib.Configure(&req)
 }
