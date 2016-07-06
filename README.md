@@ -4,7 +4,7 @@
 
 A Unix-style Mandelbrot set explorer in Go.
 
-## Demo
+## Demo - CHROME ONLY see [webdelbrot issue #9](https://github.com/johnny-morrice/webdelbrot/issues/9)
 
 [Webdelbrot client](http://godelbrot.functorama.com)
 
