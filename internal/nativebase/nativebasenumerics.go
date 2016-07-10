@@ -80,17 +80,22 @@ func (nbn *NativeBaseNumerics) PlaneToPixel(c complex128) (rx int, ry int) {
 }
 
 func (nbn *NativeBaseNumerics) PixelToPlane(i, j int) complex128 {
-	rUnit, iUnit := nbn.PixelSize()
-
-	// Scale
-	sr := float64(i) * rUnit
-	si := float64(j) * iUnit
-
-	// Translate
-	tr := nbn.RealMin + sr
-	ti := nbn.ImagMax - si
+	tr := nbn.Xtor(i)
+	ti := nbn.Ytoi(j)
 
 	return complex(tr, ti)
+}
+
+func (nbn *NativeBaseNumerics) Xtor(i int) float64 {
+	sr := float64(i) * nbn.Runit
+
+	return nbn.RealMin + sr
+}
+
+func (nbn *NativeBaseNumerics) Ytoi(j int) float64 {
+	si := float64(j) * nbn.Iunit
+
+	return nbn.ImagMax - si
 }
 
 func (nbn *NativeBaseNumerics) Escape(c complex128) NativeEscapeValue {

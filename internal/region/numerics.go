@@ -80,3 +80,57 @@ func Collapse(reg RegionNumerics, sizelim int) bool {
     rect := reg.Rect()
     return rect.Dx() <= sizelim || rect.Dy() <= sizelim
 }
+
+type Region struct {
+    Xmin int
+    Xmax int
+    Ymin int
+    Ymax int
+}
+
+func InitRegion(bn *base.BaseNumerics) Region {
+    r := Region{}
+    r.Xmin = bn.PicXMin
+    r.Xmax = bn.PicXMax
+    r.Ymin = bn.PicYMin
+    r.Ymax = bn.PicYMax
+
+    return r
+}
+
+func (r Region) Split() []Region {
+    width := r.Xmax - r.Xmin
+    height := r.Ymax - r.Ymin
+
+    toxmid := r.Xmin + (width / 2)
+    toymid := r.Ymin + (height / 2)
+
+    fromxmid := toxmid + 1
+    fromymid := toymid + 1 
+
+    tl := Region{}
+    tl.Xmin = r.Xmin
+    tl.Ymin = r.Ymin
+    tl.Xmax = toxmid
+    tl.Ymax = toymid
+
+    tr := Region{}
+    tr.Xmin = fromxmid
+    tr.Xmax = r.Xmax
+    tr.Ymin = r.Ymin
+    tr.Ymax = toymid
+
+    bl := Region{}
+    bl.Xmin = r.Xmin
+    bl.Xmax = toxmid
+    bl.Ymin = fromymid
+    bl.Ymax = r.Ymax
+
+    br := Region{}
+    br.Xmin = fromxmid
+    br.Xmax = r.Xmax
+    br.Ymin = fromymid
+    br.Ymax = r.Ymax
+
+    return []Region{tl, tr, bl, br}
+}

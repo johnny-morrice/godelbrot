@@ -15,17 +15,16 @@ type nativeSubregion struct {
 }
 
 type nativeRegion struct {
+	region.Region
 	topLeft     nativebase.NativeEscapeValue
 	topRight    nativebase.NativeEscapeValue
 	bottomLeft  nativebase.NativeEscapeValue
 	bottomRight nativebase.NativeEscapeValue
-	midPoint    nativebase.NativeEscapeValue
+	midPoint 	nativebase.NativeEscapeValue
 }
 
 func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
-	l, t := base.PlaneToPixel(nr.topLeft.C)
-	r, b := base.PlaneToPixel(nr.bottomRight.C)
-	return image.Rect(l, t, r, b)
+	return image.Rect(nr.Xmin, nr.Ymin, nr.Xmax, nr.Ymin)
 }
 
 func (nr *nativeRegion) points() []*nativebase.NativeEscapeValue {
@@ -53,14 +52,12 @@ var _ region.RegionNumerics = (*NativeRegionNumerics)(nil)
 func Make(app RenderApplication) NativeRegionNumerics {
 	sequence := nativesequence.Make(app)
 	parent := nativebase.Make(app)
-	planeMin := complex(parent.RealMin, parent.ImagMin)
-	planeMax := complex(parent.RealMax, parent.ImagMax)
 	reg := NativeRegionNumerics{
 		NativeBaseNumerics: parent,
 		RegionConfig: app.RegionConfig(),
 		SequenceNumerics: &sequence,
-		Region: createNativeRegion(parent, planeMin, planeMax),
 	}
+	reg.initRegion()
 	return reg
 }
 
@@ -126,67 +123,37 @@ func (native *NativeRegionNumerics) MandelbrotPoints() []base.EscapeValue {
 }
 
 func (native *NativeRegionNumerics) Split() {
-	r := native.Region
+	imgchlds := native.Region.Split()
 
-	topLeftPos := r.topLeft.C
-	bottomRightPos := r.bottomRight.C
-	midPos := r.midPoint.C
+	natchlds := make([]nativeRegion, len(imgchlds))
 
-	left := real(topLeftPos)
-	right := real(bottomRightPos)
-	top := imag(topLeftPos)
-	bottom := imag(bottomRightPos)
-	midR := real(midPos)
-	midI := imag(midPos)
-
-	leftSectorMid := (midR + left) / 2.0
-	rightSectorMid := (right + midR) / 2.0
-	topSectorMid := (top + midI) / 2.0
-	bottomSectorMid := (midI + bottom) / 2.0
-
-	topSideMid := native.Escape(complex(midR, top))
-	bottomSideMid := native.Escape(complex(midR, bottom))
-	leftSideMid := native.Escape(complex(left, midI))
-	rightSideMid := native.Escape(complex(right, midI))
-
-	topLeftMid := native.Escape(complex(leftSectorMid, topSectorMid))
-	topRightMid := native.Escape(complex(rightSectorMid, topSectorMid))
-	bottomLeftMid := native.Escape(complex(leftSectorMid, bottomSectorMid))
-	bottomRightMid := native.Escape(complex(rightSectorMid, bottomSectorMid))
-
-	tl := nativeRegion{
-		topLeft:     r.topLeft,
-		topRight:    topSideMid,
-		bottomLeft:  leftSideMid,
-		bottomRight: r.midPoint,
-		midPoint:    topLeftMid,
-	}
-	tr := nativeRegion{
-		topLeft:     topSideMid,
-		topRight:    r.topRight,
-		bottomLeft:  r.midPoint,
-		bottomRight: rightSideMid,
-		midPoint:    topRightMid,
-	}
-	bl := nativeRegion{
-		topLeft:     leftSideMid,
-		topRight:    r.midPoint,
-		bottomLeft:  r.bottomLeft,
-		bottomRight: bottomSideMid,
-		midPoint:    bottomLeftMid,
-	}
-	br := nativeRegion{
-		topLeft:     r.midPoint,
-		topRight:    rightSideMid,
-		bottomLeft:  bottomSideMid,
-		bottomRight: r.bottomRight,
-		midPoint:    bottomRightMid,
+	for i, ic := range imgchlds {
+		natchlds[i] = native.planeRegion(ic)
 	}
 
 	native.subregion = nativeSubregion{
 		populated: true,
-		children:  []nativeRegion{tl, tr, bl, br},
+		children:  natchlds,
 	}
+}
+
+func (native *NativeRegionNumerics) planeRegion(r region.Region) nativeRegion {
+	rmin := native.Xtor(r.Xmin)
+	rmax := native.Xtor(r.Xmax)
+	imin := native.Ytoi(r.Ymin)
+	imax := native.Ytoi(r.Ymax)
+
+	rmid := rmax - rmin
+	imid := imax - imin
+
+	nreg := nativeRegion{}
+	nreg.topLeft = native.Escape(complex(rmin, imin))
+	nreg.topRight = native.Escape(complex(rmax, imin))
+	nreg.bottomLeft = native.Escape(complex(rmin, imax))
+	nreg.bottomRight = native.Escape(complex(rmax, imax))
+	nreg.midPoint = native.Escape(complex(rmid, imid))
+
+	return nreg
 }
 
 func (native *NativeRegionNumerics) Rect() image.Rectangle {
@@ -272,33 +239,8 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 }
 
 // Does not evaluate points
-func createNativeRegion(nat nativebase.NativeBaseNumerics, min complex128, max complex128) nativeRegion {
-	left := real(min)
-	right := real(max)
-	top := imag(max)
-	bottom := imag(min)
-	mid := (max + min) / 2
+func (native *NativeRegionNumerics) initRegion() {
+	reg := region.InitRegion(&native.BaseNumerics)
 
-	coords := []complex128{
-		complex(left, top),
-		complex(right, top),
-		complex(left, bottom),
-		complex(right, bottom),
-		mid,
-	}
-
-	points := make([]nativebase.NativeEscapeValue, len(coords))
-	for i, c := range coords {
-		points[i] = nat.Escape(c)
-	}
-
-	region := nativeRegion{
-		topLeft: points[0],
-		topRight: points[1],
-		bottomLeft: points[2],
-		bottomRight: points[3],
-		midPoint: points[4],
-	}
-
-	return region
+	native.Region = native.planeRegion(reg)
 }
