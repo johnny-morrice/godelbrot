@@ -66,12 +66,14 @@ func Uniform(reg RegionNumerics) bool {
     idivs, done := reg.SampleDivs()
     first := <-idivs
     uni := true
+
     for d := range idivs {
         if d != first && uni {
             done<- true
             uni = false
         }
     }
+
     return uni
 }
 
@@ -105,8 +107,8 @@ func (r Region) Split() []Region {
     toxmid := r.Xmin + (width / 2)
     toymid := r.Ymin + (height / 2)
 
-    fromxmid := toxmid + 1
-    fromymid := toymid + 1 
+    fromxmid := toxmid
+    fromymid := toymid
 
     tl := Region{}
     tl.Xmin = r.Xmin

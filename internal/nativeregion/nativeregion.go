@@ -24,7 +24,7 @@ type nativeRegion struct {
 }
 
 func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
-	return image.Rect(nr.Xmin, nr.Ymin, nr.Xmax, nr.Ymin)
+	return image.Rect(nr.Xmin, nr.Ymin, nr.Xmax, nr.Ymax)
 }
 
 func (nr *nativeRegion) points() []*nativebase.NativeEscapeValue {
@@ -152,6 +152,7 @@ func (native *NativeRegionNumerics) planeRegion(r region.Region) nativeRegion {
 	nreg.bottomLeft = native.Escape(complex(rmin, imax))
 	nreg.bottomRight = native.Escape(complex(rmax, imax))
 	nreg.midPoint = native.Escape(complex(rmid, imid))
+	nreg.Region = r
 
 	return nreg
 }
@@ -238,7 +239,6 @@ func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool
 	close(idivch)
 }
 
-// Does not evaluate points
 func (native *NativeRegionNumerics) initRegion() {
 	reg := region.InitRegion(&native.BaseNumerics)
 
