@@ -22,6 +22,12 @@ func Configure(req *config.Request) (*Info, error) {
         return nil, nerr
     }
 
+    verr := c.validate()
+
+    if verr != nil {
+        return nil, verr
+    }
+
     rerr := c.chooseRenderStrategy()
 
     if rerr != nil {
@@ -42,6 +48,17 @@ func Configure(req *config.Request) (*Info, error) {
     }
 
     return (*Info)(c), nil
+}
+
+func (c *configurator) validate() error {
+    rcmp := c.RealMin.Cmp(&c.RealMax)
+    icmp := c.ImagMin.Cmp(&c.ImagMax)
+
+    if rcmp == 0 || rcmp == 1 || icmp == 0 || icmp == 1 {
+        return fmt.Errorf("Invalid bounds")
+    }
+
+    return nil
 }
 
 func (c *configurator) fixAspect() error {

@@ -137,9 +137,12 @@ func (bbn *BigBaseNumerics) PixelToPlane(i, j int) BigComplex {
 
 	// Translate
 	re.Add(&re, &bbn.RealMin)
-	im.Sub(&bbn.ImagMax, &im)
 
-	return BigComplex{re, im}
+	// Dodge aliasing error
+	extra := bbn.MakeBigFloat(0.0)
+	extra.Sub(&bbn.ImagMax, &im)
+
+	return BigComplex{re, extra}
 }
 
 // Size on the plane of 1px

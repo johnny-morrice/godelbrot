@@ -11,12 +11,20 @@ type Renderer interface {
 }
 
 func MakeRenderer(desc *Info) (Renderer, error) {
-    // Check that numerics modes are okay, but do not act on them
+    // Check that numerics modes are okay
     switch desc.NumericsStrategy {
     case config.NativeNumericsMode:
     case config.BigFloatNumericsMode:
     default:
         return nil, fmt.Errorf("Invalid NumericsStrategy: %v", desc.NumericsStrategy)
+    }
+
+    // Validate bounds
+    c := (*configurator)(desc)
+    verr := c.validate()
+
+    if verr != nil {
+        return nil, verr
     }
 
     renderer := Renderer(nil)

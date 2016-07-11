@@ -27,16 +27,13 @@ type distort struct {
 func (d distort) para(time *big.Float) *big.Float {
     prec := d.next.Prec()
     delta := bigbase.MakeBigFloat(0.0, prec)
-    delta.Sub(&d.prev, &d.next)
-    delta.Abs(&delta)
+
+    delta.Sub(&d.next, &d.prev)
     delta.Mul(&delta, time)
-    if d.prev.Cmp(&d.next) > 0 {
-        // Prevent bad aliasing
-        extra := bigbase.MakeBigFloat(0.0, prec)
-        return extra.Sub(&d.prev, &delta)
-    } else {
-        return delta.Add(&delta, &d.prev)
-    }
+
+    extra := bigbase.MakeBigFloat(0.0, prec)
+
+    return extra.Add(&d.prev, &delta) 
 }
 
 // Frame zooms towards the target coordinates.  Degree = 1 is a complete zoom.
@@ -61,6 +58,7 @@ func (z *Zoom) lens(degree float64) *Info {
 
     time := bigbase.MakeBigFloat(degree, num.Precision)
 
+    // Y min and max reversed as pixels grow downward...
     min := num.PixelToPlane(int(z.Xmin), int(z.Ymax))
     max := num.PixelToPlane(int(z.Xmax), int(z.Ymin))
 

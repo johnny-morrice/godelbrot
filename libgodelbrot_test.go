@@ -2,6 +2,8 @@ package godelbrot
 
 import (
 	"testing"
+
+	"github.com/johnny-morrice/godelbrot/config"
 )
 
 func TestConfigure(t *testing.T) {
@@ -15,7 +17,7 @@ func TestConfigure(t *testing.T) {
 		t.Error("There should be no error from constructing the default RenderContext")
 	}
 
-	noInfo, realErr := Configure(&Request{})
+	noInfo, realErr := Configure(&config.Request{})
 
 	if realErr == nil {
 		t.Error("Expect error after trying to create context from no description")
