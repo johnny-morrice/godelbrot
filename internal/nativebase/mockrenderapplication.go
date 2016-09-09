@@ -1,22 +1,22 @@
 package nativebase
 
 import (
-    "github.com/johnny-morrice/godelbrot/internal/base"
+	"github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 type MockRenderApplication struct {
-    base.MockRenderApplication
-    MockNativeCoordProvider
+	base.MockRenderApplication
+	MockNativeCoordProvider
 }
 
 type MockNativeCoordProvider struct {
-    TNativeUserCoords bool
+	TNativeUserCoords bool
 
-    PlaneMin complex128
-    PlaneMax complex128
+	PlaneMin complex128
+	PlaneMax complex128
 }
 
 func (mock *MockNativeCoordProvider) NativeUserCoords() (complex128, complex128) {
-    mock.TNativeUserCoords = true
-    return mock.PlaneMin, mock.PlaneMax
+	mock.TNativeUserCoords = true
+	return mock.PlaneMin, mock.PlaneMax
 }

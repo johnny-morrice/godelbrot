@@ -1,8 +1,8 @@
 package bigbase
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
+	"testing"
 )
 
 // Three paths through Make
@@ -66,16 +66,16 @@ func testMake(t *testing.T, helper aspectRatioFixHelper) {
 
 	mock := &MockRenderApplication{
 		MockRenderApplication: base.MockRenderApplication{
-			PictureWidth:   helper.pictureW,
-			PictureHeight:   helper.pictureH,
-			Base: base.BaseConfig {
+			PictureWidth:  helper.pictureW,
+			PictureHeight: helper.pictureH,
+			Base: base.BaseConfig{
 				FixAspect: true,
 			},
 		},
 		MockBigCoordProvider: MockBigCoordProvider{
 			UserMin: userMin,
 			UserMax: userMax,
-			Prec: testPrec,
+			Prec:    testPrec,
 		},
 	}
 
@@ -99,8 +99,8 @@ func testMake(t *testing.T, helper aspectRatioFixHelper) {
 
 func TestPlaneToPixel(t *testing.T) {
 	numerics := BigBaseNumerics{
-		RealMin:     MakeBigFloat(-1.0, testPrec),
-		ImagMax:     MakeBigFloat(1.0, testPrec),
+		RealMin: MakeBigFloat(-1.0, testPrec),
+		ImagMax: MakeBigFloat(1.0, testPrec),
 	}
 
 	const imageSide = 100

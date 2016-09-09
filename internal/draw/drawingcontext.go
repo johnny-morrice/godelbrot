@@ -1,8 +1,8 @@
 package draw
 
 import (
-	"image"
 	"github.com/johnny-morrice/godelbrot/internal/base"
+	"image"
 )
 
 type DrawingContext interface {

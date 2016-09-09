@@ -1,21 +1,21 @@
 package region
 
 import (
-	"image"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/draw"
+	"image"
 )
 
 type RegionRenderStrategy struct {
-	factory RegionNumericsFactory
-	context draw.DrawingContext
+	factory      RegionNumericsFactory
+	context      draw.DrawingContext
 	regionConfig RegionConfig
 }
 
 func Make(app RenderApplication) *RegionRenderStrategy {
 	return &RegionRenderStrategy{
-		factory: app.RegionNumericsFactory(),
-		context: app.DrawingContext(),
+		factory:      app.RegionNumericsFactory(),
+		context:      app.DrawingContext(),
 		regionConfig: app.RegionConfig(),
 	}
 }

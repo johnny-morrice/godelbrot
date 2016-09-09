@@ -1,9 +1,9 @@
 package draw
 
 import (
+	"github.com/johnny-morrice/godelbrot/internal/base"
 	"image/color"
 	"testing"
-	"github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 func TestColor(t *testing.T) {

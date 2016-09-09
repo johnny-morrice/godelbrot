@@ -11,14 +11,14 @@ func TestBigMandelbrotSanity(t *testing.T) {
 	const iterateLimit uint8 = 255
 
 	originMember := BigEscapeValue{
-		C: &origin,
+		C:                &origin,
 		SqrtDivergeLimit: &sqrtDL,
-		Prec: testPrec,
+		Prec:             testPrec,
 	}
 	nonMember := BigEscapeValue{
-		C: &non,
+		C:                &non,
 		SqrtDivergeLimit: &sqrtDL,
-		Prec: testPrec,
+		Prec:             testPrec,
 	}
 
 	originMember.Mandelbrot(iterateLimit)

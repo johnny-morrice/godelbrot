@@ -6,11 +6,11 @@ import (
 )
 
 type SequenceNumericsFactory interface {
-    Build() SequenceNumerics
+	Build() SequenceNumerics
 }
 
 type SequenceProvider interface {
-    SequenceNumericsFactory() SequenceNumericsFactory
+	SequenceNumericsFactory() SequenceNumericsFactory
 }
 
 type RenderApplication interface {

@@ -1,13 +1,13 @@
 package bigregion
 
 import (
-	"log"
-	"image"
-	"math/big"
 	"github.com/johnny-morrice/godelbrot/internal/base"
-	"github.com/johnny-morrice/godelbrot/internal/region"
 	"github.com/johnny-morrice/godelbrot/internal/bigbase"
 	"github.com/johnny-morrice/godelbrot/internal/bigsequence"
+	"github.com/johnny-morrice/godelbrot/internal/region"
+	"image"
+	"log"
+	"math/big"
 )
 
 type bigSubregion struct {
@@ -46,10 +46,11 @@ func (br *bigRegion) rect(base *bigbase.BigBaseNumerics) image.Rectangle {
 type BigRegionNumerics struct {
 	region.RegionConfig
 	bigbase.BigBaseNumerics
-	Region             bigRegion
-	SequenceNumerics  *bigsequence.BigSequenceNumerics
-	subregion          bigSubregion
+	Region           bigRegion
+	SequenceNumerics *bigsequence.BigSequenceNumerics
+	subregion        bigSubregion
 }
+
 var _ region.RegionNumerics = (*BigRegionNumerics)(nil)
 
 func Make(app RenderApplication) BigRegionNumerics {
@@ -58,10 +59,10 @@ func Make(app RenderApplication) BigRegionNumerics {
 	planeMin := bigbase.BigComplex{parent.RealMin, parent.ImagMin}
 	planeMax := bigbase.BigComplex{parent.RealMax, parent.ImagMax}
 	reg := BigRegionNumerics{
-		BigBaseNumerics: parent,
-		RegionConfig: app.RegionConfig(),
+		BigBaseNumerics:  parent,
+		RegionConfig:     app.RegionConfig(),
 		SequenceNumerics: &sequence,
-		Region: createBigRegion(parent, planeMin, planeMax),
+		Region:           createBigRegion(parent, planeMin, planeMax),
 	}
 	return reg
 }
@@ -100,7 +101,7 @@ func (brn *BigRegionNumerics) Children() []region.RegionNumerics {
 func (brn *BigRegionNumerics) RegionSequence() region.ProxySequence {
 	return BigSequenceNumericsProxy{
 		BigSequenceNumerics: brn.SequenceNumerics,
-		LocalRegion:   brn.Region,
+		LocalRegion:         brn.Region,
 	}
 }
 
@@ -204,7 +205,7 @@ func (brn *BigRegionNumerics) RegionMember() base.EscapeValue {
 func (brn *BigRegionNumerics) proxyNumerics(region *bigRegion) region.RegionNumerics {
 	return BigRegionNumericsProxy{
 		BigRegionNumerics: brn,
-		LocalRegion:   *region,
+		LocalRegion:       *region,
 	}
 }
 
@@ -222,18 +223,18 @@ func (brn *BigRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 }
 
 func (brn *BigRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
-	complete := func (idiv uint8) bool {
+	complete := func(idiv uint8) bool {
 		select {
 		case <-done:
 			close(idivch)
 			return true
 		default:
-			idivch<- idiv
+			idivch <- idiv
 			return false
 		}
 	}
 
-	eval := func (r, i *big.Float) uint8 {
+	eval := func(r, i *big.Float) uint8 {
 		p := brn.Escape(&bigbase.BigComplex{*r, *i})
 		return p.InvDiv
 	}
@@ -313,10 +314,10 @@ func createBigRegion(big bigbase.BigBaseNumerics, min bigbase.BigComplex, max bi
 	}
 
 	return bigRegion{
-		topLeft: points[0],
-		topRight: points[1],
-		bottomLeft: points[2],
+		topLeft:     points[0],
+		topRight:    points[1],
+		bottomLeft:  points[2],
 		bottomRight: points[3],
-		midPoint: points[4],
+		midPoint:    points[4],
 	}
 }

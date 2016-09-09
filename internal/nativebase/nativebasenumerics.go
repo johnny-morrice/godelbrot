@@ -1,9 +1,9 @@
 package nativebase
 
 import (
+	"github.com/johnny-morrice/godelbrot/internal/base"
 	"image"
 	"math"
-	"github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 // Basis for all native numerics
@@ -19,7 +19,7 @@ type NativeBaseNumerics struct {
 	Iunit float64
 
 	SqrtDivergeLimit float64
-	IterateLimit uint8
+	IterateLimit     uint8
 }
 
 func Make(app RenderApplication) NativeBaseNumerics {
@@ -40,7 +40,7 @@ func Make(app RenderApplication) NativeBaseNumerics {
 		ImagMax:      imag(planeMax),
 
 		SqrtDivergeLimit: math.Sqrt(config.DivergeLimit),
-		IterateLimit: config.IterateLimit,
+		IterateLimit:     config.IterateLimit,
 
 		Runit: rUnit,
 		Iunit: iUnit,
@@ -49,7 +49,7 @@ func Make(app RenderApplication) NativeBaseNumerics {
 
 func (nbn *NativeBaseNumerics) CreateMandelbrot(c complex128) NativeEscapeValue {
 	return NativeEscapeValue{
-		C: c,
+		C:                c,
 		SqrtDivergeLimit: nbn.SqrtDivergeLimit,
 	}
 }
@@ -119,8 +119,8 @@ func (nbn *NativeBaseNumerics) SubImage(rect image.Rectangle) {
 type UnitQuery struct {
 	PictureW uint
 	PictureH uint
-	PlaneW float64
-	PlaneH float64
+	PlaneW   float64
+	PlaneH   float64
 }
 
 func (uq UnitQuery) PixelUnits() (float64, float64) {

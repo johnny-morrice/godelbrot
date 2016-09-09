@@ -1,42 +1,42 @@
 package main
 
 import (
-    "image"
-    "image/png"
-    "os"
-    "io"
-    "log"
-    lib "github.com/johnny-morrice/godelbrot"
+	lib "github.com/johnny-morrice/godelbrot"
+	"image"
+	"image/png"
+	"io"
+	"log"
+	"os"
 )
 
 func main() {
-    var input io.Reader = os.Stdin
-    var output io.Writer = os.Stdout
+	var input io.Reader = os.Stdin
+	var output io.Writer = os.Stdout
 
-    frch := lib.ReadInfoStream(input)
-    imgch := make(chan image.Image)
+	frch := lib.ReadInfoStream(input)
+	imgch := make(chan image.Image)
 
-    go func() {
-        for frpkt := range frch {
-            if frpkt.Err != nil {
-                log.Fatal(frpkt.Err)
-            }
-            picture, renderErr := lib.Render(frpkt.Info)
+	go func() {
+		for frpkt := range frch {
+			if frpkt.Err != nil {
+				log.Fatal(frpkt.Err)
+			}
+			picture, renderErr := lib.Render(frpkt.Info)
 
-            if renderErr != nil {
-                log.Fatal("Render errror:", renderErr)
-            }
+			if renderErr != nil {
+				log.Fatal("Render errror:", renderErr)
+			}
 
-            imgch<- picture
-        }
-        close(imgch)
-    }()
+			imgch <- picture
+		}
+		close(imgch)
+	}()
 
-    for picture := range imgch {
-        encodeErr := png.Encode(output, picture)
+	for picture := range imgch {
+		encodeErr := png.Encode(output, picture)
 
-        if encodeErr != nil {
-            log.Fatal("Encoding error:", encodeErr)
-        }
-    }
+		if encodeErr != nil {
+			log.Fatal("Encoding error:", encodeErr)
+		}
+	}
 }

@@ -1,9 +1,9 @@
 package nativeregion
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/nativebase"
+	"testing"
 )
 
 func TestRegionSplitPos(t *testing.T) {
@@ -114,10 +114,10 @@ func TestRect(t *testing.T) {
 			PicYMax: picSide,
 		},
 		SqrtDivergeLimit: sqrtDLimit,
-		RealMin: left,
-		RealMax: right,
-		ImagMin: bottom,
-		ImagMax: top,
+		RealMin:          left,
+		RealMax:          right,
+		ImagMin:          bottom,
+		ImagMax:          top,
 	}
 	numerics := &NativeRegionNumerics{
 		NativeBaseNumerics: parent,

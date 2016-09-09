@@ -2,9 +2,9 @@ package region
 
 import (
 	"fmt"
-	"image"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/sequence"
+	"image"
 )
 
 type RegionType uint
@@ -16,21 +16,21 @@ const (
 )
 
 type MockNumerics struct {
-	TExtrinsically 			  bool
-	TClaimExtrinsics          bool
-	TRect                     bool
-	TSplit                    bool
-	TMandelbrotPoints         bool
-	TRegionMember             bool
-	TSubdivide                bool
-	TChildren                 bool
-	TSampleDivs				  bool
-	TRegionSequence bool
+	TExtrinsically    bool
+	TClaimExtrinsics  bool
+	TRect             bool
+	TSplit            bool
+	TMandelbrotPoints bool
+	TRegionMember     bool
+	TSubdivide        bool
+	TChildren         bool
+	TSampleDivs       bool
+	TRegionSequence   bool
 
-	Path                      RegionType
+	Path RegionType
 
-	MockChildren			  []*MockNumerics
-	MockSequence			  *MockProxySequence
+	MockChildren []*MockNumerics
+	MockSequence *MockProxySequence
 
 	AppCollapseSize int
 }
@@ -42,7 +42,7 @@ func (mock *MockNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 
 	go func() {
 		for _, p := range mock.MandelbrotPoints() {
-			idivch<- p.InvDiv
+			idivch <- p.InvDiv
 		}
 		close(idivch)
 	}()
@@ -129,7 +129,7 @@ type MockProxySequence struct {
 	sequence.MockNumerics
 
 	TClaimExtrinsics bool
-	TExtrinsically bool
+	TExtrinsically   bool
 }
 
 func (mock *MockProxySequence) Extrinsically(f func()) {

@@ -1,15 +1,15 @@
 package bigbase
 
 import (
-	"math/big"
 	"github.com/johnny-morrice/godelbrot/internal/base"
+	"math/big"
 )
 
 type BigEscapeValue struct {
 	base.EscapeValue
 	C                *BigComplex
 	SqrtDivergeLimit *big.Float
-	Prec uint
+	Prec             uint
 }
 
 func (member *BigEscapeValue) Mandelbrot(iterateLimit uint8) {

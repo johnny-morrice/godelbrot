@@ -1,8 +1,8 @@
 package draw
 
 import (
-	"image/color"
 	"github.com/johnny-morrice/godelbrot/internal/base"
+	"image/color"
 )
 
 type Cacher func(iterateLimit uint8, index uint8) color.NRGBA

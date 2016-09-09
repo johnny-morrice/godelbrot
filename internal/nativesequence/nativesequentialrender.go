@@ -35,7 +35,7 @@ func (nsn *NativeSequenceNumerics) Sequence() []base.PixelMember {
 		y := nsn.ImagMax
 		for j := itop; j < ibott; j++ {
 			member := nativebase.NativeEscapeValue{
-				C: complex(x, y),
+				C:                complex(x, y),
 				SqrtDivergeLimit: sqrtDl,
 			}
 			member.Mandelbrot(iterlim)

@@ -6,12 +6,12 @@ import (
 
 // Numerics that are aware of a picture and of the Mandelbrot iteration limit
 type BaseNumerics struct {
-	WholeWidth uint
+	WholeWidth  uint
 	WholeHeight uint
-	PicXMin int
-	PicXMax int // exclusive maximum
-	PicYMin int
-	PicYMax int // exclusive maximum
+	PicXMin     int
+	PicXMax     int // exclusive maximum
+	PicYMin     int
+	PicYMax     int // exclusive maximum
 }
 
 func Make(app RenderApplication) BaseNumerics {

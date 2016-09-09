@@ -6,7 +6,7 @@ import (
 
 type NativeEscapeValue struct {
 	base.EscapeValue
-	C complex128
+	C                complex128
 	SqrtDivergeLimit float64
 }
 

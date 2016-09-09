@@ -1,10 +1,10 @@
 package base
 
 import (
-    "os"
-    "fmt"
+	"fmt"
+	"os"
 )
 
-func Dbg(things... interface{}) {
-    fmt.Fprintln(os.Stderr, things...)
+func Dbg(things ...interface{}) {
+	fmt.Fprintln(os.Stderr, things...)
 }

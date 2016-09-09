@@ -1,8 +1,8 @@
 package godelbrot
 
 import (
-    "math/big"
-    "github.com/johnny-morrice/godelbrot/internal/bigbase"
+	"github.com/johnny-morrice/godelbrot/internal/bigbase"
+	"math/big"
 )
 
 // There are three different kinds of magic number in this program:
@@ -35,6 +35,7 @@ var bigTwo big.Float = bigbase.MakeBigFloat(2, DefaultHighPrec)
 
 // Default high precision for newly created big floats
 const DefaultHighPrec uint = 500
+
 // Default precision is for native arithmetic
 const DefaultPrecision uint = 53
 

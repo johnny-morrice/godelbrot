@@ -1,19 +1,19 @@
 package sequence
 
 import (
-	"image"
 	"github.com/johnny-morrice/godelbrot/internal/draw"
+	"image"
 )
 
 type SequenceRenderStrategy struct {
 	numerics SequenceNumerics
-	context draw.DrawingContext
+	context  draw.DrawingContext
 }
 
 func Make(app RenderApplication) SequenceRenderStrategy {
 	return SequenceRenderStrategy{
 		numerics: app.SequenceNumericsFactory().Build(),
-		context: app.DrawingContext(),
+		context:  app.DrawingContext(),
 	}
 }
 

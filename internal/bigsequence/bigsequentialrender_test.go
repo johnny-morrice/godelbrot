@@ -1,9 +1,9 @@
 package bigsequence
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/bigbase"
+	"testing"
 )
 
 func TestBigMandelbrotSequence(t *testing.T) {
@@ -15,7 +15,7 @@ func TestBigMandelbrotSequence(t *testing.T) {
 			Base: base.BaseConfig{
 				DivergeLimit: 4.0,
 			},
-			PictureWidth: 10,
+			PictureWidth:  10,
 			PictureHeight: 10,
 		},
 	}

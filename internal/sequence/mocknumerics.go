@@ -1,26 +1,26 @@
 package sequence
 
 import (
-    "image"
-    "github.com/johnny-morrice/godelbrot/internal/base"
+	"github.com/johnny-morrice/godelbrot/internal/base"
+	"image"
 )
 
 type MockNumerics struct {
-    TSequence bool
-    TSubImage bool
+	TSequence bool
+	TSubImage bool
 
-    PointCount int
+	PointCount int
 }
 
 // Check MockNumerics implements SequenceNumerics interface
 var _ SequenceNumerics = (*MockNumerics)(nil)
 
 func (mn *MockNumerics) Sequence() []base.PixelMember {
-    mn.TSequence = true
+	mn.TSequence = true
 
-    return []base.PixelMember{base.PixelMember{}}
+	return []base.PixelMember{base.PixelMember{}}
 }
 
 func (mn *MockNumerics) SubImage(rect image.Rectangle) {
-    mn.TSubImage = true
+	mn.TSubImage = true
 }

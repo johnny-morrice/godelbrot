@@ -18,7 +18,7 @@ func Make(app bigbase.RenderApplication) BigSequenceNumerics {
 	w, h := app.PictureDimensions()
 	return BigSequenceNumerics{
 		BigBaseNumerics: bigbase.Make(app),
-		area: int(w * h),
+		area:            int(w * h),
 	}
 }
 
@@ -38,7 +38,7 @@ func (bsn *BigSequenceNumerics) Sequence() []base.PixelMember {
 	count := 0
 	member := bigbase.BigEscapeValue{
 		SqrtDivergeLimit: &bsn.SqrtDivergeLimit,
-		Prec: bsn.Precision,
+		Prec:             bsn.Precision,
 	}
 	for i := ileft; i < iright; i++ {
 		pos.I.Copy(&bsn.ImagMax)

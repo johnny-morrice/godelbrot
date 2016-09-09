@@ -1,10 +1,10 @@
 package bigregion
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/bigbase"
 	"github.com/johnny-morrice/godelbrot/internal/bigsequence"
+	"testing"
 )
 
 func TestBigProxyRegionClaimExtrinsics(t *testing.T) {
@@ -48,18 +48,18 @@ func TestBigProxySequenceClaimExtrinsics(t *testing.T) {
 
 	bsnp := BigSequenceNumericsProxy{
 		BigSequenceNumerics: &numerics,
-		LocalRegion:   region,
+		LocalRegion:         region,
 	}
 
 	bsnp.ClaimExtrinsics()
 
 	expect := base.BaseNumerics{
-		WholeWidth: picW,
+		WholeWidth:  picW,
 		WholeHeight: picH,
-		PicXMin: 25,
-		PicXMax: 75,
-		PicYMin: 25,
-		PicYMax: 75,
+		PicXMin:     25,
+		PicXMax:     75,
+		PicYMin:     25,
+		PicYMax:     75,
 	}
 
 	actual := bsnp.BigBaseNumerics.BaseNumerics
@@ -74,7 +74,7 @@ func regionEq(areg, breg bigRegion) bool {
 	aths := areg.points()
 	bths := breg.points()
 
-	for i, a := range(aths) {
+	for i, a := range aths {
 		b := bths[i]
 		if !bigbase.BigComplexEq(a.C, b.C) {
 			return false

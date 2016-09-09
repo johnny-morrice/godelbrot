@@ -1,12 +1,12 @@
 package nativeregion
 
 import (
-	"log"
-	"image"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/nativebase"
 	"github.com/johnny-morrice/godelbrot/internal/nativesequence"
 	"github.com/johnny-morrice/godelbrot/internal/region"
+	"image"
+	"log"
 )
 
 type nativeSubregion struct {
@@ -20,7 +20,7 @@ type nativeRegion struct {
 	topRight    nativebase.NativeEscapeValue
 	bottomLeft  nativebase.NativeEscapeValue
 	bottomRight nativebase.NativeEscapeValue
-	midPoint 	nativebase.NativeEscapeValue
+	midPoint    nativebase.NativeEscapeValue
 }
 
 func (nr *nativeRegion) rect(base *nativebase.NativeBaseNumerics) image.Rectangle {
@@ -41,9 +41,9 @@ func (nr *nativeRegion) points() []*nativebase.NativeEscapeValue {
 type NativeRegionNumerics struct {
 	region.RegionConfig
 	nativebase.NativeBaseNumerics
-	Region             nativeRegion
-	SequenceNumerics   *nativesequence.NativeSequenceNumerics
-	subregion          nativeSubregion
+	Region           nativeRegion
+	SequenceNumerics *nativesequence.NativeSequenceNumerics
+	subregion        nativeSubregion
 }
 
 // Check that we implement the interface
@@ -54,8 +54,8 @@ func Make(app RenderApplication) NativeRegionNumerics {
 	parent := nativebase.Make(app)
 	reg := NativeRegionNumerics{
 		NativeBaseNumerics: parent,
-		RegionConfig: app.RegionConfig(),
-		SequenceNumerics: &sequence,
+		RegionConfig:       app.RegionConfig(),
+		SequenceNumerics:   &sequence,
 	}
 	reg.initRegion()
 	return reg
@@ -100,7 +100,7 @@ func (native *NativeRegionNumerics) RegionSequence() region.ProxySequence {
 
 func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
 	seq := NativeSequenceProxy{
-		LocalRegion:   native.Region,
+		LocalRegion:            native.Region,
 		NativeSequenceNumerics: native.SequenceNumerics,
 	}
 	return seq
@@ -108,7 +108,7 @@ func (native *NativeRegionNumerics) NativeSequence() NativeSequenceProxy {
 
 func (native *NativeRegionNumerics) Proxy(region nativeRegion) NativeRegionProxy {
 	return NativeRegionProxy{
-		LocalRegion:   region,
+		LocalRegion:          region,
 		NativeRegionNumerics: native,
 	}
 }
@@ -189,18 +189,18 @@ func (native *NativeRegionNumerics) SampleDivs() (<-chan uint8, chan<- bool) {
 }
 
 func (native *NativeRegionNumerics) sample(idivch chan<- uint8, done <-chan bool) {
-	complete := func (idiv uint8) bool {
+	complete := func(idiv uint8) bool {
 		select {
 		case <-done:
 			close(idivch)
 			return true
 		default:
-			idivch<- idiv
+			idivch <- idiv
 			return false
 		}
 	}
 
-	eval := func (r, i float64) uint8 {
+	eval := func(r, i float64) uint8 {
 		p := native.Escape(complex(r, i))
 		return p.InvDiv
 	}

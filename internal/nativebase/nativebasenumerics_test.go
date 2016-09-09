@@ -1,9 +1,9 @@
 package nativebase
 
 import (
-	"testing"
-	"math"
 	"github.com/johnny-morrice/godelbrot/internal/base"
+	"math"
+	"testing"
 )
 
 // Three paths through Make
@@ -68,17 +68,16 @@ func testMake(t *testing.T, helper aspectRatioFixHelper) {
 	mock := &MockRenderApplication{
 		MockRenderApplication: base.MockRenderApplication{
 			Base: base.BaseConfig{
-				FixAspect:  true,
+				FixAspect: true,
 			},
-			PictureWidth:   helper.pictureW,
-			PictureHeight:   helper.pictureH,
+			PictureWidth:  helper.pictureW,
+			PictureHeight: helper.pictureH,
 		},
 	}
 	mock.PlaneMin = userMin
 	mock.PlaneMax = userMax
 
 	numerics := Make(mock)
-
 
 	actualMin := complex(numerics.RealMin, numerics.ImagMin)
 	actualMax := complex(numerics.RealMax, numerics.ImagMax)
@@ -104,10 +103,10 @@ func TestPixelToPlane(t *testing.T) {
 	const height = side
 	const planeSide = 2.0
 	numerics := NativeBaseNumerics{
-		RealMin:     -1.0,
-		ImagMin:	 -1.0,
-		ImagMax:     1.0,
-		RealMax:     1.0,
+		RealMin: -1.0,
+		ImagMin: -1.0,
+		ImagMax: 1.0,
+		RealMax: 1.0,
 	}
 	numerics.WholeWidth = width
 	numerics.WholeHeight = height
@@ -189,10 +188,10 @@ func TestPlaneToPixel(t *testing.T) {
 	const height = side
 	const planeSide = 2.0
 	numerics := NativeBaseNumerics{
-		RealMin:     -1.0,
-		ImagMin:	 -1.0,
-		ImagMax:     1.0,
-		RealMax:     1.0,
+		RealMin: -1.0,
+		ImagMin: -1.0,
+		ImagMax: 1.0,
+		RealMax: 1.0,
 	}
 	numerics.WholeWidth = width
 	numerics.WholeHeight = height

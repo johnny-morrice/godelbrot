@@ -1,9 +1,9 @@
 package nativesequence
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/nativebase"
+	"testing"
 )
 
 func TestSequence(t *testing.T) {
@@ -13,9 +13,9 @@ func TestSequence(t *testing.T) {
 	const iterateLimit = 10
 	app := &nativebase.MockRenderApplication{
 		MockRenderApplication: base.MockRenderApplication{
-			PictureWidth: 10,
+			PictureWidth:  10,
 			PictureHeight: 10,
-			Base: base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
+			Base:          base.BaseConfig{DivergeLimit: 4.0, IterateLimit: iterateLimit},
 		},
 	}
 	app.PlaneMin = complex(0.0, 0.0)

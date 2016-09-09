@@ -1,10 +1,10 @@
 package nativeregion
 
 import (
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/nativebase"
 	"github.com/johnny-morrice/godelbrot/internal/nativesequence"
+	"testing"
 )
 
 const sqrtDLimit = float64(2.0)
@@ -54,12 +54,12 @@ func TestNativeProxySequenceClaimExtrinsics(t *testing.T) {
 			RealMax: real(planeMax),
 			ImagMin: imag(planeMin),
 			ImagMax: imag(planeMax),
-			Runit: rUnit,
-			Iunit: iUnit,
+			Runit:   rUnit,
+			Iunit:   iUnit,
 		},
 	}
 	native := NativeSequenceProxy{
-		LocalRegion:   createNativeRegion(numerics.NativeBaseNumerics, regMin, regMax),
+		LocalRegion:            createNativeRegion(numerics.NativeBaseNumerics, regMin, regMax),
 		NativeSequenceNumerics: &numerics,
 	}
 

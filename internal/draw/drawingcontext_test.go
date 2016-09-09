@@ -1,15 +1,15 @@
 package draw
 
 import (
+	"github.com/johnny-morrice/godelbrot/internal/base"
 	"image"
 	"testing"
-	"github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 func TestDrawPoint(t *testing.T) {
 	mockDraw := &MockDrawingContext{
 		Pic: image.NewNRGBA(image.ZR),
-		Col:  NewRedscalePalette(255),
+		Col: NewRedscalePalette(255),
 	}
 	pixel := base.PixelMember{1, 2, base.EscapeValue{}}
 	DrawPoint(mockDraw, pixel)

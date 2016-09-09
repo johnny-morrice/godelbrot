@@ -1,10 +1,10 @@
 package bigbase
 
 import (
+	"github.com/johnny-morrice/godelbrot/internal/base"
 	"image"
 	"math"
 	"math/big"
-	"github.com/johnny-morrice/godelbrot/internal/base"
 )
 
 // Basis for all big.Float numerics
@@ -17,7 +17,7 @@ type BigBaseNumerics struct {
 	ImagMax big.Float
 
 	SqrtDivergeLimit big.Float
-	IterateLimit uint8
+	IterateLimit     uint8
 
 	Runit big.Float
 	Iunit big.Float
@@ -62,7 +62,7 @@ func Make(app RenderApplication) BigBaseNumerics {
 		ImagMax:      top,
 
 		SqrtDivergeLimit: MakeBigFloat(fSqrtDiverge, prec),
-		IterateLimit: baseConfig.IterateLimit,
+		IterateLimit:     baseConfig.IterateLimit,
 
 		Runit:     rUnit,
 		Iunit:     iUnit,
@@ -104,8 +104,8 @@ func (bbn *BigBaseNumerics) PlaneToPixel(c *BigComplex) (rx int, ry int) {
 
 func (bbn *BigBaseNumerics) MakeMember(c *BigComplex) BigEscapeValue {
 	return BigEscapeValue{
-		C: c,
-		Prec: bbn.Precision,
+		C:                c,
+		Prec:             bbn.Precision,
 		SqrtDivergeLimit: &bbn.SqrtDivergeLimit,
 	}
 }
@@ -159,8 +159,8 @@ func (bbn *BigBaseNumerics) Escape(c *BigComplex) BigEscapeValue {
 type UnitQuery struct {
 	pictureW uint
 	pictureH uint
-	planeW *big.Float
-	planeH *big.Float
+	planeW   *big.Float
+	planeH   *big.Float
 }
 
 func (uq UnitQuery) PixelUnits() (big.Float, big.Float) {

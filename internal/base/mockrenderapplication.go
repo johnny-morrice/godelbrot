@@ -1,12 +1,12 @@
 package base
 
 type MockRenderApplication struct {
-	TBaseConfig bool
+	TBaseConfig        bool
 	TPictureDimensions bool
 
 	Base BaseConfig
 
-	PictureWidth uint
+	PictureWidth  uint
 	PictureHeight uint
 }
 

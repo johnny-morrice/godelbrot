@@ -1,30 +1,30 @@
 package sequence
 
 import (
-    "github.com/johnny-morrice/godelbrot/internal/base"
-    "github.com/johnny-morrice/godelbrot/internal/draw"
+	"github.com/johnny-morrice/godelbrot/internal/base"
+	"github.com/johnny-morrice/godelbrot/internal/draw"
 )
 
 type MockRenderApplication struct {
-    base.MockRenderApplication
-    draw.MockContextProvider
+	base.MockRenderApplication
+	draw.MockContextProvider
 
-    TSequenceNumericsFactory bool
+	TSequenceNumericsFactory bool
 
-    SequenceFactory SequenceNumericsFactory
+	SequenceFactory SequenceNumericsFactory
 }
 
 func (mock *MockRenderApplication) SequenceNumericsFactory() SequenceNumericsFactory {
-    mock.TSequenceNumericsFactory = true
-    return mock.SequenceFactory
+	mock.TSequenceNumericsFactory = true
+	return mock.SequenceFactory
 }
 
 type MockFactory struct {
-    TBuild bool
-    Numerics SequenceNumerics
+	TBuild   bool
+	Numerics SequenceNumerics
 }
 
 func (mock *MockFactory) Build() SequenceNumerics {
-    mock.TBuild = true
-    return mock.Numerics
+	mock.TBuild = true
+	return mock.Numerics
 }

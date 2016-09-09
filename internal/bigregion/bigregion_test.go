@@ -1,13 +1,13 @@
 package bigregion
 
 import (
-	"math/big"
-	"testing"
 	"github.com/johnny-morrice/godelbrot/internal/base"
 	"github.com/johnny-morrice/godelbrot/internal/bigbase"
-	"github.com/johnny-morrice/godelbrot/internal/region"
-	"github.com/johnny-morrice/godelbrot/internal/nativeregion"
 	"github.com/johnny-morrice/godelbrot/internal/nativebase"
+	"github.com/johnny-morrice/godelbrot/internal/nativeregion"
+	"github.com/johnny-morrice/godelbrot/internal/region"
+	"math/big"
+	"testing"
 )
 
 const prec = 53
@@ -202,7 +202,7 @@ type bigRegionSplitHelper struct {
 
 type fRegFactory func() region.RegionNumerics
 
-var _ region.RegionNumericsFactory = fRegFactory(func () region.RegionNumerics { return nil })
+var _ region.RegionNumericsFactory = fRegFactory(func() region.RegionNumerics { return nil })
 
 func (f fRegFactory) Build() region.RegionNumerics {
 	return f()
@@ -241,7 +241,7 @@ func TestSampleDivs(t *testing.T) {
 	// This business is over complicated
 	bigProvider := region.MockRegionProvider{}
 	bigProvider.RegConfig = regConfig
-	bigProvider.RegionFactory = fRegFactory(func () region.RegionNumerics {
+	bigProvider.RegionFactory = fRegFactory(func() region.RegionNumerics {
 		app := &MockRenderApplication{}
 		app.MockRegionProvider = bigProvider
 		app.MockRenderApplication = mockBase
@@ -256,7 +256,7 @@ func TestSampleDivs(t *testing.T) {
 
 	nativeProvider := region.MockRegionProvider{}
 	nativeProvider.RegConfig = regConfig
-	nativeProvider.RegionFactory = fRegFactory(func () region.RegionNumerics {
+	nativeProvider.RegionFactory = fRegFactory(func() region.RegionNumerics {
 		app := &nativeregion.MockRenderApplication{}
 		app.MockNativeCoordProvider = nativeCoords
 		app.MockRegionProvider = nativeProvider

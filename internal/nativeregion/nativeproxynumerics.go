@@ -1,13 +1,13 @@
 package nativeregion
 
 import (
-    "github.com/johnny-morrice/godelbrot/internal/region"
 	"github.com/johnny-morrice/godelbrot/internal/nativesequence"
+	"github.com/johnny-morrice/godelbrot/internal/region"
 )
 
 type NativeRegionProxy struct {
 	*NativeRegionNumerics
-	LocalRegion   nativeRegion
+	LocalRegion nativeRegion
 }
 
 // Check we implement the interface
@@ -26,7 +26,7 @@ func (proxy NativeRegionProxy) Extrinsically(f func()) {
 
 type NativeSequenceProxy struct {
 	*nativesequence.NativeSequenceNumerics
-	LocalRegion   nativeRegion
+	LocalRegion nativeRegion
 }
 
 func (proxy NativeSequenceProxy) ClaimExtrinsics() {

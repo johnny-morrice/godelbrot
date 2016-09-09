@@ -1,9 +1,9 @@
 package region
 
-import(
+import (
+	paint "github.com/johnny-morrice/godelbrot/internal/draw"
 	"image"
 	"image/draw"
-	paint "github.com/johnny-morrice/godelbrot/internal/draw"
 )
 
 // DrawUniform draws a rectangle of uniform colour on to the image.
