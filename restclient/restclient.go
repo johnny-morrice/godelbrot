@@ -304,6 +304,7 @@ func (web *Client) decode(r io.Reader, any interface{}) error {
 func httpError(resp HttpResponse) error {
 	buff := &bytes.Buffer{}
 	err := resp.Write(buff)
+        
 	if err != nil {
 		panic(err)
 	}
