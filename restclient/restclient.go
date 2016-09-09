@@ -121,7 +121,6 @@ func (web *Client) cycstartUrl(url string, renreq *protocol.RenderRequest) (stri
 }
 
 func (web *Client) Newrq(url string, renreq *protocol.RenderRequest) (*protocol.RQNewResp, error) {
-
 	if web.config.Debug {
 		log.Printf("Sending render request: %v", renreq)
 	}
