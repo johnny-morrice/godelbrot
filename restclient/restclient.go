@@ -60,8 +60,10 @@ func (web *Client) RenderCycle(url string, renreq *protocol.RenderRequest) (*Ren
     if err != nil {
         return nil, err
     }
+
     for {
         rqstat, err := web.Getrq(rqurl)
+
         if err != nil {
             return nil, err
         }
@@ -69,7 +71,7 @@ func (web *Client) RenderCycle(url string, renreq *protocol.RenderRequest) (*Ren
 
         case "done":
             imgurl := web.Url(rqstat.ImageURL)
-            
+
             r, err := web.Getimag(imgurl)
             if err != nil {
                 return nil, err
@@ -97,16 +99,21 @@ func (web *Client) RenderCycle(url string, renreq *protocol.RenderRequest) (*Ren
 func (web *Client) cycstartUrl(url string, renreq *protocol.RenderRequest) (string, error) {
     if url == "" {
         newresp, err := web.Newrq(web.Url("renderqueue"), renreq)
+
         if err != nil {
             return "", err
         }
+
         return web.Url(newresp.RQStatusURL), nil
     } else {
+
         if renreq.WantZoom {
             newresp, err := web.Rqzoom(url, renreq)
+
             if err != nil {
                 return "" ,err
             }
+
             return web.Url(newresp.RQStatusURL), nil
         } else {
             return url, nil
@@ -121,27 +128,36 @@ func (web *Client) Newrq(url string, renreq *protocol.RenderRequest) (*protocol.
     }
 
     buff, werr := jsonr(renreq)
+
     if werr != nil {
         return nil, addstack(werr)
     }
+
     resp, err := web.post(url, "application/json", buff)
+
     if err != nil {
         return nil, err
     }
+
+    defer resp.GetBody().Close()
+
     if resp.GetStatusCode() != 200 {
         return nil, httpError(resp)
     }
-    defer resp.GetBody().Close()
+
     rqi := &protocol.RQNewResp{}
     derr := web.decode(resp.GetBody(), rqi)
+
     return rqi, addstack(derr)
 }
 
 func (web *Client) Rqzoom(rqurl string, renreq *protocol.RenderRequest) (*protocol.RQNewResp, error) {
     cacheresp, err := web.Getrq(rqurl)
+
     if err != nil {
         return nil, err
     }
+
     renreq.Req = cacheresp.NextReq
 
     if web.config.Debug {
@@ -153,32 +169,47 @@ func (web *Client) Rqzoom(rqurl string, renreq *protocol.RenderRequest) (*protoc
 
 func (web *Client) Getrq(url string) (*protocol.RQGetResp, error) {
     resp, err := web.get(url)
+
     if err != nil {
         return nil, err
     }
+
     defer resp.GetBody().Close()
+
+    if resp.GetStatusCode() != 200 {
+        return nil, httpError(resp)
+    }
+
     rqi := &protocol.RQGetResp{}
     derr := web.decode(resp.GetBody(), rqi)
+
     return rqi, addstack(derr)
 }
 
 func (web *Client) Getimag(url string) (io.Reader, error) {
     resp, err := web.get(url)
+
     if err != nil {
         return nil, err
     }
+
+    defer resp.GetBody().Close()
+
     if resp.GetStatusCode() != 200 {
         return nil, httpError(resp)
     }
-    defer resp.GetBody().Close()
+
     buff := &bytes.Buffer{}
     _, cpyerr := io.Copy(buff, resp.GetBody())
+
     return buff, addstack(cpyerr)
 }
 
 func (web *Client) Url(path string) string {
     config := web.config
+
     var url string
+
     if web.config.Prefix == "" {
         url = fmt.Sprintf("http://%v:%v/%v",
             config.Addr, config.Port, path)
@@ -197,12 +228,14 @@ type httpFunc func () (HttpResponse, error)
 
 func (web *Client) get(url string) (r HttpResponse, err error) {
     f := func () (HttpResponse, error) {
+
         if web.config.Debug {
             log.Printf("GET %v", url)
         }
 
         return web.config.Http.Get(url)
     }
+
     return web.request(f)
 }
 
@@ -220,6 +253,7 @@ func (web *Client) post(url, ctype string, body io.Reader) (HttpResponse, error)
 func (web *Client) request(f httpFunc) (HttpResponse, error) {
     var r HttpResponse
     var err error
+
     web.cautiously(func () {
         r, err = f()
 
@@ -227,6 +261,7 @@ func (web *Client) request(f httpFunc) (HttpResponse, error) {
             web.reportResponse(r, err)
         }
     })
+
     return r, err
 }
 
@@ -235,8 +270,10 @@ func (web *Client) reportResponse(r HttpResponse, err error) {
         log.Printf("Error: %v", err)
         return
     }
+
     log.Printf("Status: %v", r.GetStatus())
     ctypeHeads := r.GetHeader()["Content-Type"]
+
     if len(ctypeHeads) != 1 {
         log.Printf("Bad Content-Type header")
     } else {
@@ -250,6 +287,7 @@ func (web *Client) cautiously(f func()) {
     } else {
         <-web.tick.C
     }
+
     f()
 }
 
@@ -261,6 +299,7 @@ func (web *Client) decode(r io.Reader, any interface{}) error {
         log.Printf("Decoded: %v", buff.String())
         return derr
     }
+
     return decode(r, any)
 }
 
@@ -270,6 +309,7 @@ func httpError(resp HttpResponse) error {
     if err != nil {
         panic(err)
     }
+
     return fmt.Errorf("Response:\n%v", buff)
 }
 
@@ -283,6 +323,7 @@ func jsonr(any interface{}) (io.Reader, error) {
     buff := &bytes.Buffer{}
     enc := json.NewEncoder(buff)
     err := enc.Encode(any)
+    
     return buff, err
 }
 
